@@ -1,0 +1,42 @@
+<idea-plugin>
+    <id>Cloak</id>
+    <name>Cloak</name>
+    <version>${version}</version>
+    <vendor>Fudge</vendor>
+    <idea-version since-build="190.0" until-build="1000.*"/>
+
+    <description>A cloak made of fabric</description>
+
+    <change-notes>  <![CDATA[]]></change-notes>
+
+    <depends>com.intellij.modules.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <projectService serviceImplementation="knit.MappingService"/>
+        <applicationInitializedListener implementation="knit.KnitApplicationInitializedListener"/>
+        <refactoring.elementListenerProvider implementation="knit.RemappingRefactoringListenerProvider"/>
+        <projectViewNodeDecorator implementation="knit.ObfuscationProjectViewNodeDecorator"/>
+    </extensions>
+
+    <project-components>
+        <component>
+            <implementation-class>knit.ObfuscationStatusPassFactory</implementation-class>
+        </component>
+    </project-components>
+
+    <actions>
+        <action id="Knit.EnableRemapping" class="knit.EnableRemappingAction" text="Enable Remapping" description="Enable or disable remapping mode">
+            <add-to-group group-id="RefactoringMenu"/>
+        </action>
+
+<!--        <group id="MyPlugin.SampleMenu" text="Greeting" description="Greeting menu">-->
+
+            <action id="Cloak.Test" class="cloak.idea.RemapAction" text="Hello" description="Says hello">
+                <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+                <keyboard-shortcut first-keystroke="F2" keymap="$default"/>
+            </action>
+<!--        </group>-->
+    </actions>
+
+
+</idea-plugin>
