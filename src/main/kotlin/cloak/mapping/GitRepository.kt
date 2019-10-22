@@ -23,7 +23,7 @@ open class GitRepository(private val git: Git) {
         val startPoint = when {
             localBranchAlreadyExists -> branchName
             remoteBranchExists -> "origin/$branchName"
-            else -> "master"
+            else -> "refs/heads/master"
         }
 
         git.checkout()

@@ -1,5 +1,7 @@
 package cloak.mapping.mappings
 
+import cloak.mapping.descriptor.MethodDescriptor
+import cloak.mapping.descriptor.read
 import cloak.mapping.put
 import java.io.File
 
@@ -88,7 +90,7 @@ fun parseMethod(
     return MethodMapping(
         obfuscatedName = tokens[1],
         deobfuscatedName = deobfName,
-        descriptor = descriptor,
+        descriptor = MethodDescriptor.read(descriptor) ,
         parameters = mutableListOf(),
         parent = parent
     )

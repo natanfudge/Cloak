@@ -50,9 +50,9 @@ private class MappingsWriter(val writer: BufferedWriter) {
                     Prefix.Method,
                     method.obfuscatedName,
                     method.deobfuscatedName!!,
-                    method.descriptor
+                    method.descriptor.classFileName
                 )
-            } else writeLine(methodIndent, Prefix.Method, method.obfuscatedName, method.descriptor)
+            } else writeLine(methodIndent, Prefix.Method, method.obfuscatedName, method.descriptor.classFileName)
 
             for (parameter in method.parameters) {
                 val paramIndent = indent + NaturalIndent.Parameter

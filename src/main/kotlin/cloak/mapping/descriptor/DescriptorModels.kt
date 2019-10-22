@@ -7,7 +7,7 @@ typealias FieldDescriptorCompanion = FieldType.Companion
 
 sealed class Descriptor(val classFileName: String) {
     override fun equals(other: Any?) = other is Descriptor && other.classFileName == classFileName
-    override fun toString() = "Descriptor(classFileName=$classFileName)"
+    override fun toString() = "PrimitiveType(classFileName=$classFileName)"
     override fun hashCode() = classFileName.hashCode()
 }
 
@@ -27,11 +27,15 @@ sealed class FieldType(classFileName: String) : ReturnDescriptor(classFileName) 
     object Boolean : FieldType("Z")
 }
 
-data class ObjectType(val className: String) : FieldType("L$className;")
+data class ObjectType(val className: String) : FieldType("L$className;"){
+    override fun toString() = classFileName
+}
 data class ArrayType(val componentType: FieldType) : FieldType("[" + componentType.classFileName)
 
+typealias ParameterDescriptor = FieldType
+
 data class MethodDescriptor(
-    val parameterDescriptors: List<FieldType>,
+    val parameterDescriptors: List<ParameterDescriptor>,
     val returnDescriptor: ReturnDescriptor
 ) : Descriptor("(${parameterDescriptors.joinToString("") { it.classFileName }})${returnDescriptor.classFileName}") {
     companion object

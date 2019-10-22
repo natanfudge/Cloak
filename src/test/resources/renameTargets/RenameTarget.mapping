@@ -1,0 +1,7 @@
+CLASS test test/RenameTarget
+	CLASS ti InnerD
+	    CLASS tii InnerInnerD
+	        METHOD tiim method (I)J
+	            ARG 0 arg
+
+    METHOD m method(

@@ -12,22 +12,22 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="knit.MappingService"/>
-        <applicationInitializedListener implementation="knit.KnitApplicationInitializedListener"/>
-        <refactoring.elementListenerProvider implementation="knit.RemappingRefactoringListenerProvider"/>
-        <projectViewNodeDecorator implementation="knit.ObfuscationProjectViewNodeDecorator"/>
+<!--        <projectService serviceImplementation="knit.MappingService"/>-->
+<!--        <applicationInitializedListener implementation="knit.KnitApplicationInitializedListener"/>-->
+<!--        <refactoring.elementListenerProvider implementation="knit.RemappingRefactoringListenerProvider"/>-->
+<!--        <projectViewNodeDecorator implementation="knit.ObfuscationProjectViewNodeDecorator"/>-->
     </extensions>
 
     <project-components>
-        <component>
-            <implementation-class>knit.ObfuscationStatusPassFactory</implementation-class>
-        </component>
+<!--        <component>-->
+<!--            <implementation-class>knit.ObfuscationStatusPassFactory</implementation-class>-->
+<!--        </component>-->
     </project-components>
 
     <actions>
-        <action id="Knit.EnableRemapping" class="knit.EnableRemappingAction" text="Enable Remapping" description="Enable or disable remapping mode">
-            <add-to-group group-id="RefactoringMenu"/>
-        </action>
+<!--        <action id="Knit.EnableRemapping" class="knit.EnableRemappingAction" text="Enable Remapping" description="Enable or disable remapping mode">-->
+<!--            <add-to-group group-id="RefactoringMenu"/>-->
+<!--        </action>-->
 
 <!--        <group id="MyPlugin.SampleMenu" text="Greeting" description="Greeting menu">-->
 
