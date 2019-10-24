@@ -1,5 +1,6 @@
 import cloak.mapping.descriptor.FieldType
 import cloak.mapping.descriptor.ObjectType
+import cloak.mapping.descriptor.PrimitiveType
 import cloak.mapping.mappings.MappingsFile
 import cloak.mapping.mappings.read
 import cloak.mapping.mappings.writeTo
@@ -12,7 +13,7 @@ class MappingsTests {
 
     private val testMappings = mappingsFile("bgq", "net/minecraft/block/AbstractBannerBlock") {
         innerClass("testObf", "testDeobf") {
-            field("a", "b", FieldType.Byte)
+            field("a", "b", PrimitiveType.Byte)
             method("d", "e") {
                 param(1, "g")
             }

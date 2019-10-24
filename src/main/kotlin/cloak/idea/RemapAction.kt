@@ -11,10 +11,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
 
+//TODO: list of default ignored auto-imports
+//TODO: "new project" dialog: Kotlin/Java, include publishing block
+//TODO: turn on "autoscroll from source" by default
+//TODO: give cool icon to fabric.mod.json and modid.mixin.json
+//TODO: inspections for fabric stuff?
 
 class RemapAction : Action("Hello") {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
-//        val editor = context.editor ?: return false
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
         if (!element.packageName.startsWith("net.minecraft")) return false

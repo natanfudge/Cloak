@@ -7,30 +7,53 @@ typealias FieldDescriptorCompanion = FieldType.Companion
 
 sealed class Descriptor(val classFileName: String) {
     override fun equals(other: Any?) = other is Descriptor && other.classFileName == classFileName
-    override fun toString() = "PrimitiveType(classFileName=$classFileName)"
     override fun hashCode() = classFileName.hashCode()
 }
 
 sealed class ReturnDescriptor(classFileName: String) : Descriptor(classFileName) {
-    object Void : ReturnDescriptor("V")
+    object Void : ReturnDescriptor("V"){
+        override fun toString()  = "void"
+    }
 }
 
 sealed class FieldType(classFileName: String) : ReturnDescriptor(classFileName) {
     companion object
-    object Byte : FieldType("B")
-    object Char : FieldType("C")
-    object Double : FieldType("D")
-    object Float : FieldType("F")
-    object Int : FieldType("I")
-    object Long : FieldType("J")
-    object Short : FieldType("S")
-    object Boolean : FieldType("Z")
+
+}
+
+sealed class PrimitiveType(classFileName: String) : FieldType(classFileName){
+    object Byte : PrimitiveType("B"){
+        override fun toString()  = "byte"
+    }
+    object Char : PrimitiveType("C"){
+        override fun toString()  = "char"
+    }
+    object Double : PrimitiveType("D"){
+        override fun toString()  = "double"
+    }
+    object Float : PrimitiveType("F"){
+        override fun toString()  = "float"
+    }
+    object Int : PrimitiveType("I"){
+        override fun toString()  = "int"
+    }
+    object Long : PrimitiveType("J"){
+        override fun toString()  = "long"
+    }
+    object Short : PrimitiveType("S"){
+        override fun toString()  = "short"
+    }
+    object Boolean : PrimitiveType("Z"){
+        override fun toString()  = "boolean"
+    }
 }
 
 data class ObjectType(val className: String) : FieldType("L$className;"){
-    override fun toString() = classFileName
+    override fun toString() = className
 }
-data class ArrayType(val componentType: FieldType) : FieldType("[" + componentType.classFileName)
+data class ArrayType(val componentType: FieldType) : FieldType("[" + componentType.classFileName){
+    override fun toString() = "$componentType[]"
+}
 
 typealias ParameterDescriptor = FieldType
 

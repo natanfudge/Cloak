@@ -12,10 +12,12 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+<!--        <applicationService -->
 <!--        <projectService serviceImplementation="knit.MappingService"/>-->
 <!--        <applicationInitializedListener implementation="knit.KnitApplicationInitializedListener"/>-->
 <!--        <refactoring.elementListenerProvider implementation="knit.RemappingRefactoringListenerProvider"/>-->
 <!--        <projectViewNodeDecorator implementation="knit.ObfuscationProjectViewNodeDecorator"/>-->
+        <applicationService serviceImplementation="cloak.idea.ClassNameProvider"/>
     </extensions>
 
     <project-components>

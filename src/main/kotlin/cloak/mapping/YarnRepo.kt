@@ -6,6 +6,7 @@ import java.io.File
 import java.nio.file.Paths
 
 class YarnRepo(private val localPath: File) {
+    private var git : GitRepository? = null
     companion object {
         private const val RemoteUrl = "https://github.com/natanfudge/yarn"
         private const val MappingsDirName = "mappings"
@@ -19,12 +20,15 @@ class YarnRepo(private val localPath: File) {
 
     fun clean() = localPath.deleteRecursively()
 
-    fun getOrCloneGit(): GitRepository = GitRepository(
-        if (localPath.exists()) Git.open(localPath) else Git.cloneRepository()
-            .setURI(RemoteUrl)
-            .setDirectory(localPath)
-            .call()
-    )
+    fun getOrCloneGit(): GitRepository {
+        if(git == null) git = GitRepository(
+            if (localPath.exists()) Git.open(localPath) else Git.cloneRepository()
+                .setURI(RemoteUrl)
+                .setDirectory(localPath)
+                .call()
+        )
+        return git!!
+    }
 
 
     fun getFile(path: String): File = localPath.toPath().resolve(path).toFile()

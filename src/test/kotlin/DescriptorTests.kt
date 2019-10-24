@@ -14,10 +14,10 @@ class DescriptorTests {
     }
 
     @Test
-    fun `Parse Basic`() = testReadWrite(FieldType.Byte, "B")
+    fun `Parse Basic`() = testReadWrite(PrimitiveType.Byte, "B")
 
     @Test
-    fun `Parse Array`() = testReadWrite(ArrayType(FieldType.Int), "[I")
+    fun `Parse Array`() = testReadWrite(ArrayType(PrimitiveType.Int), "[I")
 
     @Test
     fun `Parse Class`() = testReadWrite(ObjectType("Foo"), "LFoo;")
@@ -29,7 +29,7 @@ class DescriptorTests {
     fun `Parse Returning Method`() {
         val parsed = MethodDescriptor(
             listOf(
-                FieldType.Long, ArrayType(FieldType.Double), ObjectType("Baz"),
+                PrimitiveType.Long, ArrayType(PrimitiveType.Double), ObjectType("Baz"),
                 ArrayType(ArrayType(ObjectType("Bar")))
             ), ArrayType(ObjectType("Ka"))
         )
@@ -43,7 +43,7 @@ class DescriptorTests {
     fun `Parse Void Method`() {
         val parsed = MethodDescriptor(
             listOf(
-                FieldType.Long, ArrayType(FieldType.Double), ObjectType("Baz"),
+                PrimitiveType.Long, ArrayType(PrimitiveType.Double), ObjectType("Baz"),
                 ArrayType(ArrayType(ObjectType("Bar")))
             ), ReturnDescriptor.Void
         )

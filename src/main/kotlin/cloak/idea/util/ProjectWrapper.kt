@@ -1,6 +1,7 @@
 package cloak.idea.util
 
 
+import cloak.idea.ClassNameProvider
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
@@ -18,6 +19,12 @@ interface ProjectWrapper {
     fun showMessageDialog(message: String, title: String, icon: Icon = CommonIcons.Info)
 
     val yarnRepoDir: File
+
+    /**
+     * Needed to find methods that have intermediary descriptors while the user sees named descriptors
+     * You just need to save this, it will be filled if it's empty while it's being consumed
+     */
+    fun getIntermediaryClassNames(): MutableMap<String, String>
 }
 
 class IdeaProjectWrapper(private val project: Project) : ProjectWrapper {
@@ -31,6 +38,7 @@ class IdeaProjectWrapper(private val project: Project) : ProjectWrapper {
     }
 
     override val yarnRepoDir = IdeaStorage.YarnRepoDir
+    override fun getIntermediaryClassNames() = ClassNameProvider.Instance.namedToIntermediary
 
     private class InputValidatorWrapper(val validator: (String) -> String?) : InputValidatorEx {
         override fun checkInput(inputString: String) = true

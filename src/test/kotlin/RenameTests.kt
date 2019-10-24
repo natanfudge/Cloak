@@ -1,19 +1,18 @@
-import cloak.mapping.rename.Renamer
 import cloak.mapping.StringSuccess
 import cloak.mapping.descriptor.ObjectType
+import cloak.mapping.rename.Renamer
+import org.junit.AfterClass
 import org.junit.Test
 import util.*
-import java.io.File
 import kotlin.test.assertEquals
 
 class RenameTests {
     private val yarn = TestYarnRepo
 
-    private fun useFile(path: String): File {
-        val newFile = yarn.getMappingsFile(path)
-        getTestResource(path).copyTo(newFile, overwrite = true)
-        yarn.getOrCloneGit().stageChanges("mappings/$path")
-        return newFile
+    private fun useFile(path: String) {
+        val git = yarn.getOrCloneGit()
+        getTestResource(path).copyTo(yarn.getMappingsFile(path), overwrite = true)
+        git.stageChanges("mappings/$path")
     }
 
     private fun testRename(
@@ -27,7 +26,7 @@ class RenameTests {
         useFile("$blockPath.mapping")
         val project = TestProjectWrapper(userInput)
         val targetName = className(blockPath, nameInit)
-        val result = Renamer.rename(project,targetName , isTopLevelClass)
+        val result = Renamer.rename(project, targetName, isTopLevelClass)
         assert(result is StringSuccess) { result.toString() }
 
         if (isTopLevelClass) {
@@ -58,8 +57,15 @@ class RenameTests {
     }
 
     @Test
-    fun `Rename Method`()  = testRename("RenameMethod","goodNameNow"){
-        method("getPlacementState", ObjectType("net/minecraft/entity/mob/VexEntity"))
+    fun `Rename Method`() = testRename("RenameMethod", "goodnamenow") {
+        method(
+            "topCoversMediumSquare",
+            ObjectType("net/minecraft/world/BlockView"), ObjectType("net/minecraft/util/math/BlockPos")
+        )
+    }
+
+    @Test
+    fun `Rename Method with inner classes descriptor`() {
     }
 
     @Test
@@ -110,6 +116,15 @@ class RenameTests {
     @Test
     fun `Errors when there's already a class with that name in the same package`() {
 
+    }
+
+
+    companion object {
+        @AfterClass
+        @JvmStatic
+        fun save() {
+
+        }
     }
 
 

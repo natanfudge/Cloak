@@ -23,3 +23,5 @@ inline fun <T> profile(sectionName: String, code: () -> T): T {
 fun String.splitOn(index: Int) = Pair(substring(0, index), substring(index + 1))
 
 val File.doesNotExist get() = !exists()
+
+fun <K> Map<K,K>.getOrKey(key : K) : K = getOrDefault(key,key)

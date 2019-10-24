@@ -75,9 +75,9 @@ data class ClassName(val className: String, val packageName: String, val innerCl
     override fun toString(): String = toString(isInnerClass = false)
 
     private fun toString(isInnerClass: Boolean): String {
-        val packageName = if (isInnerClass) "" else packageName
+        val packageName = if (isInnerClass) "" else "$packageName/"
         val innerClassStr = if (innerClass != null) Joiner.InnerClass + innerClass.toString(isInnerClass = true) else ""
-        return "$packageName/$className$innerClassStr"
+        return "$packageName$className$innerClassStr"
     }
 
 }

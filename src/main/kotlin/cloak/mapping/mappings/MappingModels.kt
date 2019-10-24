@@ -14,6 +14,12 @@ object Joiner {
 
 
 typealias MappingsFile = ClassMapping
+
+fun MappingsFile.visitClasses(visitor: (ClassMapping) -> Unit) {
+    visitor(this)
+    for (innerClass in innerClasses) innerClass.visitClasses(visitor)
+}
+
 typealias MappingsFileCompanion = ClassMapping.Companion
 
 data class ClassMapping(
@@ -66,7 +72,10 @@ data class MethodMapping(
     val parameters: MutableList<ParameterMapping>,
     override val parent: ClassMapping
 ) : Mapping() {
-    override fun toString() = "$parent${Joiner.Method}$nonNullName"
+    override fun toString() =
+        "$parent${Joiner.Method}$nonNullName(${descriptor.parameterDescriptors.joinToString(" ,")})" +
+                ": ${descriptor.returnDescriptor}"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
