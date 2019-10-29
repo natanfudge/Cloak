@@ -78,13 +78,13 @@ fun parseMethod(
 ): MethodMapping {
     var deobfName: String? = null
     val descriptor: String
-    when (tokens.size) {
+    when (val tokenAmount = tokens.size) {
         3 -> descriptor = tokens[2]
         4 -> {
             deobfName = tokens[2]
             descriptor = tokens[3]
         }
-        else -> error("Invalid method declaration")
+        else -> error("Invalid method declaration, got $tokenAmount tokens.")
     }
 
     return MethodMapping(

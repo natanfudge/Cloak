@@ -5,13 +5,10 @@ import cloak.idea.util.ProjectWrapper
 import cloak.mapping.*
 import cloak.mapping.descriptor.remap
 import cloak.mapping.mappings.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.eclipse.jgit.lib.PersonIdent
 import java.io.File
 import javax.lang.model.SourceVersion
-import kotlin.test.assertNotNull
 
 data class GitUser(val name: String, val email: String) {
     val jgit = PersonIdent(name, email)
@@ -19,69 +16,93 @@ data class GitUser(val name: String, val email: String) {
 }
 
 object Renamer {
-    fun <M : Mapping> rename(
+    /**
+     * Returns the new name
+     */
+    suspend fun rename(
         project: ProjectWrapper,
-        name: Name<M>,
+        name: Name,
         isTopLevelClass: Boolean
-    ): Errorable<String> = with(project) {
+    )  : Errorable<String> = with(project) {
+        coroutineScope {
+            val user = GitUser(name = "natanfudge", email = "natan.lifsiz@gmail.com")
+            val git = async { getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir) }
+            val namedToIntermediaryClasses = async { getClassNamesMap(YarnRepo(yarnRepoDir)) }
+
+            val input = getFromUiThread {
+                showInputDialog(message = "Choose new name", title = "Rename") {
+                    validate(it, isTopLevelClass)
+                }
+            } ?: return@coroutineScope fail<String>("User didn't input a new name")
+
+            renameOnBackgroundThread(namedToIntermediaryClasses, name, input, user, git)
+        }
+
+
         //TODO: actually get from input and save to global settings
-        val user =
-            GitUser(name = "natanfudge", email = "natan.lifsiz@gmail.com")
-        val git = getOrCloneGitAsync(gitUser = user, yarnRepo = yarnRepoDir)
-        val namedToIntermediaryClasses = getClassNamesMapAsync(YarnRepo(yarnRepoDir))
 
 
-        val input = showInputDialog(message = "Choose new name", title = "Rename") {
-            validate(it, isTopLevelClass)
-        } ?: return fail("User didn't input a new name")
+    }
 
-        return runBlocking {
 
-            // Class names are named for the user, but intermediary in the mappings,
-            // so we convert what the user has to intermediary.
-            val namedToIntermediary = namedToIntermediaryClasses.await()
-            val oldName = if (name is MethodName) name.copy(
-                parameterTypes = name.parameterTypes.map { it.remap(namedToIntermediary) }
-            ) else name
 
-            val result = tryRename(
-                oldName = oldName,
-                newName = input,
-                yarnRepo = yarnRepoDir,
-                explanation = null,
-                gitUser = user,
-                git = git.await(),
-                namedToIntermediary = namedToIntermediary
-            )
 
-            when (result) {
-                //TODO: this should not exit out of the UI if there is a problem, instead there should be loading indicator
-                // and an error on the same screen (if no error then exit and send message)
-                is StringSuccess -> showMessageDialog(message = result.value, title = "Rename Success")
-                is StringError -> showMessageDialog(
+    //TODO: quick popup when can't find it
+    private suspend fun ProjectWrapper.renameOnBackgroundThread(
+        namedToIntermediaryClasses: Deferred<MutableMap<String, String>>,
+        name: Name,
+        input: String,
+        user: GitUser,
+        git: Deferred<GitRepository>
+    ) = asyncWithProgressBar("Renaming...") {
+
+        // Class names are named for the user, but intermediary in the mappings,
+        // so we convert what the user has to intermediary.
+        val namedToIntermediary = namedToIntermediaryClasses.await()
+        val oldName = if (name is MethodName) name.copy(
+            parameterTypes = name.parameterTypes.map { it.remap(namedToIntermediary) }
+        ) else name
+
+        val result = tryRename(
+            oldName = oldName,
+            newName = input,
+            yarnRepo = yarnRepoDir,
+            explanation = null,
+            gitUser = user,
+            git = git.await(),
+            namedToIntermediary = namedToIntermediary
+        )
+
+
+        when (result) {
+            //TODO: this should not exit out of the UI if there is a problem, instead there should be loading indicator
+            // and an error on the same screen (if no error then exit and send message)
+//                    is StringSuccess -> showMessageDialog(message = result.value, title = "Rename Success")
+            is StringError -> inUiThread {
+                showMessageDialog(
                     message = result.value,
                     title = "Rename Error",
                     icon = CommonIcons.Error
                 )
             }
-            result
         }
 
+        result
     }
 
     /**
      * Call this while the user is busy (typing the new name) to prevent lag later on.
      * This method will be executed asynchronously so it will return immediately and do the work in the background.
      */
-    private fun getOrCloneGitAsync(gitUser: GitUser, yarnRepo: File) = GlobalScope.async {
+    private suspend fun getOrCloneGit(gitUser: GitUser, yarnRepo: File) = withContext(Dispatchers.IO) {
         YarnRepo(yarnRepo).getOrCloneGit().apply { switchToBranch(gitUser.branchName) }
     }
 
-    private fun ProjectWrapper.getClassNamesMapAsync(yarnRepo: YarnRepo) = GlobalScope.async {
+    private suspend fun ProjectWrapper.getClassNamesMap(yarnRepo: YarnRepo) = withContext(Dispatchers.IO) {
         val map = getIntermediaryClassNames()
         if (map.isEmpty()) {
             yarnRepo.walkMappingsDirectory().forEach { file ->
-                if(!file.isDirectory){
+                if (!file.isDirectory) {
                     MappingsFile.read(file).visitClasses { mapping ->
                         mapping.deobfuscatedName?.let { map[it] = mapping.obfuscatedName }
                     }
@@ -120,10 +141,10 @@ object Renamer {
      * @param gitUser Git identifier of the user who made the mappings
      *
      *
-     * @return A success message if successful, and a failure message if it failed
+     * @return The new name if successful, and a failure message if it failed
      */
-    private fun <M : Mapping> tryRename(
-        oldName: Name<M>,
+    private fun tryRename(
+        oldName: Name,
         newName: String,
         explanation: String?,
         yarnRepo: File,
@@ -150,29 +171,20 @@ object Renamer {
 
         //TODO: Remember to have this error happen ONLY when the mappings actually mismatch
         if (matchingMappings.isEmpty()) return fail(
-            """ 
-Could not find a mapping for '$oldName' (Probably mismatching mappings)
-Ensure:
-    - The project SDK is set correctly
-- Remember to have this error happen ONLY when the mappings actually mismatch)"""
+            """This was already renamed in a newer version.
+If it wasn't, ensure the project SDK is set correctly.
+(- Remember to have this error happen ONLY when it has been renamed later)"""
         )
         assert(matchingMappings.size == 1)
 
 
-        return rename(rename, matchingMappings[0], yarn, git, gitUser,namedToIntermediary)
+        return applyRename(rename, matchingMappings[0], yarn, git, gitUser, namedToIntermediary)
     }
 
-//    fun Name<*>.type(): String = when (this) {
-//        is ClassName -> "class"
-//        is MethodName -> "method"
-//        is FieldName -> "field"
-//        is ParameterName -> "parameter"
-//    }
 
-
-    private fun <M : Mapping> rename(
-        rename: Rename<M>,
-        renameTarget: M,
+    private fun applyRename(
+        rename: Rename,
+        renameTarget: Mapping,
         yarn: YarnRepo,
         git: GitRepository,
         user: GitUser,
@@ -186,7 +198,8 @@ Ensure:
         }
         // Update the named -> intermediary map
         if (renameTarget is ClassMapping) {
-            namedToIntermediary[renameTarget.deobfuscatedName ?: error("A name has been given")] = renameTarget.obfuscatedName
+            namedToIntermediary[renameTarget.deobfuscatedName ?: error("A name has been given")] =
+                renameTarget.obfuscatedName
         }
 
         val newPath = renameTarget.filePath
@@ -203,7 +216,7 @@ Ensure:
 
         println("Changes commited successfully!")
 
-        return "Renamed $presentableOldName to $presentableNewName".success
+        return renameTarget.deobfuscatedName!!.shortName().success
     }
 
 //TODO: push changes
@@ -213,6 +226,8 @@ Ensure:
 
 
 }
+
+private fun String.shortName() = split("/").last()
 
 
 fun splitPackageAndName(rawName: String): Pair<String?, String> {

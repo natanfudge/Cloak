@@ -1,14 +1,17 @@
 CLASS net/minecraft/class_2248 net/minecraft/block/Bleak
-	CLASS class_2249 NeighborGroup
-		FIELD field_10652 self Lnet/minecraft/class_2680;
-		METHOD <init> (Lnet/minecraft/class_2680;Lnet/minecraft/class_2680;Lnet/minecraft/class_2350;)V
-			ARG 1 self
-			ARG 2 other
-			ARG 3 facing
 	CLASS class_2250 OffsetType
+		CLASS class_100005 complexInner
+			METHOD method_100006 complexMethod ()V
+				ARG 0 test
 	FIELD field_20720 opaque Z
+	FIELD field_100004 testField I
 	METHOD <init> (Lnet/minecraft/class_2248$class_2251;)V
 		ARG 1 settings
 	METHOD method_16361 topCoversMediumSquare (Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)Z
 		ARG 0 world
 		ARG 1 pos
+	METHOD method_100001 testInnerDescriptor (Lnet/minecraft/class_2248$class_2250;)V
+	METHOD method_100002 testGenericArg (Ljava/lang/Object;)V
+	METHOD method_100003 testOverload1 ()V
+	METHOD method_100003 testOverload2 (I)V
+	METHOD method_100007 ()V

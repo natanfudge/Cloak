@@ -16,14 +16,15 @@
 <!--        <projectService serviceImplementation="knit.MappingService"/>-->
 <!--        <applicationInitializedListener implementation="knit.KnitApplicationInitializedListener"/>-->
 <!--        <refactoring.elementListenerProvider implementation="knit.RemappingRefactoringListenerProvider"/>-->
-<!--        <projectViewNodeDecorator implementation="knit.ObfuscationProjectViewNodeDecorator"/>-->
-        <applicationService serviceImplementation="cloak.idea.ClassNameProvider"/>
+<!--        <projectViewNodeDecorator implementation="cloak.idea.RenamedIdentifierHighlighter"/>-->
+        <applicationService serviceImplementation="ClassNameProvider"/>
+        <applicationService serviceImplementation="RenamedNamesProvider"/>
     </extensions>
 
     <project-components>
-<!--        <component>-->
-<!--            <implementation-class>knit.ObfuscationStatusPassFactory</implementation-class>-->
-<!--        </component>-->
+        <component>
+            <implementation-class>cloak.idea.RenamedIdentifierHighlighterFactory</implementation-class>
+        </component>
     </project-components>
 
     <actions>

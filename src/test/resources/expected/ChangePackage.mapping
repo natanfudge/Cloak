@@ -1,5 +1,5 @@
-CLASS net/minecraft/class_2248 net/minecraft/block/Block
-	CLASS class_2250 OffsetTypist
+CLASS net/minecraft/class_2248 foo/bar/boing
+	CLASS class_2250 OffsetType
 		CLASS class_100005 complexInner
 			METHOD method_100006 complexMethod ()V
 				ARG 0 test

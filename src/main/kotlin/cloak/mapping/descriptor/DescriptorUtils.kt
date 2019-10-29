@@ -1,6 +1,10 @@
 package cloak.mapping.descriptor
 
 import cloak.mapping.getOrKey
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.ArrayListClassDesc
+import kotlinx.serialization.internal.ListLikeDescriptor
+import kotlinx.serialization.internal.StringDescriptor
 
 fun FieldType.Companion.parsePresentableTypeName(rawTypeName: String, isGenericType: Boolean): FieldType {
     if (isGenericType) return ObjectType("java/lang/Object")
@@ -13,7 +17,7 @@ fun FieldType.Companion.parsePresentableTypeName(rawTypeName: String, isGenericT
         )
     )
 
-    return ObjectType(rawTypeName)
+    return ObjectType(rawTypeName.replace(".","/"))
 }
 
 
@@ -36,3 +40,15 @@ fun <T : Descriptor> T.remap(map: Map<String, String>): T = when (this) {
     is MethodDescriptor -> this.copy(parameterDescriptors.map { it.remap(map) }, returnDescriptor.remap(map))
     else -> error("Impossible")
 } as T
+
+@Serializer(forClass = ParameterDescriptor::class)
+object ParameterDescriptorSerializer : KSerializer<ParameterDescriptor>{
+    override val descriptor = StringDescriptor
+
+    override fun deserialize(decoder: Decoder) = ParameterDescriptor.read(decoder.decodeString())
+
+    override fun serialize(encoder: Encoder, obj: ParameterDescriptor) {
+        encoder.encodeString(obj.classFileName)
+    }
+
+}

@@ -1,22 +1,21 @@
 package util
 
-import cloak.mapping.*
 import cloak.mapping.descriptor.ParameterDescriptor
 import cloak.mapping.rename.*
-import cloak.mapping.rename.ParameterName
+import cloak.mapping.splitOn
 
 
 fun className(
     name: String,
     init: (ClassBuilder.() -> NameBuilder<*>)? = null
-): Name<*> {
+): Name {
     val builder = ClassBuilder(listOf(name))
     val result = init?.invoke(builder) ?: builder
     return result.build()
 }
 
 
-interface NameBuilder<T : Name<*>> {
+interface NameBuilder<T : Name> {
     fun build(): T
 }
 
@@ -30,7 +29,7 @@ class ClassBuilder(private val innerClasses: List<String>) : NameBuilder<ClassNa
 
     // Kind of crap code but idc it does the job
     override fun build(): ClassName {
-        val (packageName, topLevelClassName) = innerClasses.first().let { it.splitOn(it.lastIndexOf("/")) }
+        val (packageName, topLevelClassName) = splitPackageAndName(innerClasses.first())
         val innerMostClass = innerClasses.last()
         var classNameHolder = ClassName(
             className =
@@ -57,6 +56,11 @@ class ClassBuilder(private val innerClasses: List<String>) : NameBuilder<ClassNa
         return classNameHolder
     }
 
+    private fun splitPackageAndName(rawName: String): Pair<String?, String> {
+        val lastSlashIndex = rawName.lastIndexOf('/')
+        return if (lastSlashIndex == -1) null to rawName
+        else rawName.splitOn(lastSlashIndex)
+    }
 }
 
 class FieldBuilder(private val className: ClassName, private val field: String) :
@@ -69,8 +73,10 @@ class MethodBuilder(
     private val parameterTypes: List<ParameterDescriptor>
 ) : NameBuilder<MethodName> {
     override fun build() = MethodName(method, className, parameterTypes)
-    fun parameter(index: Int) = ParameterName(index, build())
+    fun parameter(index: Int) = ParamName(index, build())
 }
+
+
 
 
 private fun <E> List<E>.subList(fromIndex: Int) = subList(fromIndex, size)

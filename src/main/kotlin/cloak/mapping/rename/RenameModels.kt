@@ -2,30 +2,32 @@ package cloak.mapping.rename
 
 import cloak.mapping.Errorable
 import cloak.mapping.descriptor.ParameterDescriptor
+import cloak.mapping.descriptor.ParameterDescriptorSerializer
 import cloak.mapping.mappings.*
 import cloak.mapping.success
+import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.Serializable
 import java.io.File
 import java.nio.file.Paths
 
-//TODO: store mappings in memory
 
 
-data class Rename<M : Mapping>(
-    val originalName: Name<M>,
+data class Rename(
+    val originalName: Name,
     private val newName: String,
     private val newPackageName: String?,
     private val explanation: String?
 ) {
-    fun findRenameTarget(file: File): M? {
+    fun findRenameTarget(file: File): Mapping? {
         if (file.isDirectory) return null
         val topLevelClass = originalName.topLevelClass
         if (topLevelClass.className != file.nameWithoutExtension) return null
-        if (!Paths.get(file.parent).endsWith(Paths.get(topLevelClass.packageName))) return null
+        if (!Paths.get(file.parent).endsWith(Paths.get(topLevelClass.packageName ?: ""))) return null
 
         return originalName.findRenameTarget(MappingsFile.read(file))
     }
 
-    fun rename(mappings: M): Errorable<Unit> {
+    fun rename(mappings: Mapping): Errorable<Unit> {
         return if (newPackageName != null) {
             // Changing the package can only be done on top-level classes
             val renamer = originalName as? ClassName
@@ -38,16 +40,16 @@ data class Rename<M : Mapping>(
 
 }
 
-sealed class Name<M : Mapping> {
+sealed class Name{
     abstract val topLevelClass: ClassName
 
-    abstract fun findRenameTarget(mappings: MappingsFile): M?
+    abstract fun findRenameTarget(mappings: MappingsFile): Mapping?
 }
 
-
-data class ClassName(val className: String, val packageName: String, val innerClass: ClassName?) :
-    Name<ClassMapping>() {
-    override val topLevelClass = this
+@Serializable
+data class ClassName(val className: String, val packageName: String?, val innerClass: ClassName?) :
+    Name() {
+    override val topLevelClass get() = this
 
     override fun findRenameTarget(mappings: ClassMapping): ClassMapping? =
         findRenameTarget(mappings, isTopLevelClass = true)
@@ -82,8 +84,8 @@ data class ClassName(val className: String, val packageName: String, val innerCl
 
 }
 
-
-data class FieldName(val fieldName: String, val classIn: ClassName) : Name<FieldMapping>() {
+@Serializable
+data class FieldName(val fieldName: String, val classIn: ClassName) : Name() {
     override val topLevelClass = classIn
     override fun findRenameTarget(mappings: MappingsFile): FieldMapping? {
         return classIn.findRenameTarget(mappings)?.fields
@@ -94,9 +96,13 @@ data class FieldName(val fieldName: String, val classIn: ClassName) : Name<Field
 
 }
 
+@Serializable
+data class MethodName(
+    val methodName: String, val classIn: ClassName,
+     val parameterTypes: List<@Serializable(with = ParameterDescriptorSerializer::class) ParameterDescriptor>
+) : Name() {
 
-data class MethodName(val methodName: String, val classIn: ClassName, val parameterTypes: List<ParameterDescriptor>) :
-    Name<MethodMapping>() {
+
     override val topLevelClass = classIn
     override fun findRenameTarget(mappings: MappingsFile): MethodMapping? {
         val targetClass = classIn.findRenameTarget(mappings) ?: return null
@@ -114,7 +120,8 @@ data class MethodName(val methodName: String, val classIn: ClassName, val parame
 
 }
 
-class ParameterName(val index: Int, private val methodIn: MethodName) : Name<ParameterMapping>() {
+@Serializable
+data class ParamName(val index: Int,  val methodIn: MethodName) : Name() {
     override val topLevelClass = methodIn.classIn
 
     override fun findRenameTarget(mappings: MappingsFile): ParameterMapping? {

@@ -13,14 +13,14 @@ private val intermediaryMapFileCache = File("intermediaryNames.json")
 private val intermediaryMapMemoryCache = mutableMapOf<String, String>()
 
 private val StringMapSerializer = (String.serializer() to String.serializer()).map
-private val json = Json(JsonConfiguration.Stable)
+private val json = Json(JsonConfiguration.Stable.copy(prettyPrint = true))
 
 fun saveIntermediaryMap() = intermediaryMapFileCache.writeText(json.stringify(StringMapSerializer,
     intermediaryMapMemoryCache))
 
 class TestProjectWrapper(private val userInput: String?) : ProjectWrapper {
     private val messages = mutableListOf<String>()
-    override fun showInputDialog(
+    override  fun showInputDialog(
         message: String,
         title: String,
         icon: Icon,
@@ -28,7 +28,7 @@ class TestProjectWrapper(private val userInput: String?) : ProjectWrapper {
         validator: ((String) -> String?)?
     ): String? = userInput
 
-    override fun showMessageDialog(message: String, title: String, icon: Icon) {
+    override  fun showMessageDialog(message: String, title: String, icon: Icon) {
         messages.add(message)
     }
 
@@ -44,6 +44,10 @@ class TestProjectWrapper(private val userInput: String?) : ProjectWrapper {
         }
         return intermediaryMapMemoryCache
     }
+
+    override suspend fun <T> asyncWithProgressBar(title: String, action: suspend () -> T): T = action()
+    override fun inUiThread(action: () -> Unit)  = action()
+    override suspend fun <T> getFromUiThread(input: () -> T): T  = input()
 }
 
 fun testProject(input: String? = null) = TestProjectWrapper(input)

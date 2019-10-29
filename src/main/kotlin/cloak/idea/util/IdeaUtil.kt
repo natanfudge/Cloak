@@ -4,16 +4,14 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.InputValidatorEx
-import com.intellij.openapi.ui.Messages
-import javax.swing.Icon
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 
 //TODO: make this use the project
-
 
 
 abstract class Action(text: String? = null) : AnAction(text) {
@@ -28,3 +26,6 @@ val AnActionEvent.editor get() = getData(CommonDataKeys.EDITOR)
 val AnActionEvent.psiElement get() = getData(CommonDataKeys.PSI_ELEMENT)
 val AnActionEvent.document get() = getData(PlatformDataKeys.EDITOR)?.document
 val AnActionEvent.file get() = getData(CommonDataKeys.VIRTUAL_FILE)
+fun Project.executeCommand(name: String? = null, groupId: Any? = null, command: () -> Unit) =
+    CommandProcessor.getInstance().executeCommand(this, command, name, groupId)
+

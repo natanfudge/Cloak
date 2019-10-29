@@ -21,6 +21,7 @@ inline fun <T> profile(sectionName: String, code: () -> T): T {
 }
 
 fun String.splitOn(index: Int) = Pair(substring(0, index), substring(index + 1))
+fun String.splitOn(char : Char) = splitOn(indexOf(char))
 
 val File.doesNotExist get() = !exists()
 
