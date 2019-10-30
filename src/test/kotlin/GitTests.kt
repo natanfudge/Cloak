@@ -1,5 +1,4 @@
 
-import cloak.mapping.YarnRepo
 import cloak.mapping.doesNotExist
 import org.eclipse.jgit.lib.PersonIdent
 import org.junit.BeforeClass
@@ -11,8 +10,9 @@ import java.util.*
 class GitTests {
 
     private val yarn = TestYarnRepo
-    private val testAuthor = PersonIdent("natanfudge","natandestroyer100@gmail.com")
+
     companion object {
+        val TestAuthor = PersonIdent("natanfudge","natandestroyer100@gmail.com")
         @BeforeClass
         @JvmStatic
         fun clean() {
@@ -50,7 +50,7 @@ class GitTests {
     fun `Can push changes to remote`() {
         val repo = yarn.getOrCloneGit()
         repo.stageChanges("MAINTAINERS")
-        repo.commit(author = testAuthor, commitMessage = "Test Commit")
+        repo.commit(author = TestAuthor, commitMessage = "Test Commit")
         yarn.push(repo)
     }
 

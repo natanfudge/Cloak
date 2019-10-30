@@ -176,6 +176,9 @@ sealed class Mapping {
     val nonNullName get() = deobfuscatedName ?: obfuscatedName
     fun name(obfuscated: Boolean) = if (obfuscated) obfuscatedName else deobfuscatedName
 
+    fun List<Mapping>.anythingElseHasTheSameObfName() = any {
+        it !== this@Mapping && it.deobfuscatedName == deobfuscatedName
+    }
 }
 
 

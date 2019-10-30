@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import java.io.File
 import java.nio.file.Paths
 
-
+//TODO: move this logic out of the models
 
 data class Rename(
     val originalName: Name,

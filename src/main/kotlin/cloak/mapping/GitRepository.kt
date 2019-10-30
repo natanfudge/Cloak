@@ -42,6 +42,8 @@ open class GitRepository(private val git: Git) {
         return git.add().addFilepattern(path).call()
     }
 
+//    fun stageAllChanges
+
     fun getBranches(): List<Ref> = git.branchList().call()
 
     open fun commit(author: PersonIdent, commitMessage: String) {

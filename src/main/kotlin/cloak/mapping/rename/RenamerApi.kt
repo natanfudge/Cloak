@@ -15,6 +15,8 @@ data class GitUser(val name: String, val email: String) {
     val branchName = name
 }
 
+val PersonIdent.cloakUser get() = GitUser(this.name, this.emailAddress)
+
 object Renamer {
     /**
      * Returns the new name
@@ -23,7 +25,7 @@ object Renamer {
         project: ProjectWrapper,
         name: Name,
         isTopLevelClass: Boolean
-    )  : Errorable<String> = with(project) {
+    ): Errorable<String> = with(project) {
         coroutineScope {
             val user = GitUser(name = "natanfudge", email = "natan.lifsiz@gmail.com")
             val git = async { getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir) }
@@ -43,8 +45,6 @@ object Renamer {
 
 
     }
-
-
 
 
     //TODO: quick popup when can't find it
@@ -75,9 +75,6 @@ object Renamer {
 
 
         when (result) {
-            //TODO: this should not exit out of the UI if there is a problem, instead there should be loading indicator
-            // and an error on the same screen (if no error then exit and send message)
-//                    is StringSuccess -> showMessageDialog(message = result.value, title = "Rename Success")
             is StringError -> inUiThread {
                 showMessageDialog(
                     message = result.value,
@@ -153,15 +150,15 @@ object Renamer {
         namedToIntermediary: MutableMap<String, String>
     )
             : Errorable<String> {
-        val (packageName, className) = splitPackageAndName(newName)
-        assert(packageName == null || (oldName is ClassName && oldName.innerClass == null))
+        val (packageName, newClassName) = splitPackageAndName(newName)
+        if (packageName != null && (oldName !is ClassName || oldName.innerClass != null)) {
+            return fail("Changing the package name can only be done on top level classes.")
+        }
 
         val yarn = YarnRepo(yarnRepo)
 
         val rename = Rename(
-            originalName = oldName,
-            newName = className,
-            explanation = explanation,
+            originalName = oldName, newName = newClassName, explanation = explanation,
             newPackageName = packageName
         )
 
@@ -196,6 +193,7 @@ If it wasn't, ensure the project SDK is set correctly.
         if (result is StringError) {
             return result.map { "" }
         }
+
         // Update the named -> intermediary map
         if (renameTarget is ClassMapping) {
             namedToIntermediary[renameTarget.deobfuscatedName ?: error("A name has been given")] =
@@ -203,6 +201,11 @@ If it wasn't, ensure the project SDK is set correctly.
         }
 
         val newPath = renameTarget.filePath
+        val newMappingLocation = yarn.getMappingsFile(newPath)
+
+        if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
+            return fail("There's another ${renameTarget.typeName()} named that way already.")
+        }
         val presentableNewName = renameTarget.toString()
 
 
@@ -210,7 +213,7 @@ If it wasn't, ensure the project SDK is set correctly.
             git.remove(yarn.pathOfMappingFromGitRoot(oldPath))
         }
 
-        renameTarget.root.writeTo(yarn.getMappingsFile(newPath))
+        renameTarget.root.writeTo(newMappingLocation)
         git.stageChanges(yarn.pathOfMappingFromGitRoot(newPath))
         git.commit(author = user.jgit, commitMessage = "$presentableOldName -> $presentableNewName")
 
@@ -226,6 +229,15 @@ If it wasn't, ensure the project SDK is set correctly.
 
 
 }
+
+private fun Mapping.duplicatesAnotherMapping(newMappingLocation: File): Boolean = when (this) {
+    is ClassMapping -> if (parent == null) newMappingLocation.exists() else parent.innerClasses.anythingElseHasTheSameObfName()
+    // With methods you can overload the same name as long as the descriptor is different
+    is MethodMapping -> parent.methods.any { it !== this && it.deobfuscatedName == deobfuscatedName && it.descriptor == descriptor }
+    is FieldMapping -> parent.fields.anythingElseHasTheSameObfName()
+    is ParameterMapping -> parent.parameters.anythingElseHasTheSameObfName()
+}
+
 
 private fun String.shortName() = split("/").last()
 

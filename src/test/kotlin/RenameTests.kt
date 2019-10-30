@@ -1,35 +1,55 @@
 import cloak.mapping.StringSuccess
 import cloak.mapping.descriptor.ObjectType
 import cloak.mapping.rename.Renamer
+import cloak.mapping.rename.cloakUser
 import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.Test
 import util.*
 import kotlin.test.assertEquals
 
-
+private val yarn = TestYarnRepo
+fun useFile(path: String) {
+    val git = yarn.getOrCloneGit()
+    getTestResource(path).copyTo(yarn.getMappingsFile(path), overwrite = true)
+    git.stageChanges("mappings/$path")
+}
 
 class RenameTests {
-    private val yarn = TestYarnRepo
 
-    private fun useFile(path: String) {
-        val git = yarn.getOrCloneGit()
-        getTestResource(path).copyTo(yarn.getMappingsFile(path), overwrite = true)
-        git.stageChanges("mappings/$path")
+    companion object {
+        @JvmStatic
+        @BeforeClass
+        fun prepare() {
+            with(yarn.getOrCloneGit()){
+                commit(GitTests.TestAuthor, "preparation")
+                switchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+            }
+        }
+
+        @JvmStatic
+        @AfterClass
+        fun cleanup() {
+            saveIntermediaryMap()
+        }
     }
+
 
     private fun testRename(
         test: String,
         userInput: String,
-        oldFileName : String = "Block",
-        oldPath : String = "net/minecraft/block",
+        oldFileName: String = "Block",
+        oldPath: String = "net/minecraft/block",
         newFileName: String = oldFileName,
-        newPath : String = oldPath,
+        newPath: String = oldPath,
         nameInit: (ClassBuilder.() -> NameBuilder<*>)? = null
     ) = runBlocking {
 
         val oldFullPath = "$oldPath/$oldFileName"
-        val newFullPath = "$newPath/$newFileName"
+        val newFullPath = "$newPath/$newFileName.mapping"
+
+        TestYarnRepo.getMappingsFile(newFullPath).delete()
 
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
@@ -42,12 +62,12 @@ class RenameTests {
             assert(!TestYarnRepo.getMappingsFile("$oldFullPath.mapping").exists())
         }
 
-        val actual = TestYarnRepo.getMappingsFile("$newFullPath.mapping")
+        val actual = TestYarnRepo.getMappingsFile(newFullPath)
         assert(actual.exists())
 
         val expected = getExpected(test)
 
-        assertEquals(expected.readText().replace("\r\n", "\n"), actual.readText().replace("\r\n", "\n"))
+        assertEqualsIgnoreLineBreaks(expected.readText(), actual.readText())
     }
 
     private fun getExpected(testName: String) = getTestResource("expected").listFiles()!!
@@ -111,48 +131,21 @@ class RenameTests {
     }
 
     @Test
-    fun `Change Package`()  = testRename("ChangePackage", "foo/bar/boing", newFileName = "boing",newPath = "foo/bar")
+    fun `Change Package`() = testRename("ChangePackage", "foo/bar/boing", newFileName = "boing", newPath = "foo/bar")
 
     @Test
-    fun `Rename Unnamed`() =testRename("RenameUnnamed","actualName"){
+    fun `Rename Unnamed`() = testRename("RenameUnnamed", "actualName") {
         method("method_100007")
     }
 
     @Test
-    fun `Part Of Path Is Unnamed`() = testRename("PartUnnamed","newName", oldFileName = "class_2189",oldPath = "net/minecraft") {
-        method("someMethod")
-    }
-
-    @Test
-    fun `Errors when there's already a class with that name in the same package`() {
-
-    }
-
-    @Test
-    fun `Errors when there's already a class with that name in the new package`() {
-
-    }
-
-    @Test
-    fun `Errors when there's already a field with that name`() {
-
-    }
-
-    @Test
-    fun `Errors when there's already a method with the same name and param descriptor`() {
-
-    }
-
-
-    companion object {
-        @AfterClass
-        @JvmStatic
-        fun save() {
-            saveIntermediaryMap()
+    fun `Part Of Path Is Unnamed`() =
+        testRename("PartUnnamed", "newName", oldFileName = "class_2189", oldPath = "net/minecraft") {
+            method("someMethod")
         }
-    }
 
 
-    //TODO: make sure that there isn't even an option to rename constructors
+//TODO: make sure that there isn't even an option to rename constructors
 
 }
+

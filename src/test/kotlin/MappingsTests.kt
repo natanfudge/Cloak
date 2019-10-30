@@ -5,6 +5,7 @@ import cloak.mapping.mappings.MappingsFile
 import cloak.mapping.mappings.read
 import cloak.mapping.mappings.writeTo
 import org.junit.Test
+import util.assertEqualsIgnoreLineBreaks
 import util.getTestResource
 import util.mappingsFile
 import kotlin.test.assertEquals
@@ -53,6 +54,6 @@ class MappingsTests {
             MappingsFile.read(originalFile).writeTo(it)
             it.readText()
         }
-        assertEquals(originalFile.readText(), actual)
+        assertEqualsIgnoreLineBreaks(originalFile.readText(), actual)
     }
 }
