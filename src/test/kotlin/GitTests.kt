@@ -56,7 +56,6 @@ class GitTests {
 
     @Test
     fun `Git remove deletes file`() {
-        //TODO: test this actually works
         val repo = yarn.getOrCloneGit()
         val deleteTarget = File("yarn/testDelete")
         deleteTarget.createNewFile()

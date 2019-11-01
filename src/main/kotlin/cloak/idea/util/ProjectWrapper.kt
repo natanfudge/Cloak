@@ -4,12 +4,15 @@ package cloak.idea.util
 import ClassNameProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
+import com.intellij.refactoring.RefactoringBundle
+import com.intellij.refactoring.util.CommonRefactoringUtil
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.nio.file.Paths
@@ -24,6 +27,8 @@ interface ProjectWrapper {
     ): String?
 
     fun showMessageDialog(message: String, title: String, icon: Icon = CommonIcons.Info)
+
+    fun showErrorPopup(message : String, title : String)
 
     val yarnRepoDir: File
 
@@ -41,7 +46,7 @@ interface ProjectWrapper {
 
 }
 
-class IdeaProjectWrapper(private val project: Project) : ProjectWrapper {
+class IdeaProjectWrapper(private val project: Project,private val editor : Editor) : ProjectWrapper {
 
     companion object IdeaStorage {
         private const val StorageDirectory = "cloak"
@@ -84,6 +89,17 @@ class IdeaProjectWrapper(private val project: Project) : ProjectWrapper {
 
     override fun showMessageDialog(message: String, title: String, icon: Icon) =
         Messages.showMessageDialog(project, message, title, icon)
+
+    override fun showErrorPopup(message: String, title : String) {
+        inUiThread {
+            CommonRefactoringUtil.showErrorHint(
+                project,
+                editor,
+                message,
+                title,
+                null
+            ) }
+    }
 
     override fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
     override suspend fun <T> getFromUiThread(input: () -> T): T = suspendCoroutine { cont ->

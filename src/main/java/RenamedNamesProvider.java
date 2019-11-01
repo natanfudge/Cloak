@@ -1,7 +1,11 @@
+import cloak.idea.NewName;
 import cloak.idea.ObjWrapper;
+import cloak.idea.RenamedNamesProviderKt;
 import cloak.mapping.rename.Name;
 import com.intellij.openapi.components.*;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import kotlinx.serialization.json.Json;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -15,7 +19,7 @@ import java.util.Objects;
 @State(name = "RenamedNames", storages = @Storage(StoragePathMacros.NON_ROAMABLE_FILE))
 public class RenamedNamesProvider implements PersistentStateComponent<RenamedNamesProvider.State> {
 
-    static class State {
+    public static class State {
         public Map<String, String> renamedNamesJson = new HashMap<>();
 
         @Override
@@ -32,14 +36,16 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
         }
     }
 
-    State state = new State();
+    private State state = new State();
 
 
-    Map<Name, String> renamedNames = new HashMap<>();
+    private Map<Name, NewName> renamedNames = new HashMap<>();
 
-    public void addRenamedName(Name name, String renamedTo) {
+    public void addRenamedName(Name name, NewName renamedTo) {
         renamedNames.put(name, renamedTo);
-        state.renamedNamesJson.put(ObjWrapper.INSTANCE.getNamesJson().stringify(ObjWrapper.INSTANCE.getNameSerializer(), name), renamedTo);
+        Json json = ObjWrapper.INSTANCE.getNamesJson();
+        state.renamedNamesJson.put(json.stringify(ObjWrapper.INSTANCE.getNameSerializer(),name),
+                json.stringify(ObjWrapper.INSTANCE.getNewNameSerializer(), renamedTo));
     }
 
     public void cleanNames() {
@@ -53,7 +59,7 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
 
 
     @Nullable
-    public String getRenameOf(Name name) {
+    public NewName getRenameOf(Name name) {
         return renamedNames.get(name);
     }
 
@@ -62,10 +68,10 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
         return this.state;
     }
 
-    public void loadState(State state) {
+    public void loadState(@NotNull State state) {
         this.state = state;
-        state.renamedNamesJson
-                .forEach((k, v) -> renamedNames.put(ObjWrapper.INSTANCE.getNamesJson().parse(ObjWrapper.INSTANCE.getNameSerializer(), k), v));
+        RenamedNamesProviderKt.loadState(state,renamedNames);
+        int x = 2;
     }
 
     public static RenamedNamesProvider getInstance() {

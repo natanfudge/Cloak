@@ -34,13 +34,13 @@ class ClassBuilder(private val innerClasses: List<String>) : NameBuilder<ClassNa
         var classNameHolder = ClassName(
             className =
             if (innerClasses.size == 1) topLevelClassName else innerMostClass,
-            packageName = packageName,
+            packageName = packageName ?:"",
             innerClass = null
         )
         if (innerClasses.size >= 2) {
             for (className in innerClasses.subList(1).reversed().subList(1)) {
                 classNameHolder = ClassName(
-                    className = className, packageName = packageName, innerClass = classNameHolder
+                    className = className, packageName = packageName ?:"", innerClass = classNameHolder
                 )
             }
 
@@ -48,7 +48,7 @@ class ClassBuilder(private val innerClasses: List<String>) : NameBuilder<ClassNa
                 ClassName(
                     className = topLevelClassName,
                     innerClass = classNameHolder,
-                    packageName = packageName
+                    packageName = packageName ?: ""
                 )
         }
 

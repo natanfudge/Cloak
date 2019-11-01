@@ -50,17 +50,21 @@ private fun PsiField.getFieldName() = (parent as PsiClass).getClassName()?.let {
     FieldName(fieldName = name, classIn = it)
 }
 
-private fun PsiMethod.getMethodName() = (parent as PsiClass).getClassName()?.let {className ->
-    MethodName(
-        methodName = name,
-        classIn = className,
-        parameterTypes = getSignature(PsiSubstitutor.EMPTY).parameterTypes
-            .map {
-                val rawType = if(it is PsiClassReferenceType) it.rawType() else it
-                //TODO: actually check if it's generic
-                FieldType.parsePresentableTypeName(rawType.canonicalText, isGenericType = false)
-            }
-    )
+private fun PsiMethod.getMethodName(): MethodName? {
+    val superMethods = findSuperMethods()
+    val methodOwner = (superMethods.firstOrNull()?.parent ?: this.parent) as PsiClass
+    return methodOwner.getClassName()?.let { className ->
+        MethodName(
+            methodName = name,
+            classIn = className,
+            parameterTypes = getSignature(PsiSubstitutor.EMPTY).parameterTypes
+                .map {
+                    val rawType = if(it is PsiClassReferenceType) it.rawType() else it
+                    //TODO: actually check if it's generic
+                    FieldType.parsePresentableTypeName(rawType.canonicalText, isGenericType = false)
+                }
+        )
+    }
 }
 private fun PsiParameter.getIndex() = (parent as PsiParameterList).getParameterIndex(this)
 private fun PsiParameter.getParameterName() : ParamName? = (this.parent.parent as PsiMethod).getMethodName()?.let {

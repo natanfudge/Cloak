@@ -9,3 +9,5 @@ import kotlin.contracts.contract
      is FieldMapping -> "field"
      is ParameterMapping -> "parameter"
  }
+
+const val MappingsExtension = ".mapping"

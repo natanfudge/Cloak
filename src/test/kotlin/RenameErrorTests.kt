@@ -17,6 +17,7 @@ class RenameErrorTests {
             with(TestYarnRepo.getOrCloneGit()){
                 commit(GitTests.TestAuthor, "preparation")
                 switchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+                TestYarnRepo.getMappingsFilesLocations()
             }
         }
 

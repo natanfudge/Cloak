@@ -32,6 +32,11 @@ class TestProjectWrapper(private val userInput: String?) : ProjectWrapper {
         messages.add(message)
     }
 
+    override fun showErrorPopup(message: String, title: String) {
+
+    }
+
+
     override val yarnRepoDir = File(System.getProperty("user.dir") + "/yarn")
 
 

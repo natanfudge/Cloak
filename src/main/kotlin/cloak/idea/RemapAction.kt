@@ -9,10 +9,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 //TODO: list of default ignored auto-imports
 //TODO: "new project" dialog: Kotlin/Java, include publishing block
@@ -20,12 +18,13 @@ import kotlinx.coroutines.withContext
 //TODO: give cool icon to fabric.mod.json and modid.mixin.json
 //TODO: inspections for fabric stuff?
 
+fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
 class RemapAction : Action("Hello") {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
-        if (!element.packageName.startsWith("net.minecraft")) return false
+        if (!isMinecraftPackageName(element.packageName)) return false
 
 
         return when (element) {
@@ -36,8 +35,6 @@ class RemapAction : Action("Hello") {
     }
     //TODO: allow going back to already submitted branches to fix after review
 
-    //TODO: test renaming package
-
 
     //TODO: bigger screen that can fit a reason
     //TODO: use bigger screen to get git username and email input
@@ -47,8 +44,13 @@ class RemapAction : Action("Hello") {
         val nameBeforeName = element.asName()
         val name = nameBeforeName.updateAccordingToRenames(RenamedNamesProvider.getInstance())
 
+        //TODO: handle parent methods somehow
         GlobalScope.launch {
-            val result = Renamer.rename(IdeaProjectWrapper(event.project ?: return@launch), name, isTopLevelClass)
+            val result = Renamer.rename(
+                IdeaProjectWrapper(event.project ?: return@launch, event.editor ?: return@launch),
+                name,
+                isTopLevelClass
+            )
             if (result is StringSuccess) {
                 println("$name was renamed to ${result.value}")
                 RenamedNamesProvider.getInstance().addRenamedName(nameBeforeName, result.value)
@@ -73,17 +75,21 @@ private fun Name.updateAccordingToRenames(renames: RenamedNamesProvider) = when 
 }
 
 private fun ClassName.updateAccordingToRenames(renames: RenamedNamesProvider): ClassName =
-    renames.getRenameOf(this)?.let { copy(className = it) } ?: this
+    renames.getRenameOf(this)?.let {
+       var newName = copy(className = it.newName)
+        if(it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
+        newName
+    } ?: this
 
 private fun FieldName.updateAccordingToRenames(renames: RenamedNamesProvider): FieldName {
     val newClassName = classIn.updateAccordingToRenames(renames)
-    return renames.getRenameOf(this)?.let { copy(fieldName = it, classIn = newClassName) }
+    return renames.getRenameOf(this)?.let { copy(fieldName = it.newName, classIn = newClassName) }
         ?: copy(classIn = newClassName)
 }
 
 private fun MethodName.updateAccordingToRenames(renames: RenamedNamesProvider): MethodName {
     val newClassName = classIn.updateAccordingToRenames(renames)
-    return renames.getRenameOf(this)?.let { copy(methodName = it, classIn = newClassName) }
+    return renames.getRenameOf(this)?.let { copy(methodName = it.newName, classIn = newClassName) }
         ?: copy(classIn = newClassName)
 }
 

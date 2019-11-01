@@ -7,7 +7,6 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import util.*
-import kotlin.test.assertEquals
 
 private val yarn = TestYarnRepo
 fun useFile(path: String) {
@@ -22,9 +21,10 @@ class RenameTests {
         @JvmStatic
         @BeforeClass
         fun prepare() {
-            with(yarn.getOrCloneGit()){
+            with(yarn.getOrCloneGit()) {
                 commit(GitTests.TestAuthor, "preparation")
                 switchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+                TestYarnRepo.getMappingsFilesLocations()
             }
         }
 
@@ -52,6 +52,9 @@ class RenameTests {
         TestYarnRepo.getMappingsFile(newFullPath).delete()
 
         val isTopLevelClass = newFileName != oldFileName
+
+        // Let the repo know we've added a new file
+        TestYarnRepo.updateMappingsFileLocation("", newLocation = oldFullPath)
         useFile("$oldFullPath.mapping")
         val project = TestProjectWrapper(userInput)
         val targetName = className(oldFullPath, nameInit)
@@ -144,8 +147,6 @@ class RenameTests {
             method("someMethod")
         }
 
-
-//TODO: make sure that there isn't even an option to rename constructors
 
 }
 

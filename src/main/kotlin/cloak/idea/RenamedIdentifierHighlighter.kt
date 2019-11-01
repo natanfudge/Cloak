@@ -45,8 +45,10 @@ class RenamedIdentifierHighlighter(project: Project, private val file: PsiFile, 
 
     override fun doCollectInformation(progress: ProgressIndicator) {}
     override fun doApplyInformationToEditor() {
+        if (file !is PsiJavaFile) return
         if (!RenamedNamesProvider.getInstance().anythingWasRenamed()) return
-        //TODO: only do this after there is at least one rename, and only when this is a mc jar file.
+        if (!isMinecraftPackageName(file.packageName)) return
+
         val highlights = mutableListOf<HighlightInfo>()
         Visitor(highlights).visitFile(file)
 

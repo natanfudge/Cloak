@@ -18,14 +18,7 @@ data class Rename(
     private val newPackageName: String?,
     private val explanation: String?
 ) {
-    fun findRenameTarget(file: File): Mapping? {
-        if (file.isDirectory) return null
-        val topLevelClass = originalName.topLevelClass
-        if (topLevelClass.className != file.nameWithoutExtension) return null
-        if (!Paths.get(file.parent).endsWith(Paths.get(topLevelClass.packageName ?: ""))) return null
 
-        return originalName.findRenameTarget(MappingsFile.read(file))
-    }
 
     fun rename(mappings: Mapping): Errorable<Unit> {
         return if (newPackageName != null) {
@@ -47,7 +40,7 @@ sealed class Name{
 }
 
 @Serializable
-data class ClassName(val className: String, val packageName: String?, val innerClass: ClassName?) :
+data class ClassName(val className: String, val packageName: String, val innerClass: ClassName?) :
     Name() {
     override val topLevelClass get() = this
 

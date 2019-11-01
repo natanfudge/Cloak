@@ -1,5 +1,7 @@
 package cloak.mapping
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 import java.io.File
 import kotlin.system.measureTimeMillis
 
@@ -26,3 +28,5 @@ fun String.splitOn(char : Char) = splitOn(indexOf(char))
 val File.doesNotExist get() = !exists()
 
 fun <K> Map<K,K>.getOrKey(key : K) : K = getOrDefault(key,key)
+
+val NormalJson = Json(JsonConfiguration.Stable)

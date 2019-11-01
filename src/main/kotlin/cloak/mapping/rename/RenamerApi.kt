@@ -1,11 +1,14 @@
 package cloak.mapping.rename
 
-import cloak.idea.util.CommonIcons
+import cloak.idea.NewName
 import cloak.idea.util.ProjectWrapper
 import cloak.mapping.*
 import cloak.mapping.descriptor.remap
 import cloak.mapping.mappings.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.eclipse.jgit.lib.PersonIdent
 import java.io.File
 import javax.lang.model.SourceVersion
@@ -18,6 +21,21 @@ data class GitUser(val name: String, val email: String) {
 val PersonIdent.cloakUser get() = GitUser(this.name, this.emailAddress)
 
 object Renamer {
+
+    private fun YarnRepo.getRenameTargetOf(name: Name): Mapping? {
+        val matching = getMappingsFilesLocations()
+            .mapNotNull { name.findMatchingMapping(it, this) }
+            .toList()
+        assert(matching.size <= 1)
+        return matching.firstOrNull()
+    }
+
+    /** User input is in named but the repo is in intermediary */
+    private fun Name.remapParameterDescriptors(namedToIntermediary: MutableMap<String, String>) =
+        if (this is MethodName) copy(
+            parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
+        ) else this
+
     /**
      * Returns the new name
      */
@@ -25,23 +43,42 @@ object Renamer {
         project: ProjectWrapper,
         name: Name,
         isTopLevelClass: Boolean
-    ): Errorable<String> = with(project) {
+    ): Errorable<NewName> = with(project) {
         coroutineScope {
             val user = GitUser(name = "natanfudge", email = "natan.lifsiz@gmail.com")
-            val git = async { getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir) }
-            val namedToIntermediaryClasses = async { getClassNamesMap(YarnRepo(yarnRepoDir)) }
+            val gitPromise = async { getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir) }
+            val namedToIntermediaryClassesPromise = async { getClassNamesMap(YarnRepo.at(yarnRepoDir)) }
+
+
+            val (git, namedToIntermediaryClasses, matchingMapping) = asyncWithProgressBar("Preparing rename...") {
+                val git = gitPromise.await()
+                val namedToIntermediaryClasses = namedToIntermediaryClassesPromise.await()
+                val yarn = YarnRepo.at(yarnRepoDir)
+
+                val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
+
+                //TODO: this should be instant instead of the amount of time that it takes. (getRenameTargetOf)
+                // with file name caching.
+                Triple(git, namedToIntermediaryClasses, yarn.getRenameTargetOf(oldName))
+            }
+
+            if (matchingMapping == null) {
+                showErrorPopup(
+                    "This was already renamed/doesn't exist in a newer version."
+                    , title = "Cannot rename"
+                )
+                return@coroutineScope fail<NewName>("Can't find matching mappings")
+
+            }
 
             val input = getFromUiThread {
                 showInputDialog(message = "Choose new name", title = "Rename") {
                     validate(it, isTopLevelClass)
                 }
-            } ?: return@coroutineScope fail<String>("User didn't input a new name")
+            } ?: return@coroutineScope fail<NewName>("User didn't input a new name")
 
-            renameOnBackgroundThread(namedToIntermediaryClasses, name, input, user, git)
+            renameOnBackgroundThread(namedToIntermediaryClasses, name, input, user, git, matchingMapping)
         }
-
-
-        //TODO: actually get from input and save to global settings
 
 
     }
@@ -49,40 +86,28 @@ object Renamer {
 
     //TODO: quick popup when can't find it
     private suspend fun ProjectWrapper.renameOnBackgroundThread(
-        namedToIntermediaryClasses: Deferred<MutableMap<String, String>>,
+        namedToIntermediaryClasses: MutableMap<String, String>,
         name: Name,
         input: String,
         user: GitUser,
-        git: Deferred<GitRepository>
-    ) = asyncWithProgressBar("Renaming...") {
+        git: GitRepository,
+        matchingMapping: Mapping
+    ): Errorable<NewName> = asyncWithProgressBar("Renaming...") {
 
-        // Class names are named for the user, but intermediary in the mappings,
-        // so we convert what the user has to intermediary.
-        val namedToIntermediary = namedToIntermediaryClasses.await()
-        val oldName = if (name is MethodName) name.copy(
-            parameterTypes = name.parameterTypes.map { it.remap(namedToIntermediary) }
-        ) else name
 
         val result = tryRename(
-            oldName = oldName,
+            oldName = name,
             newName = input,
             yarnRepo = yarnRepoDir,
             explanation = null,
             gitUser = user,
-            git = git.await(),
-            namedToIntermediary = namedToIntermediary
+            git = git,
+            namedToIntermediary = namedToIntermediaryClasses,
+            matchingMapping = matchingMapping
         )
 
 
-        when (result) {
-            is StringError -> inUiThread {
-                showMessageDialog(
-                    message = result.value,
-                    title = "Rename Error",
-                    icon = CommonIcons.Error
-                )
-            }
-        }
+        if (result is StringError) showErrorPopup(message = result.value, title = "Rename Error")
 
         result
     }
@@ -92,19 +117,16 @@ object Renamer {
      * This method will be executed asynchronously so it will return immediately and do the work in the background.
      */
     private suspend fun getOrCloneGit(gitUser: GitUser, yarnRepo: File) = withContext(Dispatchers.IO) {
-        YarnRepo(yarnRepo).getOrCloneGit().apply { switchToBranch(gitUser.branchName) }
+        YarnRepo.at(yarnRepo).getOrCloneGit().apply { switchToBranch(gitUser.branchName) }
     }
 
     private suspend fun ProjectWrapper.getClassNamesMap(yarnRepo: YarnRepo) = withContext(Dispatchers.IO) {
         val map = getIntermediaryClassNames()
         if (map.isEmpty()) {
-            yarnRepo.walkMappingsDirectory().forEach { file ->
-                if (!file.isDirectory) {
-                    MappingsFile.read(file).visitClasses { mapping ->
-                        mapping.deobfuscatedName?.let { map[it] = mapping.obfuscatedName }
-                    }
+            for (relativePath in yarnRepo.getMappingsFilesLocations()) {
+                MappingsFile.read(yarnRepo.getMappingsFile("$relativePath$MappingsExtension")).visitClasses { mapping ->
+                    mapping.deobfuscatedName?.let { map[it] = mapping.obfuscatedName }
                 }
-
             }
         }
         map
@@ -129,6 +151,7 @@ object Renamer {
         return null
     }
 
+
     /**
      * @param oldName The class, method, field, or parameter to rename.
      * @param newName The new name of the class, method, field, or parameter.
@@ -141,6 +164,7 @@ object Renamer {
      * @return The new name if successful, and a failure message if it failed
      */
     private fun tryRename(
+        matchingMapping: Mapping,
         oldName: Name,
         newName: String,
         explanation: String?,
@@ -149,33 +173,23 @@ object Renamer {
         gitUser: GitUser,
         namedToIntermediary: MutableMap<String, String>
     )
-            : Errorable<String> {
+            : Errorable<NewName> {
         val (packageName, newClassName) = splitPackageAndName(newName)
         if (packageName != null && (oldName !is ClassName || oldName.innerClass != null)) {
             return fail("Changing the package name can only be done on top level classes.")
         }
 
-        val yarn = YarnRepo(yarnRepo)
+        val yarn = YarnRepo.at(yarnRepo)
 
         val rename = Rename(
             originalName = oldName, newName = newClassName, explanation = explanation,
             newPackageName = packageName
         )
 
-        val matchingMappings = yarn.walkMappingsDirectory()
-            .mapNotNull { rename.findRenameTarget(it) }
-            .toList()
+        val result = applyRename(rename, matchingMapping, yarn, git, gitUser, namedToIntermediary)
+        return if (result is StringError) result.map { NewName("", null) }
+        else NewName(newClassName, packageName).success
 
-        //TODO: Remember to have this error happen ONLY when the mappings actually mismatch
-        if (matchingMappings.isEmpty()) return fail(
-            """This was already renamed in a newer version.
-If it wasn't, ensure the project SDK is set correctly.
-(- Remember to have this error happen ONLY when it has been renamed later)"""
-        )
-        assert(matchingMappings.size == 1)
-
-
-        return applyRename(rename, matchingMappings[0], yarn, git, gitUser, namedToIntermediary)
     }
 
 
@@ -200,8 +214,13 @@ If it wasn't, ensure the project SDK is set correctly.
                 renameTarget.obfuscatedName
         }
 
+
         val newPath = renameTarget.filePath
         val newMappingLocation = yarn.getMappingsFile(newPath)
+
+        // Update the cache of existing mappings
+        yarn.updateMappingsFileLocation(oldLocation = oldPath.removeSuffix(MappingsExtension),newLocation = newPath.removeSuffix(
+            MappingsExtension))
 
         if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
             return fail("There's another ${renameTarget.typeName()} named that way already.")

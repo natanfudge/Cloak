@@ -1,18 +1,19 @@
 package cloak.idea
 
+import RenamedNamesProvider
+import cloak.idea.ObjWrapper.NameSerializer
+import cloak.idea.ObjWrapper.NewNameSerializer
 import cloak.mapping.rename.*
-import com.intellij.openapi.components.*
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
-import com.intellij.util.xmlb.XmlSerializerUtil
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonDecodingException
 import kotlinx.serialization.modules.SerializersModule
 
 
-object ObjWrapper{
+object ObjWrapper {
     private val nameModule = SerializersModule {
         polymorphic(Name::class) {
             ClassName::class with ClassName.serializer()
@@ -24,44 +25,36 @@ object ObjWrapper{
     val NamesJson = Json(JsonConfiguration.Stable, context = nameModule)
     // Odd that I need to cast here
     val NameSerializer = PolymorphicSerializer(Name::class) as KSerializer<Name>
+
+    val NewNameSerializer = NewName.serializer()
 }
 
+@Serializable
+data class NewName(val newName: String, val newPackageName: String?) {
+    override fun toString() = if (newPackageName != null) "$newPackageName/$newName" else newName
+}
 
-//// So we can find methods that have intermediary descriptors while the user sees named descriptors
-//@State(name = "RenamedNames", storages = [Storage(StoragePathMacros.NON_ROAMABLE_FILE)])
-//data class RenamedNamesProvider(
-////    var stateValue : String? = null
-//     val renamedNamesJson: MutableMap<String, String> = mutableMapOf()
-//) : PersistentStateComponent<RenamedNamesProvider> {
+fun loadState(state: RenamedNamesProvider.State, renamedNames: MutableMap<Name, NewName>) {
+    val json = ObjWrapper.NamesJson
+    for((k,v) in state.renamedNamesJson){
+        renamedNames[json.parse(NameSerializer, k)] = json.parse(NewNameSerializer, v)
+    }
+//    state.renamedNamesJson.clear()
 //
-//    private val renamedNames = mutableMapOf<Name, String>()
+//    val keys = state.renamedNamesJson.keys.toList()
+//    var i = 0
+//    while (i < state.renamedNamesJson.keys.size) {
+//        val jsonKey = keys[i]
+//        try {
+//            val key =
+//            val value =
+//            renamedNames[key] = value
+//            i++
+//        } catch (e: Exception) {
+//            println("Corrupted cache:")
+//            e.printStackTrace()
+//            state.renamedNamesJson.remove(jsonKey)
+//        }
 //
-//    fun addRenamedName(name: Name, renamedTo: String) {
-//        renamedNames[name] = renamedTo
-//        renamedNamesJson[NamesJson.stringify(NameSerializer, name)] = renamedTo
 //    }
-//
-//    fun clearNames() {
-//        renamedNames.clear()
-//        renamedNamesJson.clear()
-//    }
-//
-//    fun anythingWasRenamed() = renamedNames.isNotEmpty()
-//
-//    fun getRenameOf(name : Name) : String? = renamedNames[name]
-//
-//
-//    override fun getState(): RenamedNamesProvider {
-//        return this
-//    }
-//
-//    override fun loadState(state: RenamedNamesProvider) {
-//        XmlSerializerUtil.copyBean(state, this)
-//        for ((k, v) in renamedNamesJson) renamedNames[NamesJson.parse(NameSerializer, k)] = v
-//    }
-//
-//    companion object {
-//        val Instance: RenamedNamesProvider
-//            get() = ServiceManager.getService(RenamedNamesProvider::class.java)
-//    }
-//}
+}

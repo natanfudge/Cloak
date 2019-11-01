@@ -11,14 +11,12 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
-//TODO: make this use the project
 
 
 abstract class Action(text: String? = null) : AnAction(text) {
     open fun isEnabledAndVisible(event: AnActionEvent): Boolean = true
     override fun update(event: AnActionEvent) {
         event.presentation.isEnabledAndVisible = isEnabledAndVisible(event)
-//        event.presentation.isEnabledAndVisible = true
     }
 }
 
