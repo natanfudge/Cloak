@@ -6,16 +6,14 @@ import kotlinx.serialization.internal.ArrayListClassDesc
 import kotlinx.serialization.internal.ListLikeDescriptor
 import kotlinx.serialization.internal.StringDescriptor
 
-fun FieldType.Companion.parsePresentableTypeName(rawTypeName: String, isGenericType: Boolean): FieldType {
-    if (isGenericType) return ObjectType("java/lang/Object")
+fun FieldType.Companion.parsePresentableTypeName(rawTypeName: String): FieldType {
     primitiveStringsToObjects[rawTypeName]?.let { return it }
     if (rawTypeName.endsWith("[]")) return ArrayType(
-        parsePresentableTypeName(
-            rawTypeName.substring(0, rawTypeName.length - 2),
-            //TODO: actually determine if it's generic
-            isGenericType = false
-        )
+        parsePresentableTypeName(rawTypeName.substring(0, rawTypeName.length - 2))
     )
+
+    // We trust that if a type doesn't have a package it means it's a generic type
+    if ("." !in rawTypeName) return ObjectType("java/lang/Object")
 
     return ObjectType(rawTypeName.replace(".","/"))
 }

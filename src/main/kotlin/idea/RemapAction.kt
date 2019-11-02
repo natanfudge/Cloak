@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
-class RemapAction : Action("Hello") {
+class RemapAction : CloakAction("Hello") {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
@@ -44,7 +44,6 @@ class RemapAction : Action("Hello") {
         val nameBeforeName = element.asName()
         val name = nameBeforeName.updateAccordingToRenames(RenamedNamesProvider.getInstance())
 
-        //TODO: handle parent methods somehow
         GlobalScope.launch {
             val result = Renamer.rename(
                 IdeaProjectWrapper(event.project ?: return@launch, event.editor ?: return@launch),

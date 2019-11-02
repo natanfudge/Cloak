@@ -2,6 +2,8 @@ package util
 
 import cloak.idea.util.ProjectWrapper
 import cloak.mapping.doesNotExist
+import cloak.mapping.rename.GitUser
+import cloak.mapping.rename.cloakUser
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.map
@@ -35,6 +37,8 @@ class TestProjectWrapper(private val userInput: String?) : ProjectWrapper {
     override fun showErrorPopup(message: String, title: String) {
 
     }
+
+    override fun getGitUser() = GitTests.TestAuthor.cloakUser
 
 
     override val yarnRepoDir = File(System.getProperty("user.dir") + "/yarn")

@@ -64,7 +64,6 @@ data class ClassMapping(
     override val root: ClassMapping = parent?.root ?: this
 }
 
-//TODO: this needs to also include a parsed version of the descriptor, like Class#method(int,bool,MyClass)
 data class MethodMapping(
     override val obfuscatedName: String,
     override var deobfuscatedName: String?,

@@ -53,8 +53,6 @@ class RenameTests {
 
         val isTopLevelClass = newFileName != oldFileName
 
-        // Let the repo know we've added a new file
-        TestYarnRepo.updateMappingsFileLocation("", newLocation = oldFullPath)
         useFile("$oldFullPath.mapping")
         val project = TestProjectWrapper(userInput)
         val targetName = className(oldFullPath, nameInit)

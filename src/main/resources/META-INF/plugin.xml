@@ -12,11 +12,6 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-<!--        <applicationService -->
-<!--        <projectService serviceImplementation="knit.MappingService"/>-->
-<!--        <applicationInitializedListener implementation="knit.KnitApplicationInitializedListener"/>-->
-<!--        <refactoring.elementListenerProvider implementation="knit.RemappingRefactoringListenerProvider"/>-->
-<!--        <projectViewNodeDecorator implementation="cloak.idea.RenamedIdentifierHighlighter"/>-->
         <applicationService serviceImplementation="ClassNameProvider"/>
         <applicationService serviceImplementation="RenamedNamesProvider"/>
     </extensions>
@@ -28,17 +23,11 @@
     </project-components>
 
     <actions>
-<!--        <action id="Knit.EnableRemapping" class="knit.EnableRemappingAction" text="Enable Remapping" description="Enable or disable remapping mode">-->
-<!--            <add-to-group group-id="RefactoringMenu"/>-->
-<!--        </action>-->
-
-<!--        <group id="MyPlugin.SampleMenu" text="Greeting" description="Greeting menu">-->
 
             <action id="Cloak.Test" class="cloak.idea.RemapAction" text="Hello" description="Says hello">
                 <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-                <keyboard-shortcut first-keystroke="F2" keymap="$default"/>
+                <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
             </action>
-<!--        </group>-->
     </actions>
 
 

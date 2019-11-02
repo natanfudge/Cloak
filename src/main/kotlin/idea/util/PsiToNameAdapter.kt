@@ -16,11 +16,13 @@ fun PsiElement.asNameOrNull(): Name? = when (this) {
     is PsiField -> getFieldName()
     is PsiMethod -> getMethodName()
     // avoid getting parameter of lambdas
-    is PsiParameter  -> if(parent.parent is PsiMethod) getParameterName() else null
+    is PsiParameter -> if (parent.parent is PsiMethod) getParameterName() else null
     else -> null
 }
 
-fun PsiElement.asName(): Name = asNameOrNull() ?: error("This is only possible on named classes, fields, params in normal methods and methods.")
+fun PsiElement.asName(): Name =
+    asNameOrNull() ?: error("This is only possible on named classes, fields, params in normal methods and methods.")
+
 val PsiElement.packageName: String
     get() = (this.containingFile as PsiJavaFile).packageName
 
@@ -57,16 +59,15 @@ private fun PsiMethod.getMethodName(): MethodName? {
         MethodName(
             methodName = name,
             classIn = className,
-            parameterTypes = getSignature(PsiSubstitutor.EMPTY).parameterTypes
-                .map {
-                    val rawType = if(it is PsiClassReferenceType) it.rawType() else it
-                    //TODO: actually check if it's generic
-                    FieldType.parsePresentableTypeName(rawType.canonicalText, isGenericType = false)
-                }
+            parameterTypes = getSignature(PsiSubstitutor.EMPTY).parameterTypes.map {
+                val rawType = if (it is PsiClassReferenceType) it.rawType() else it
+                FieldType.parsePresentableTypeName(rawType.canonicalText)
+            }
         )
     }
 }
+
 private fun PsiParameter.getIndex() = (parent as PsiParameterList).getParameterIndex(this)
-private fun PsiParameter.getParameterName() : ParamName? = (this.parent.parent as PsiMethod).getMethodName()?.let {
-    ParamName(index = this.getIndex(),methodIn = it)
+private fun PsiParameter.getParameterName(): ParamName? = (this.parent.parent as PsiMethod).getMethodName()?.let {
+    ParamName(index = this.getIndex(), methodIn = it)
 }
