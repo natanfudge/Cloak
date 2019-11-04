@@ -2,6 +2,8 @@ package cloak.idea.util
 
 
 import ClassNameProvider
+import cloak.mapping.rename.GitUser
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.editor.Editor
@@ -11,7 +13,6 @@ import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
-import com.intellij.refactoring.RefactoringBundle
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -20,15 +21,22 @@ import javax.swing.Icon
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+data class RenameInput(val newName: String, val explanation: String?)
 interface ProjectWrapper {
-    fun showInputDialog(
-        message: String, title: String, icon: Icon = CommonIcons.Question, initialValue: String? = null,
-        validator: ((String) -> String?)? = null
-    ): String?
+//    fun showInputDialog(
+//        message: String, title: String, icon: Icon = CommonIcons.Question, initialValue: String? = null,
+//        allowEmptyString: Boolean = false,
+//        validator: ((String) -> String?)? = null
+//    ): String?
+
+     fun requestRenameInput(newNameValidator: (String) -> String?): RenameInput?
 
     fun showMessageDialog(message: String, title: String, icon: Icon = CommonIcons.Info)
 
-    fun showErrorPopup(message : String, title : String)
+    fun showErrorPopup(message: String, title: String)
+
+    // Returns null if the user cancels dialog
+    fun getGitUser(): GitUser?
 
     val yarnRepoDir: File
 
@@ -46,7 +54,7 @@ interface ProjectWrapper {
 
 }
 
-class IdeaProjectWrapper(private val project: Project,private val editor : Editor) : ProjectWrapper {
+class IdeaProjectWrapper(private val project: Project, private val editor: Editor?) : ProjectWrapper {
 
     companion object IdeaStorage {
         private const val StorageDirectory = "cloak"
@@ -54,6 +62,9 @@ class IdeaProjectWrapper(private val project: Project,private val editor : Edito
         private val YarnRepoDir = getGlobalStorage(YarnRepositoryDirectory)
         private fun getGlobalStorage(path: String): File =
             Paths.get(PathManager.getSystemPath(), StorageDirectory, path).toFile()
+
+        private const val GithubUserKey = "github_user"
+        private const val GithubEmailKey = "github_email"
     }
 
     override val yarnRepoDir = IdeaStorage.YarnRepoDir
@@ -69,28 +80,35 @@ class IdeaProjectWrapper(private val project: Project,private val editor : Edito
             })
         }
 
-    private class InputValidatorWrapper(val validator: (String) -> String?) : InputValidatorEx {
-        override fun checkInput(inputString: String) = true
-        override fun getErrorText(inputString: String): String? = validator(inputString)
+    private class InputValidatorWrapper(
+        private val allowEmptyString: Boolean = false,
+        private val validator: ((String) -> String?)? = null
+    ) : InputValidatorEx {
+        override fun checkInput(inputString: String): Boolean {
+            return allowEmptyString || inputString.any { !it.isWhitespace() }
+        }
+
+        override fun getErrorText(inputString: String): String? = validator?.invoke(inputString)
 
         override fun canClose(inputString: String?) = true
     }
 
-    override fun showInputDialog(
-        message: String, title: String, icon: Icon, initialValue: String?, validator: ((String) -> String?)?
-    ): String? = Messages.showInputDialog(
-        project,
-        message,
-        title,
-        icon,
-        initialValue,
-        validator?.let { InputValidatorWrapper(it) })
+    override fun requestRenameInput(newNameValidator: (String) -> String?): RenameInput? {
+        val (newName, explanation) = showTwoInputsDialog(
+            project,
+            message = null, title = "Rename", descriptionA = "New Name", descriptionB = "Explanation",
+            validatorA = InputValidatorWrapper(allowEmptyString = false, validator = newNameValidator),
+            validatorB = InputValidatorWrapper(allowEmptyString = true)
+        ) ?: return null
+
+        return RenameInput(newName, if(explanation == "") null else explanation)
+    }
 
 
     override fun showMessageDialog(message: String, title: String, icon: Icon) =
         Messages.showMessageDialog(project, message, title, icon)
 
-    override fun showErrorPopup(message: String, title : String) {
+    override fun showErrorPopup(message: String, title: String) {
         inUiThread {
             CommonRefactoringUtil.showErrorHint(
                 project,
@@ -98,7 +116,27 @@ class IdeaProjectWrapper(private val project: Project,private val editor : Edito
                 message,
                 title,
                 null
-            ) }
+            )
+        }
+    }
+
+    private fun getNewGitUser(): GitUser? {
+        val (username, email) = showTwoInputsDialog(
+            project, "Enter your Github user to attribute contributions to", "Identification",
+            "Username", "Email", validatorA = InputValidatorWrapper(), validatorB = InputValidatorWrapper()
+        ) ?: return null
+
+        PropertiesComponent.getInstance().setValue(GithubUserKey, username)
+        PropertiesComponent.getInstance().setValue(GithubEmailKey, email)
+        return GitUser(username, email)
+    }
+
+    override fun getGitUser(): GitUser? {
+        val properties = PropertiesComponent.getInstance()
+        val username = properties.getValue(GithubUserKey)
+        val email = properties.getValue(GithubEmailKey)
+        return if (username != null && email != null) GitUser(username, email = email)
+        else getNewGitUser()
     }
 
     override fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)

@@ -11,11 +11,12 @@ import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
 import javax.swing.plaf.basic.BasicHTML
+import javax.swing.text.Document
 import javax.swing.text.JTextComponent
 
 fun showTwoInputsDialog(
     project: Project,
-    message: String,
+    message: String?,
     title: String,
     descriptionA: String?,
     descriptionB: String?,
@@ -85,6 +86,12 @@ class TwoInputsDialog(
         if (validatorB != null && !validatorB.checkInput(textFieldB.text.trim { it <= ' ' })) okAction.isEnabled = false
     }
 
+    private fun Document.onTextChange(callback: (DocumentEvent) -> Unit) = addDocumentListener(
+        object : DocumentAdapter() {
+            public override fun textChanged(event: DocumentEvent) {
+                callback(event)
+            }
+        })
 
     override fun createActions(): Array<Action?> {
         val actions = arrayOfNulls<Action>(myOptions.size)
@@ -94,21 +101,32 @@ class TwoInputsDialog(
                 actions[0] = okAction
                 actions[0]!!.putValue(DialogWrapper.DEFAULT_ACTION, true)
 
-                fun listenToIncorrectInput(textField: JTextComponent, validator: InputValidator?) {
-                    textField.document.addDocumentListener(
-                        object : DocumentAdapter() {
-                            public override fun textChanged(event: DocumentEvent) {
-                                val text = textField.text.trim { it <= ' ' }
-                                actions[i]!!.isEnabled = validator == null || validator.checkInput(text)
-                                if (validator is InputValidatorEx) {
-                                    setErrorText(validator.getErrorText(text), textField)
-                                }
-                            }
-                        })
+                fun validateInput(textField: JTextComponent, validator: InputValidator?) {
+                    val text = textField.text.trim { it <= ' ' }
+                    if (validator != null) {
+                        if (!validator.checkInput(text)) {
+                            actions[i]!!.isEnabled = false
+                        }
+
+                        if (validator is InputValidatorEx) {
+                            val errorText = validator.getErrorText(text)
+                            setErrorText(errorText, textField)
+                            if (errorText != null) actions[i]!!.isEnabled = false
+                        }
+                    }
                 }
 
-                listenToIncorrectInput(textFieldA, validatorA)
-                listenToIncorrectInput(textFieldB, validatorB)
+                fun validateBoth() {
+                    actions[i]!!.isEnabled = true
+                    validateInput(textFieldA, validatorA)
+                    validateInput(textFieldB, validatorB)
+                }
+
+
+                textFieldA.document.onTextChange { validateBoth() }
+
+                textFieldB.document.onTextChange { validateBoth() }
+
 
             } else {
                 actions[i] = object : AbstractAction(option) {
@@ -120,6 +138,8 @@ class TwoInputsDialog(
         }
         return actions
     }
+
+
 
     private fun textValid(textField: JTextComponent, validator: InputValidator?): Boolean {
         val inputString = textField.text.trim { it <= ' ' }
@@ -134,9 +154,7 @@ class TwoInputsDialog(
         }
     }
 
-    override fun createCenterPanel(): JComponent? {
-        return null
-    }
+    override fun createCenterPanel(): JComponent? = null
 
     override fun createNorthPanel(): JComponent? {
         val panel = createIconPanel()
@@ -176,8 +194,8 @@ class TwoInputsDialog(
         add(component.apply(init), position)
 
     private fun createTextFieldComponentA(): JComponent = JPanel(BorderLayout()).apply {
-        add(JLabel(descriptionA), BorderLayout.LINE_START){
-            border = EmptyBorder(0,0,0,5)
+        add(JLabel(descriptionA), BorderLayout.LINE_START) {
+            border = EmptyBorder(0, 0, 0, 5)
         }
         add(JTextField(30), BorderLayout.LINE_END) {
             margin = JBInsets(0, 10, 0, 0)
@@ -186,8 +204,8 @@ class TwoInputsDialog(
     }
 
     private fun createTextFieldComponentB(): JComponent = JPanel(BorderLayout()).apply {
-        add(JLabel(descriptionB), BorderLayout.LINE_START){
-            border = EmptyBorder(0,0,0,5)
+        add(JLabel(descriptionB), BorderLayout.LINE_START) {
+            border = EmptyBorder(0, 0, 0, 5)
         }
         add(JTextField(30), BorderLayout.LINE_END) {
             margin = JBInsets(0, 10, 0, 0)

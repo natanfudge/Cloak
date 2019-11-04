@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
-class RemapAction : CloakAction("Hello") {
+class RenameAction : CloakAction("Hello") {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
@@ -37,7 +37,6 @@ class RemapAction : CloakAction("Hello") {
 
 
     //TODO: bigger screen that can fit a reason
-    //TODO: use bigger screen to get git username and email input
     override fun actionPerformed(event: AnActionEvent) {
         val element = event.psiElement ?: return
         val isTopLevelClass = element is PsiClass && !element.isInnerClass

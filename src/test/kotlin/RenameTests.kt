@@ -1,3 +1,4 @@
+import cloak.idea.util.RenameInput
 import cloak.mapping.StringSuccess
 import cloak.mapping.descriptor.ObjectType
 import cloak.mapping.rename.Renamer
@@ -37,12 +38,13 @@ class RenameTests {
 
 
     private fun testRename(
-        test: String,
-        userInput: String,
+        testName: String,
+        newName: String,
         oldFileName: String = "Block",
         oldPath: String = "net/minecraft/block",
         newFileName: String = oldFileName,
         newPath: String = oldPath,
+        explanation : String? = null,
         nameInit: (ClassBuilder.() -> NameBuilder<*>)? = null
     ) = runBlocking {
 
@@ -54,7 +56,7 @@ class RenameTests {
         val isTopLevelClass = newFileName != oldFileName
 
         useFile("$oldFullPath.mapping")
-        val project = TestProjectWrapper(userInput)
+        val project = TestProjectWrapper(RenameInput(newName,explanation))
         val targetName = className(oldFullPath, nameInit)
         val result = Renamer.rename(project, targetName, isTopLevelClass)
         assert(result is StringSuccess) { result.toString() }
@@ -66,7 +68,7 @@ class RenameTests {
         val actual = TestYarnRepo.getMappingsFile(newFullPath)
         assert(actual.exists())
 
-        val expected = getExpected(test)
+        val expected = getExpected(testName)
 
         assertEqualsIgnoreLineBreaks(expected.readText(), actual.readText())
     }
@@ -76,8 +78,8 @@ class RenameTests {
 
     @Test
     fun `Rename Class`() = testRename(
-        test = "RenameClass",
-        userInput = "Bleak",
+        testName = "RenameClass",
+        newName = "Bleak",
         newFileName = "Bleak"
     )
 
@@ -116,6 +118,7 @@ class RenameTests {
         field("testField")
     }
 
+    //TODO: complete these tests
     @Test
     fun `Rename Parameter`() {
 

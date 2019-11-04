@@ -15,8 +15,10 @@ import kotlin.coroutines.suspendCoroutine
 
 abstract class CloakAction(text: String? = null) : AnAction(text) {
     open fun isEnabledAndVisible(event: AnActionEvent): Boolean = true
+    open fun isEnabled(event: AnActionEvent) : Boolean = true
     override fun update(event: AnActionEvent) {
         event.presentation.isEnabledAndVisible = isEnabledAndVisible(event)
+        event.presentation.isEnabled = isEnabled(event)
     }
 }
 

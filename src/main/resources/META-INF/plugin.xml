@@ -24,10 +24,16 @@
 
     <actions>
 
-            <action id="Cloak.Test" class="cloak.idea.RemapAction" text="Hello" description="Says hello">
-                <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-                <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
-            </action>
+        <action id="Cloak.Rename" class="cloak.idea.RenameAction" text="Rename"
+                description="Provides a yarn mapping to the target identifier">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
+        </action>
+        <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action class="cloak.idea.SubmitAction" id="Cloak.Submit" text="Submit Mappings"
+                    description="Sends a pull request with the renamed mappings to the main Yarn repository"/>
+        </group>
     </actions>
 
 

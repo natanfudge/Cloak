@@ -1,3 +1,4 @@
+import cloak.idea.util.RenameInput
 import cloak.mapping.StringError
 import cloak.mapping.descriptor.ObjectType
 import cloak.mapping.rename.Renamer
@@ -29,10 +30,11 @@ class RenameErrorTests {
     }
 
     private fun testError(
-        userInput: String,
+        newName: String,
         oldFileName: String = "Block",
         oldPath: String = "net/minecraft/block",
         newFileName: String = oldFileName,
+        explanation : String? = null,
         nameInit: (ClassBuilder.() -> NameBuilder<*>)? = null
     ) = runBlocking {
 
@@ -40,7 +42,7 @@ class RenameErrorTests {
 
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
-        val project = TestProjectWrapper(userInput)
+        val project = TestProjectWrapper(RenameInput(newName,explanation))
         val targetName = className(oldFullPath, nameInit)
         val result = Renamer.rename(project, targetName, isTopLevelClass)
         assert(result is StringError)

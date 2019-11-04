@@ -1,4 +1,4 @@
-package cloak.mapping
+package cloak.idea.git
 
 import cloak.mapping.mappings.MappingsExtension
 import org.eclipse.jgit.api.Git
@@ -56,5 +56,9 @@ class YarnRepo private constructor(private val localPath: File) {
     fun getMappingsFile(path: String): File = mappingsDirectory.toPath().resolve(path).toFile()
 
     fun push(repo: GitRepository) =
-        repo.actuallyPush(RemoteUrl, UsernamePasswordCredentialsProvider(GithubUsername, GithubPassword))
+        repo.actuallyPush(
+            RemoteUrl, UsernamePasswordCredentialsProvider(
+                GithubUsername,
+                GithubPassword
+            ))
 }

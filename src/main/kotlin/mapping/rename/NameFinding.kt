@@ -1,6 +1,6 @@
 package cloak.mapping.rename
 
-import cloak.mapping.YarnRepo
+import cloak.idea.git.YarnRepo
 import cloak.mapping.mappings.*
 
 fun Name.getMatchingMappingIn(yarnRepo: YarnRepo): Mapping? {

@@ -3,7 +3,7 @@ package util
 import cloak.mapping.Errorable
 import cloak.mapping.StringError
 import cloak.mapping.StringSuccess
-import cloak.mapping.YarnRepo
+import cloak.idea.git.YarnRepo
 import java.io.File
 import kotlin.test.assertEquals
 

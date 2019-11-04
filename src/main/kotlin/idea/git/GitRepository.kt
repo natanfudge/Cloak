@@ -1,4 +1,4 @@
-package cloak.mapping
+package cloak.idea.git
 
 import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.Git
