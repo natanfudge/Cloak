@@ -55,7 +55,7 @@ private data class PullRequest(val title: String, val body: String, val head: St
 
 
 //curl -v https://api.github.com/repos/shedaniel/SmoothScrollingEverywhere/pulls -d "{\"title\":\"testPR\",\"base\":\"master\", \"head\":\"natanfudge:mas
-//ter\"}" -X POST  --header "Authorization: token b86204efabf373e953f7c05a99d8a1098a535f5d"
+//ter\"}" -X POST  --header "Authorization: token [REDACTED]"
 
 //    val post = HttpPost("URL")
 //    post.entity = StringEntity(body).apply { contentType = Header("application/json" }
