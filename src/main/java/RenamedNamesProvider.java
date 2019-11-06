@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-;
+
 // this doesn't work in kotlin for some fucking reason
 
 // So we can find methods that have intermediary descriptors while the user sees named descriptors
@@ -39,6 +39,9 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
 
     private State state = new State();
 
+    // Intentionally not saved to avoid highlighting when not needed
+    private boolean anythingWasRenamedRecently = false;
+
 
     private Map<Name, NewName> renamedNames = new HashMap<>();
 
@@ -47,6 +50,7 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
         Json json = ObjWrapper.INSTANCE.getNamesJson();
         state.renamedNamesJson.put(json.stringify(ObjWrapper.INSTANCE.getNameSerializer(),name),
                 json.stringify(ObjWrapper.INSTANCE.getNewNameSerializer(), renamedTo));
+        anythingWasRenamedRecently = true;
     }
 
     public void cleanNames() {
@@ -55,7 +59,7 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
     }
 
     public boolean anythingWasRenamed() {
-        return !renamedNames.isEmpty();
+        return !renamedNames.isEmpty() || anythingWasRenamedRecently;
     }
 
 
@@ -72,7 +76,6 @@ public class RenamedNamesProvider implements PersistentStateComponent<RenamedNam
     public void loadState(@NotNull State state) {
         this.state = state;
         RenamedNamesProviderKt.loadState(state,renamedNames);
-        int x = 2;
     }
 
     public static RenamedNamesProvider getInstance() {

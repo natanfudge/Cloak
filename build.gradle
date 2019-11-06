@@ -24,8 +24,8 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.13.0" // JVM dependency
 //    implementation 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5'
-    implementation 'io.ktor:ktor-client-core:1.2.4'
-    implementation 'io.ktor:ktor-client-apache:1.2.4'
+//    implementation 'io.ktor:ktor-client-core:1.2.4'
+//    implementation 'io.ktor:ktor-client-apache:1.2.4'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

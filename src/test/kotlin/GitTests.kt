@@ -2,6 +2,7 @@
 import cloak.mapping.doesNotExist
 import org.eclipse.jgit.lib.PersonIdent
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Test
 import util.TestYarnRepo
 import java.io.File
@@ -51,7 +52,7 @@ class GitTests {
         val repo = yarn.getOrCloneGit()
         repo.stageChanges("MAINTAINERS")
         repo.commit(author = TestAuthor, commitMessage = "Test Commit")
-        yarn.push(repo)
+        yarn.push()
     }
 
     @Test
@@ -62,5 +63,12 @@ class GitTests {
         repo.stageChanges("testDelete")
         repo.remove("testDelete")
         assert(deleteTarget.doesNotExist)
+    }
+
+    @Test
+    @Ignore
+    fun `Can delete branch`() {
+        yarn.getOrCloneGit().switchToBranch("master")
+        yarn.deleteBranch("foofo")
     }
 }

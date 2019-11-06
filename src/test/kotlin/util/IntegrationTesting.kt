@@ -47,6 +47,16 @@ class TestProjectWrapper(private val userInput: RenameInput?) : ProjectWrapper {
 
     }
 
+    override fun getUserInput(
+        title: String,
+        message: String,
+        allowEmptyString: Boolean,
+        validator: ((String) -> String?)?
+    ): String? {
+        return null
+    }
+
+
     override fun getGitUser() = GitTests.TestAuthor.cloakUser
 
 
@@ -63,7 +73,7 @@ class TestProjectWrapper(private val userInput: RenameInput?) : ProjectWrapper {
         return intermediaryMapMemoryCache
     }
 
-    override suspend fun <T> asyncWithProgressBar(title: String, action: suspend () -> T): T = action()
+    override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T = action()
     override fun inUiThread(action: () -> Unit) = action()
     override suspend fun <T> getFromUiThread(input: () -> T): T = input()
 }

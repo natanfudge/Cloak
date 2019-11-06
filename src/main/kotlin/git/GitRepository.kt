@@ -1,4 +1,4 @@
-package cloak.idea.git
+package cloak.git
 
 import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.Git
@@ -7,11 +7,12 @@ import org.eclipse.jgit.dircache.DirCache
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.transport.CredentialsProvider
+import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.URIish
 
 open class GitRepository(private val git: Git) {
 
-    fun switchToBranch(branchName: String) {
+    fun switchToBranch(branchName: String, startFromBranch: String? = null) {
         if (git.repository.branch == branchName) return
 
         val remoteBranchExists = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call()
@@ -20,7 +21,7 @@ open class GitRepository(private val git: Git) {
         val localBranchAlreadyExists = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call()
             .any { it.name == "refs/heads/$branchName" }
 
-        val startPoint = when {
+        val startPoint = if (startFromBranch != null) "refs/heads/$startFromBranch" else when {
             localBranchAlreadyExists -> branchName
             remoteBranchExists -> "origin/$branchName"
             else -> "refs/heads/master"
@@ -42,7 +43,12 @@ open class GitRepository(private val git: Git) {
         return git.add().addFilepattern(path).call()
     }
 
-//    fun stageAllChanges
+    fun actuallyDeleteBranch(branchName: String, credentialsProvider: CredentialsProvider) {
+        git.branchDelete().setBranchNames("refs/heads/$branchName").setForce(true).call()
+        val refspec = RefSpec().setSource(null).setDestination("refs/heads/$branchName")
+        git.push().setRefSpecs(refspec).setRemote("origin").setCredentialsProvider(credentialsProvider).call()
+    }
+
 
     fun getBranches(): List<Ref> = git.branchList().call()
 

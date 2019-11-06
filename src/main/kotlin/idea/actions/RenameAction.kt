@@ -1,6 +1,7 @@
-package cloak.idea
+package cloak.idea.actions
 
 import RenamedNamesProvider
+import cloak.idea.RenamedIdentifierHighlighter
 import cloak.idea.util.*
 import cloak.mapping.StringSuccess
 import cloak.mapping.rename.*
@@ -20,7 +21,7 @@ import kotlinx.coroutines.launch
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
-class RenameAction : CloakAction("Hello") {
+class RenameAction : CloakAction() {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
@@ -43,15 +44,20 @@ class RenameAction : CloakAction("Hello") {
         val nameBeforeName = element.asName()
         val name = nameBeforeName.updateAccordingToRenames(RenamedNamesProvider.getInstance())
 
+        val project = event.project ?: return
+        val editor = event.editor ?: return
+
+        val projectWrapper = IdeaProjectWrapper(event.project ?: return, event.editor ?: return)
         GlobalScope.launch {
             val result = Renamer.rename(
-                IdeaProjectWrapper(event.project ?: return@launch, event.editor ?: return@launch),
+                projectWrapper,
                 name,
                 isTopLevelClass
             )
             if (result is StringSuccess) {
                 println("$name was renamed to ${result.value}")
                 RenamedNamesProvider.getInstance().addRenamedName(nameBeforeName, result.value)
+                RenamedIdentifierHighlighter.rerun(event)
             } else {
                 println("Could not rename: $result")
             }
@@ -74,8 +80,8 @@ private fun Name.updateAccordingToRenames(renames: RenamedNamesProvider) = when 
 
 private fun ClassName.updateAccordingToRenames(renames: RenamedNamesProvider): ClassName =
     renames.getRenameOf(this)?.let {
-       var newName = copy(className = it.newName)
-        if(it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
+        var newName = copy(className = it.newName)
+        if (it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
         newName
     } ?: this
 

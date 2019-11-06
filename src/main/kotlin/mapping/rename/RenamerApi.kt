@@ -1,8 +1,8 @@
 package cloak.mapping.rename
 
 import cloak.idea.NewName
-import cloak.idea.git.GitRepository
-import cloak.idea.git.YarnRepo
+import cloak.git.GitRepository
+import cloak.git.YarnRepo
 import cloak.idea.util.ProjectWrapper
 import cloak.mapping.*
 import cloak.mapping.descriptor.remap
@@ -45,7 +45,7 @@ object Renamer {
             val gitPromise = async { getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir) }
 
 
-            val (git, namedToIntermediaryClasses, matchingMapping) = asyncWithProgressBar("Preparing rename...") {
+            val (git, namedToIntermediaryClasses, matchingMapping) = asyncWithText("Preparing rename...") {
                 val git = gitPromise.await()
                 val namedToIntermediaryClasses = namedToIntermediaryClassesPromise.await()
                 val yarn = YarnRepo.at(yarnRepoDir)
@@ -68,7 +68,7 @@ object Renamer {
                 requestRenameInput { validate(it, isTopLevelClass) }
             } ?: return@coroutineScope fail<NewName>("User didn't input a new name")
 
-            asyncWithProgressBar("Renaming...") {
+            asyncWithText("Renaming...") {
                 val result = tryRename(
                     oldName = name,
                     newName = input,

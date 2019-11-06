@@ -29,11 +29,18 @@ interface ProjectWrapper {
 //        validator: ((String) -> String?)? = null
 //    ): String?
 
-     fun requestRenameInput(newNameValidator: (String) -> String?): RenameInput?
+    fun requestRenameInput(newNameValidator: (String) -> String?): RenameInput?
 
     fun showMessageDialog(message: String, title: String, icon: Icon = CommonIcons.Info)
 
     fun showErrorPopup(message: String, title: String)
+
+    fun getUserInput(
+        title: String,
+        message: String,
+        allowEmptyString: Boolean = false,
+        validator: ((String) -> String?)? = null
+    ): String?
 
     // Returns null if the user cancels dialog
     fun getGitUser(): GitUser?
@@ -46,7 +53,7 @@ interface ProjectWrapper {
      */
     fun getIntermediaryClassNames(): MutableMap<String, String>
 
-    suspend fun <T> asyncWithProgressBar(title: String, action: suspend () -> T): T
+    suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T
 
     fun inUiThread(action: () -> Unit)
 
@@ -71,7 +78,7 @@ class IdeaProjectWrapper(private val project: Project, private val editor: Edito
     override fun getIntermediaryClassNames(): MutableMap<String, String> =
         ClassNameProvider.getInstance().state.namedToIntermediary
 
-    override suspend fun <T> asyncWithProgressBar(title: String, action: suspend () -> T): T =
+    override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T =
         suspendCoroutine { cont ->
             ProgressManager.getInstance().run(object : Backgroundable(project, title) {
                 override fun run(progressIndicator: ProgressIndicator) { // start your process
@@ -101,7 +108,7 @@ class IdeaProjectWrapper(private val project: Project, private val editor: Edito
             validatorB = InputValidatorWrapper(allowEmptyString = true)
         ) ?: return null
 
-        return RenameInput(newName, if(explanation == "") null else explanation)
+        return RenameInput(newName, if (explanation == "") null else explanation)
     }
 
 
@@ -118,6 +125,22 @@ class IdeaProjectWrapper(private val project: Project, private val editor: Edito
                 null
             )
         }
+    }
+
+    override fun getUserInput(
+        title: String,
+        message: String,
+        allowEmptyString: Boolean,
+        validator: ((String) -> String?)?
+    ): String? {
+        return Messages.showInputDialog(
+            project,
+            message,
+            title,
+            CommonIcons.Question,
+            null,
+            InputValidatorWrapper(allowEmptyString, validator)
+        )
     }
 
     private fun getNewGitUser(): GitUser? {
