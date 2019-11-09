@@ -1,5 +1,4 @@
-//import cloak.idea.NamesJson
-import cloak.idea.ObjWrapper.NamesJson
+import cloak.idea.providerUtils.ObjWrapper.NamesJson
 import cloak.mapping.rename.Name
 import kotlinx.serialization.PolymorphicSerializer
 import org.junit.Test

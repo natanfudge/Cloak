@@ -41,11 +41,8 @@ class RenameAction : CloakAction() {
     override fun actionPerformed(event: AnActionEvent) {
         val element = event.psiElement ?: return
         val isTopLevelClass = element is PsiClass && !element.isInnerClass
-        val nameBeforeName = element.asName()
-        val name = nameBeforeName.updateAccordingToRenames(RenamedNamesProvider.getInstance())
-
-        val project = event.project ?: return
-        val editor = event.editor ?: return
+        val nameBeforeRenames = element.asName()
+        val name = nameBeforeRenames.updateAccordingToRenames(RenamedNamesProvider.getInstance())
 
         val projectWrapper = IdeaProjectWrapper(event.project ?: return, event.editor ?: return)
         GlobalScope.launch {
@@ -56,7 +53,7 @@ class RenameAction : CloakAction() {
             )
             if (result is StringSuccess) {
                 println("$name was renamed to ${result.value}")
-                RenamedNamesProvider.getInstance().addRenamedName(nameBeforeName, result.value)
+                RenamedNamesProvider.getInstance().addRenamedName(nameBeforeRenames, result.value)
                 RenamedIdentifierHighlighter.rerun(event)
             } else {
                 println("Could not rename: $result")

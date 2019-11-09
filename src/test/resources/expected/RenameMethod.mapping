@@ -5,7 +5,7 @@ CLASS net/minecraft/class_2248 net/minecraft/block/Block
 				ARG 0 test
 	FIELD field_20720 opaque Z
 	FIELD field_100004 testField I
-	METHOD <init> (Lnet/minecraft/class_2248$class_2251;)V
+	METHOD <init> (Lnet/minecraft/class_347$class_348;)V
 		ARG 1 settings
 	METHOD method_16361 goodnamenow (Lnet/minecraft/class_1922;Lnet/minecraft/class_2338;)Z
 		ARG 0 world

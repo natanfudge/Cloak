@@ -1,8 +1,8 @@
-package cloak.idea
+package cloak.idea.providerUtils
 
 import RenamedNamesProvider
-import cloak.idea.ObjWrapper.NameSerializer
-import cloak.idea.ObjWrapper.NewNameSerializer
+import cloak.idea.providerUtils.ObjWrapper.NameSerializer
+import cloak.idea.providerUtils.ObjWrapper.NewNameSerializer
 import cloak.mapping.rename.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
@@ -39,22 +39,5 @@ fun loadState(state: RenamedNamesProvider.State, renamedNames: MutableMap<Name, 
     for((k,v) in state.renamedNamesJson){
         renamedNames[json.parse(NameSerializer, k)] = json.parse(NewNameSerializer, v)
     }
-//    state.renamedNamesJson.clear()
-//
-//    val keys = state.renamedNamesJson.keys.toList()
-//    var i = 0
-//    while (i < state.renamedNamesJson.keys.size) {
-//        val jsonKey = keys[i]
-//        try {
-//            val key =
-//            val value =
-//            renamedNames[key] = value
-//            i++
-//        } catch (e: Exception) {
-//            println("Corrupted cache:")
-//            e.printStackTrace()
-//            state.renamedNamesJson.remove(jsonKey)
-//        }
-//
-//    }
+
 }

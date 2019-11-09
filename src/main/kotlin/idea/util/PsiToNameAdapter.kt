@@ -2,9 +2,12 @@ package cloak.idea.util
 
 import cloak.mapping.descriptor.FieldType
 import cloak.mapping.descriptor.parsePresentableTypeName
+import cloak.mapping.mappings.ConstructorName
+import cloak.mapping.mappings.Joiner
 import cloak.mapping.rename.*
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.psi.util.parents
 
 /**
  * Returns null when:
@@ -52,19 +55,32 @@ private fun PsiField.getFieldName() = (parent as PsiClass).getClassName()?.let {
     FieldName(fieldName = name, classIn = it)
 }
 
+
 private fun PsiMethod.getMethodName(): MethodName? {
     val superMethods = findSuperMethods()
     val methodOwner = (superMethods.firstOrNull()?.parent ?: this.parent) as PsiClass
     return methodOwner.getClassName()?.let { className ->
         MethodName(
-            methodName = name,
+            methodName = if(this.isConstructor) ConstructorName else name,
             classIn = className,
             parameterTypes = getSignature(PsiSubstitutor.EMPTY).parameterTypes.map {
-                val rawType = if (it is PsiClassReferenceType) it.rawType() else it
-                FieldType.parsePresentableTypeName(rawType.canonicalText)
+                val name = (if (it is PsiClassReferenceType) it.resolveName() else it.canonicalText) ?: return null
+                FieldType.parsePresentableTypeName(name)
             }
         )
     }
+}
+
+
+
+private fun PsiClassReferenceType.resolveName(): String? {
+    val resolved = rawType().resolve() ?: error("Could not resolve type: $this")
+    val parents = resolved.parents().filterIsInstance<PsiClass>().toList().reversed()
+    // We use the full name for the outer class, and only the short name for the inner class.
+    var className = parents.first().qualifiedName
+    for (innerClass in parents.drop(1)) className += Joiner.InnerClass + innerClass.name
+
+    return className
 }
 
 private fun PsiParameter.getIndex() = (parent as PsiParameterList).getParameterIndex(this)

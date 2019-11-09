@@ -12,7 +12,6 @@ object Joiner {
 }
 
 
-
 typealias MappingsFile = ClassMapping
 
 fun MappingsFile.visitClasses(visitor: (ClassMapping) -> Unit) {

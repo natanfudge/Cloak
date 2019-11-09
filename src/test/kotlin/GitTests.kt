@@ -29,6 +29,7 @@ class GitTests {
     }
 
     @Test
+    @Ignore
     fun `Branches retain information`() {
         yarn.getOrCloneGit().switchToBranch("secretInfo")
         assert(yarn.getFile("secretTestInfo").exists())
@@ -48,6 +49,7 @@ class GitTests {
     }
 
     @Test
+    @Ignore("Too dangerous")
     fun `Can push changes to remote`() {
         val repo = yarn.getOrCloneGit()
         repo.stageChanges("MAINTAINERS")

@@ -14,6 +14,7 @@ import javax.swing.plaf.basic.BasicHTML
 import javax.swing.text.Document
 import javax.swing.text.JTextComponent
 
+//TODO: error message with invalid input got broken
 fun showTwoInputsDialog(
     project: Project,
     message: String?,

@@ -46,9 +46,9 @@ class SubmitAction : CloakAction() {
 
     }
 
-
     private suspend fun ProjectWrapper.resetWorkspace(repo: YarnRepo, event: AnActionEvent, gitUser: GitUser) {
         asyncWithText("Cleaning...") {
+            // TODO: try to see if we can start from the main one in the upstream repo, here and on first clone
             repo.getOrCloneGit().switchToBranch("master")
             repo.deleteBranch(gitUser.branchName)
             RenamedNamesProvider.getInstance().cleanNames()

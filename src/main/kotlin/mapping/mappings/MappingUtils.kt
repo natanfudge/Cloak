@@ -11,3 +11,5 @@ import kotlin.contracts.contract
  }
 
 const val MappingsExtension = ".mapping"
+const val ConstructorName = "<init>"
+val MethodMapping.isConstructor get() = obfuscatedName == ConstructorName

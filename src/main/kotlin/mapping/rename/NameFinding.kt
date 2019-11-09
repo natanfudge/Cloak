@@ -35,15 +35,18 @@ private fun FieldName.getMatchingMappingIn(mappings: MappingsFile) =
     classIn.getMatchingMappingIn(mappings)?.cast<ClassMapping>()?.fields?.find { it.nonNullName == fieldName }
 
 private fun MethodName.getMatchingMappingIn(mappings: MappingsFile): Mapping? {
-    val targetClass = classIn.getMatchingMappingIn(mappings) ?: return null
+    val targetClass = classIn.getMatchingMappingIn(mappings) as? ClassMapping ?: return null
 
-    return targetClass.cast<ClassMapping>().methods
-        .find { it.nonNullName == methodName && it.descriptor.parameterDescriptors == parameterTypes }
+    return targetClass.methods.find { it.nonNullName == methodName && it.descriptor.parameterDescriptors == parameterTypes }
 }
 
 private fun ParamName.getMatchingMappingIn(mappings: MappingsFile): Mapping? {
-    val targetMethod = methodIn.getMatchingMappingIn(mappings) ?: return null
-    return targetMethod.cast<MethodMapping>().parameters.find { it.index == index }
+    val targetMethod = methodIn.getMatchingMappingIn(mappings) as? MethodMapping ?: return null
+    return targetMethod.parameters.find {
+        // Parameters in constructors begin from 1 in enigma format
+        val paramIndex = if (targetMethod.isConstructor) it.index - 1 else it.index
+        paramIndex == index
+    }
 }
 
 private inline fun <reified T> Any.cast() = this as T

@@ -1,7 +1,8 @@
 
-import cloak.idea.NewName;
-import cloak.idea.ObjWrapper;
-import cloak.idea.RenamedNamesProviderKt;
+
+import cloak.idea.providerUtils.NewName;
+import cloak.idea.providerUtils.ObjWrapper;
+import cloak.idea.providerUtils.RenamedNamesProviderKt;
 import cloak.mapping.rename.Name;
 import com.intellij.openapi.components.*;
 import com.intellij.util.xmlb.XmlSerializerUtil;

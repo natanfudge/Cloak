@@ -19,6 +19,6 @@ class GithubTests {
 
     @Test
     fun `The default branch of cloak is master`() {
-        assertEquals("master", GithubApi.getDefaultBranch("Cloak", YarnRepo.GithubUsername))
+        assertEquals("master", GithubApi.getDefaultBranch("yarn", YarnRepo.GithubUsername))
     }
 }

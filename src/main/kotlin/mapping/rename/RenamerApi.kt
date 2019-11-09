@@ -1,8 +1,8 @@
 package cloak.mapping.rename
 
-import cloak.idea.NewName
 import cloak.git.GitRepository
 import cloak.git.YarnRepo
+import cloak.idea.providerUtils.NewName
 import cloak.idea.util.ProjectWrapper
 import cloak.mapping.*
 import cloak.mapping.descriptor.remap
@@ -25,10 +25,14 @@ val PersonIdent.cloakUser get() = GitUser(this.name, this.emailAddress)
 object Renamer {
 
     /** User input is in named but the repo is in intermediary */
-    private fun Name.remapParameterDescriptors(namedToIntermediary: MutableMap<String, String>) =
-        if (this is MethodName) copy(
-            parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
-        ) else this
+    private fun <T> T.remapParameterDescriptors(namedToIntermediary: MutableMap<String, String>): T =
+        when (this) {
+            is MethodName -> copy(
+                parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
+            ) as T
+            is ParamName -> copy(index, methodIn.remapParameterDescriptors(namedToIntermediary)) as T
+            else -> this
+        }
 
     /**
      * Returns the new name
@@ -39,15 +43,12 @@ object Renamer {
         isTopLevelClass: Boolean
     ): Errorable<NewName> = with(project) {
         coroutineScope {
-            val namedToIntermediaryClassesPromise = async { getClassNamesMap(YarnRepo.at(yarnRepoDir)) }
             val user = getFromUiThread { getGitUser() }
                 ?: return@coroutineScope fail<NewName>("User didn't provide git info")
-            val gitPromise = async { getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir) }
-
 
             val (git, namedToIntermediaryClasses, matchingMapping) = asyncWithText("Preparing rename...") {
-                val git = gitPromise.await()
-                val namedToIntermediaryClasses = namedToIntermediaryClassesPromise.await()
+                val git = getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir)
+                val namedToIntermediaryClasses = getClassNamesMap(YarnRepo.at(yarnRepoDir))
                 val yarn = YarnRepo.at(yarnRepoDir)
 
                 val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
@@ -104,11 +105,29 @@ object Renamer {
         if (map.isEmpty()) {
             for (relativePath in yarnRepo.getMappingsFilesLocations()) {
                 MappingsFile.read(yarnRepo.getMappingsFile("$relativePath$MappingsExtension")).visitClasses { mapping ->
-                    mapping.deobfuscatedName?.let { map[it] = mapping.obfuscatedName }
+                    mapping.getFullMapping()?.let { (obf, deobf) -> map[deobf] = obf }
                 }
             }
         }
         map
+    }
+
+    private fun ClassMapping.getFullMapping(): Pair<String, String>? {
+        val fullPath = mutableListOf<ClassMapping>()
+        var next: ClassMapping? = this@getFullMapping
+        while (next != null) {
+            if (next.deobfuscatedName == null) return null
+            fullPath.add(next)
+            next = next.parent
+        }
+
+        fullPath.reverse()
+
+        return Pair(fullPath.joinToString(Joiner.InnerClass) { it.obfuscatedName },
+            fullPath.joinToString(Joiner.InnerClass) {
+                it.deobfuscatedName ?: error("It's checked earlier that deobfuscatedName != null")
+            }
+        )
     }
 
 

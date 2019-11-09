@@ -44,7 +44,7 @@ class RenameTests {
         oldPath: String = "net/minecraft/block",
         newFileName: String = oldFileName,
         newPath: String = oldPath,
-        explanation : String? = null,
+        explanation: String? = null,
         nameInit: (ClassBuilder.() -> NameBuilder<*>)? = null
     ) = runBlocking {
 
@@ -56,7 +56,7 @@ class RenameTests {
         val isTopLevelClass = newFileName != oldFileName
 
         useFile("$oldFullPath.mapping")
-        val project = TestProjectWrapper(RenameInput(newName,explanation))
+        val project = TestProjectWrapper(RenameInput(newName, explanation))
         val targetName = className(oldFullPath, nameInit)
         val result = Renamer.rename(project, targetName, isTopLevelClass)
         assert(result is StringSuccess) { result.toString() }
@@ -120,18 +120,22 @@ class RenameTests {
 
     //TODO: complete these tests
     @Test
-    fun `Rename Parameter`() {
-
+    fun `Rename Parameter`() = testRename("RenameParameter", "foobarbaz") {
+        method(
+            "topCoversMediumSquare",
+            ObjectType("net/minecraft/world/BlockView"), ObjectType("net/minecraft/util/math/BlockPos")
+        ).parameter(0)
     }
 
     @Test
-    fun `Rename constructor arg`() {
-
+    fun `Rename constructor arg`() = testRename("RenameConstructorParam", "newconstruct") {
+        method("<init>",ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(1)
     }
 
     @Test
-    fun `Rename Complex Target`() {
-
+    fun `Rename Complex Target`() = testRename("ComplexRename","ayyy") {
+        innerClass("OffsetType").innerClass("complexInner")
+            .method("complexMethod").parameter(0)
     }
 
     @Test
@@ -148,6 +152,26 @@ class RenameTests {
             method("someMethod")
         }
 
+    @Test
+    fun `Add new class`() {
+
+    }
+
+
+    @Test
+    fun `Add new method`() {
+
+    }
+
+    @Test
+    fun `Add new field`() {
+
+    }
+
+    @Test
+    fun `Add new parameter name`() {
+
+    }
 
 }
 
