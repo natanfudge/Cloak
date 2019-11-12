@@ -10,6 +10,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import cloak.idea.ExistingIntermediaryNamesProvider
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 //TODO: turn on "autoscroll from source" by default
 //TODO: give cool icon to fabric.mod.json and modid.mixin.json
 //TODO: inspections for fabric stuff?
+//TODO: special colors for @SideOnly
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 

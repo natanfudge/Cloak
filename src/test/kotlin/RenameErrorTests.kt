@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
-import util.*
+import cloak.util.*
 
 class RenameErrorTests {
 
@@ -17,7 +17,7 @@ class RenameErrorTests {
         fun prepare() {
             with(TestYarnRepo.getOrCloneGit()){
                 commit(GitTests.TestAuthor, "preparation")
-                switchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+                internalSwitchToBranch(GitTests.TestAuthor.cloakUser.branchName)
                 TestYarnRepo.getMappingsFilesLocations()
             }
         }

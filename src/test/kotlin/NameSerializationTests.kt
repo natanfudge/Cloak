@@ -2,7 +2,7 @@ import cloak.idea.providerUtils.ObjWrapper.NamesJson
 import cloak.mapping.rename.Name
 import kotlinx.serialization.PolymorphicSerializer
 import org.junit.Test
-import util.className
+import cloak.util.className
 import kotlin.test.assertEquals
 
 

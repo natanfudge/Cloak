@@ -12,7 +12,13 @@ import org.eclipse.jgit.transport.URIish
 
 open class GitRepository(private val git: Git) {
 
-    fun switchToBranch(branchName: String, startFromBranch: String? = null) {
+    //TODO: more properly layer this as cloak.git-only, and only use API from yarnRepo (make getOrCloneGit private)
+    fun internalSwitchToBranch(
+        branchName: String,
+        startFromBranch: String? = null,
+        force: Boolean = false,
+        defaultBaseBranch: () -> String = { "refs/heads/master" }
+    ) {
         if (git.repository.branch == branchName) return
 
         val remoteBranchExists = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call()
@@ -24,13 +30,16 @@ open class GitRepository(private val git: Git) {
         val startPoint = if (startFromBranch != null) "refs/heads/$startFromBranch" else when {
             localBranchAlreadyExists -> branchName
             remoteBranchExists -> "origin/$branchName"
-            else -> "refs/heads/master"
+            else -> defaultBaseBranch()
+//            "refs/heads/master"
         }
 
         git.checkout()
             .setCreateBranch(!localBranchAlreadyExists)
             .setName(branchName).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
+            .setForced(force)
             .setStartPoint(startPoint).call()
+
 
     }
 
@@ -60,5 +69,9 @@ open class GitRepository(private val git: Git) {
         git.remoteAdd().setName("origin").setUri(URIish(remoteUrl)).call()
         git.push().setCredentialsProvider(credentialsProvider).call()
     }
+
+    fun updateRemote(remote: String) = git.fetch().setRemote(remote).call()
+
+    fun close() = git.close()
 }
 

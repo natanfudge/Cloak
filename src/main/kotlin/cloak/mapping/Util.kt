@@ -23,10 +23,17 @@ inline fun <T> profile(sectionName: String, code: () -> T): T {
 }
 
 fun String.splitOn(index: Int) = Pair(substring(0, index), substring(index + 1))
-fun String.splitOn(char : Char) = splitOn(indexOf(char))
+fun String.splitOn(char: Char) = splitOn(indexOf(char))
 
 val File.doesNotExist get() = !exists()
 
-fun <K> Map<K,K>.getOrKey(key : K) : K = getOrDefault(key,key)
+fun <K> Map<K, K>.getOrKey(key: K): K = getOrDefault(key, key)
 
 val NormalJson = Json(JsonConfiguration.Stable)
+
+operator fun <T> T.plus(list: List<T>): List<T> {
+    val result = ArrayList<T>(list.size + 1)
+    result.add(this)
+    result.addAll(list)
+    return result
+}

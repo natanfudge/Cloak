@@ -2,6 +2,7 @@ package cloak.idea.util
 
 
 import ClassNameProvider
+import cloak.idea.LatestIntermediaryNames
 import cloak.mapping.rename.GitUser
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.application.ApplicationManager
@@ -14,6 +15,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
 import com.intellij.refactoring.util.CommonRefactoringUtil
+import cloak.idea.ExistingIntermediaryNamesProvider
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.nio.file.Paths
@@ -23,11 +25,6 @@ import kotlin.coroutines.suspendCoroutine
 
 data class RenameInput(val newName: String, val explanation: String?)
 interface ProjectWrapper {
-//    fun showInputDialog(
-//        message: String, title: String, icon: Icon = CommonIcons.Question, initialValue: String? = null,
-//        allowEmptyString: Boolean = false,
-//        validator: ((String) -> String?)? = null
-//    ): String?
 
     fun requestRenameInput(newNameValidator: (String) -> String?): RenameInput?
 
@@ -53,6 +50,8 @@ interface ProjectWrapper {
      */
     fun getIntermediaryClassNames(): MutableMap<String, String>
 
+    fun getLatestIntermediaryNames(version: String): LatestIntermediaryNames
+
     suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T
 
     fun inUiThread(action: () -> Unit)
@@ -77,6 +76,10 @@ class IdeaProjectWrapper(private val project: Project, private val editor: Edito
     override val yarnRepoDir = IdeaStorage.YarnRepoDir
     override fun getIntermediaryClassNames(): MutableMap<String, String> =
         ClassNameProvider.getInstance().state.namedToIntermediary
+
+    override fun getLatestIntermediaryNames(version: String): LatestIntermediaryNames {
+        return ExistingIntermediaryNamesProvider.instance.getNames(version)
+    }
 
     override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T =
         suspendCoroutine { cont ->

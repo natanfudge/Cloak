@@ -2,6 +2,7 @@ package cloak.idea.actions
 
 import RenamedNamesProvider
 import cloak.git.*
+import cloak.idea.ExistingIntermediaryNamesProvider
 import cloak.idea.RenamedIdentifierHighlighter
 import cloak.idea.util.CloakAction
 import cloak.idea.util.IdeaProjectWrapper
@@ -12,7 +13,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.eclipse.jgit.lib.Repository
-import java.util.*
 
 class SubmitAction : CloakAction() {
     override fun isEnabled(event: AnActionEvent): Boolean {
@@ -32,7 +32,7 @@ class SubmitAction : CloakAction() {
         ) ?: return
 
         GlobalScope.launch {
-            val upstreamOwner = "natanfudge"//TODO: switch to fabricmc
+            val upstreamOwner = "natanfudge"//TODO: switch to YarnRepo.upstreamuser
             val pr = createPr(project, repo, prName, gitUser, upstreamOwner)
             project.inUiThread {
                 project.showMessageDialog(
@@ -48,10 +48,11 @@ class SubmitAction : CloakAction() {
 
     private suspend fun ProjectWrapper.resetWorkspace(repo: YarnRepo, event: AnActionEvent, gitUser: GitUser) {
         asyncWithText("Cleaning...") {
-            // TODO: try to see if we can start from the main one in the upstream repo, here and on first clone
-            repo.getOrCloneGit().switchToBranch("master")
+            repo.switchToBranch("master")
             repo.deleteBranch(gitUser.branchName)
             RenamedNamesProvider.getInstance().cleanNames()
+            // This will update the mc version because the 'McVersion' file will be deleted
+            ExistingIntermediaryNamesProvider.instance.update(repo.getTargetMinecraftVersion())
         }
 
         RenamedIdentifierHighlighter.rerun(event)
@@ -66,7 +67,7 @@ class SubmitAction : CloakAction() {
     ): PullRequestResponse = project.asyncWithText("Submitting...") {
         val git = repo.getOrCloneGit()
         val branchName = Repository.normalizeBranchName(prName)
-        git.switchToBranch(branchName, startFromBranch = gitUser.branchName)
+        git.internalSwitchToBranch(branchName, startFromBranch = gitUser.branchName)
 
 
         repo.push()

@@ -9,4 +9,3 @@ object JbColors {
 
 private fun staticColor(red : Int, green : Int, blue : Int) = JBColor(Color(red,green,blue),Color(red,green,blue))
 
-val x = Color(0,200,0)

@@ -1,4 +1,4 @@
-package util
+package cloak.util
 
 import cloak.mapping.Errorable
 import cloak.mapping.StringError

@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
-import util.*
+import cloak.util.*
 
 private val yarn = TestYarnRepo
 fun useFile(path: String) {
@@ -24,7 +24,7 @@ class RenameTests {
         fun prepare() {
             with(yarn.getOrCloneGit()) {
                 commit(GitTests.TestAuthor, "preparation")
-                switchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+                internalSwitchToBranch(GitTests.TestAuthor.cloakUser.branchName)
                 TestYarnRepo.getMappingsFilesLocations()
             }
         }
@@ -129,7 +129,7 @@ class RenameTests {
 
     @Test
     fun `Rename constructor arg`() = testRename("RenameConstructorParam", "newconstruct") {
-        method("<init>",ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(1)
+        method("<init>",ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(0)
     }
 
     @Test
@@ -153,10 +153,14 @@ class RenameTests {
         }
 
     @Test
-    fun `Add new class`() {
+    fun `Add new outer class`() {
 
     }
 
+    @Test
+    fun `Add new inner class`() {
+
+    }
 
     @Test
     fun `Add new method`() {

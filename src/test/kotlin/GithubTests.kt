@@ -1,7 +1,5 @@
 import cloak.git.GithubApi
 import cloak.git.YarnRepo
-import cloak.git.createPullRequest
-import cloak.git.getDefaultBranch
 import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals

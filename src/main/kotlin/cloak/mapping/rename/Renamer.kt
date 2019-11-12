@@ -8,7 +8,6 @@ import cloak.mapping.*
 import cloak.mapping.descriptor.remap
 import cloak.mapping.mappings.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.eclipse.jgit.lib.PersonIdent
@@ -25,14 +24,13 @@ val PersonIdent.cloakUser get() = GitUser(this.name, this.emailAddress)
 object Renamer {
 
     /** User input is in named but the repo is in intermediary */
-    private fun <T> T.remapParameterDescriptors(namedToIntermediary: MutableMap<String, String>): T =
-        when (this) {
-            is MethodName -> copy(
-                parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
-            ) as T
-            is ParamName -> copy(index, methodIn.remapParameterDescriptors(namedToIntermediary)) as T
-            else -> this
-        }
+    private fun <T> T.remapParameterDescriptors(namedToIntermediary: MutableMap<String, String>): T = when (this) {
+        is MethodName -> copy(
+            parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
+        ) as T
+        is ParamName -> copy(index, methodIn.remapParameterDescriptors(namedToIntermediary)) as T
+        else -> this
+    }
 
     /**
      * Returns the new name
@@ -44,7 +42,7 @@ object Renamer {
     ): Errorable<NewName> = with(project) {
         coroutineScope {
             val user = getFromUiThread { getGitUser() }
-                ?: return@coroutineScope fail<NewName>("User didn't provide git info")
+                ?: return@coroutineScope fail<NewName>("User didn't provide cloak.git info")
 
             val (git, namedToIntermediaryClasses, matchingMapping) = asyncWithText("Preparing rename...") {
                 val git = getOrCloneGit(gitUser = user, yarnRepo = yarnRepoDir)
@@ -53,7 +51,7 @@ object Renamer {
 
                 val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
 
-                Triple(git, namedToIntermediaryClasses, oldName.getMatchingMappingIn(yarn))
+                Triple(git, namedToIntermediaryClasses, oldName.getMatchingMappingIn(yarn,project = this@with))
             }
 
             if (matchingMapping == null) {
@@ -97,7 +95,9 @@ object Renamer {
      * This method will be executed asynchronously so it will return immediately and do the work in the background.
      */
     private suspend fun getOrCloneGit(gitUser: GitUser, yarnRepo: File) = withContext(Dispatchers.IO) {
-        YarnRepo.at(yarnRepo).getOrCloneGit().apply { switchToBranch(gitUser.branchName) }
+        val yarn = YarnRepo.at(yarnRepo)
+        yarn.switchToBranch(gitUser.branchName)
+        yarn.getOrCloneGit()
     }
 
     private suspend fun ProjectWrapper.getClassNamesMap(yarnRepo: YarnRepo) = withContext(Dispatchers.IO) {
@@ -155,7 +155,7 @@ object Renamer {
      * @param newName The new name of the class, method, field, or parameter.
      * In the case of a class, it can be a fully qualified path in which case the package will be renamed too.
      * @param explanation Why the user renamed this
-     * @param yarnRepo A place to store the yarn git repository.
+     * @param yarnRepo A place to store the yarn cloak.git repository.
      * @param gitUser Git identifier of the user who made the mappings
      *
      *

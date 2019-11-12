@@ -33,6 +33,8 @@ private val HighlightInfoType: HighlightInfoType =
 
 private val RenamedStyle = TextAttributes(JbColors.Green, null, null, null, Font.PLAIN)
 
+
+
 class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassRegistrar) :
     TextEditorHighlightingPassFactory {
     init {

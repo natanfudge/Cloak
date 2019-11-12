@@ -1,4 +1,4 @@
-package util
+package cloak.util
 
 import cloak.mapping.descriptor.FieldDescriptor
 import cloak.mapping.descriptor.FieldType

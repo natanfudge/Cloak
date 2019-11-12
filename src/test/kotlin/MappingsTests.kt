@@ -1,13 +1,12 @@
-import cloak.mapping.descriptor.FieldType
 import cloak.mapping.descriptor.ObjectType
 import cloak.mapping.descriptor.PrimitiveType
 import cloak.mapping.mappings.MappingsFile
 import cloak.mapping.mappings.read
 import cloak.mapping.mappings.writeTo
 import org.junit.Test
-import util.assertEqualsIgnoreLineBreaks
-import util.getTestResource
-import util.mappingsFile
+import cloak.util.assertEqualsIgnoreLineBreaks
+import cloak.util.getTestResource
+import cloak.util.mappingsFile
 import kotlin.test.assertEquals
 
 class MappingsTests {

@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import java.io.File
 import java.nio.file.Paths
 
-
+//TODO: handle renaming top-level classes without a previous mapping.
 data class Rename(
     val originalName: Name,
     private val newName: String,
