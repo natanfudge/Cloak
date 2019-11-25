@@ -51,7 +51,10 @@ object Renamer {
 
                 val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
 
-                Triple(git, namedToIntermediaryClasses, oldName.getMatchingMappingIn(yarn,project = this@with))
+                Triple(
+                    git, namedToIntermediaryClasses,
+                    oldName.getMatchingMappingIn(yarn, project = this@with, namedToInt = namedToIntermediaryClasses)
+                )
             }
 
             if (matchingMapping == null) {
@@ -173,7 +176,7 @@ object Renamer {
     )
             : Errorable<NewName> {
         val (packageName, newClassName) = splitPackageAndName(newName)
-        if (packageName != null && (oldName !is ClassName || oldName.innerClass != null)) {
+        if (packageName != null && (oldName !is ClassName || oldName.classIn != null)) {
             return fail("Changing the package name can only be done on top level classes.")
         }
 

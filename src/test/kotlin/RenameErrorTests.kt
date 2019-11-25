@@ -3,11 +3,11 @@ import cloak.mapping.StringError
 import cloak.mapping.descriptor.ObjectType
 import cloak.mapping.rename.Renamer
 import cloak.mapping.rename.cloakUser
+import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
-import cloak.util.*
 
 class RenameErrorTests {
 
@@ -15,7 +15,7 @@ class RenameErrorTests {
         @JvmStatic
         @BeforeClass
         fun prepare() {
-            with(TestYarnRepo.getOrCloneGit()){
+            with(TestYarnRepo.getOrCloneGit()) {
                 commit(GitTests.TestAuthor, "preparation")
                 internalSwitchToBranch(GitTests.TestAuthor.cloakUser.branchName)
                 TestYarnRepo.getMappingsFilesLocations()
@@ -34,7 +34,7 @@ class RenameErrorTests {
         oldFileName: String = "Block",
         oldPath: String = "net/minecraft/block",
         newFileName: String = oldFileName,
-        explanation : String? = null,
+        explanation: String? = null,
         nameInit: (ClassBuilder.() -> NameBuilder<*>)? = null
     ) = runBlocking {
 
@@ -42,7 +42,7 @@ class RenameErrorTests {
 
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
-        val project = TestProjectWrapper(RenameInput(newName,explanation))
+        val project = TestProjectWrapper(RenameInput(newName, explanation))
         val targetName = className(oldFullPath, nameInit)
         val result = Renamer.rename(project, targetName, isTopLevelClass)
         assert(result is StringError)
@@ -81,5 +81,26 @@ class RenameErrorTests {
     @Test
     fun `Errors when you try to rename the package of a non-class`() = testError("net/test/foo") {
         method("method_100007")
+    }
+
+    @Test
+    fun `Errors when you add an outer class that doesn't exist in the intermediaries`() {
+        TODO()
+    }
+
+
+    @Test
+    fun `Errors when you add an inner class that doesn't exist in the intermediaries`() {
+        TODO()
+    }
+
+    @Test
+    fun `Errors when you add a method that doesn't exist in the intermediaries`() {
+        TODO()
+    }
+
+    @Test
+    fun `Errors when you add a field that doesn't exist in the intermediaries`() {
+        TODO()
     }
 }

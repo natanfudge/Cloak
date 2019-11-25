@@ -1,6 +1,10 @@
 package cloak.fabric
 
 import cloak.idea.LatestIntermediaryNames
+import cloak.mapping.descriptor.FieldDescriptor
+import cloak.mapping.descriptor.MethodDescriptor
+import cloak.mapping.descriptor.read
+import cloak.mapping.descriptor.remap
 import com.google.common.net.UrlEscapers
 import net.fabricmc.mapping.reader.v2.MappingGetter
 import net.fabricmc.mapping.reader.v2.TinyV2Factory
@@ -29,9 +33,13 @@ object Intermediary {
 
 
 private class Visitor : TinyVisitor {
-    val classNames = mutableSetOf<String>()
-    val fieldNames = mutableMapOf<String,String>()
-    val methodNames = mutableMapOf<String,String>()
+    // Official class name -> intermediary class name
+    val classNames = mutableMapOf<String, String>()
+    // Field name -> field descriptor
+    val fieldNames = mutableMapOf<String, String>()
+    // Method name -> method descriptor
+    val methodNames = mutableMapOf<String, String>()
+
     override fun pushField(name: MappingGetter, descriptor: String) {
         fieldNames[name.get(1)] = descriptor
     }
@@ -41,9 +49,15 @@ private class Visitor : TinyVisitor {
     }
 
     override fun pushClass(name: MappingGetter) {
-        classNames.add(name.get(1))
+        classNames[name.get(0)] = name.get(1)
     }
 
-    fun getNames() = LatestIntermediaryNames(classNames, methodNames, fieldNames)
+    fun getNames(): LatestIntermediaryNames {
+        val remappedMethodNames = methodNames
+            .mapValues { MethodDescriptor.read(it.value).remap(classNames).classFileName }
+        val remappedFieldNames = fieldNames
+            .mapValues { FieldDescriptor.read(it.value).remap(classNames).classFileName }
+        return LatestIntermediaryNames(classNames.values.toSet(), remappedMethodNames, remappedFieldNames)
+    }
 
 }

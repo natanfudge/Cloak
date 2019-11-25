@@ -1,19 +1,24 @@
 import cloak.idea.util.RenameInput
 import cloak.mapping.StringSuccess
 import cloak.mapping.descriptor.ObjectType
+import cloak.mapping.descriptor.PrimitiveType
 import cloak.mapping.rename.Renamer
 import cloak.mapping.rename.cloakUser
+import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
-import cloak.util.*
 
 private val yarn = TestYarnRepo
 fun useFile(path: String) {
     val git = yarn.getOrCloneGit()
-    getTestResource(path).copyTo(yarn.getMappingsFile(path), overwrite = true)
-    git.stageChanges("mappings/$path")
+    val file = getTestResource(path)
+    if(file.exists()){
+        file.copyTo(yarn.getMappingsFile(path), overwrite = true)
+        git.stageChanges("mappings/$path")
+    }
+
 }
 
 class RenameTests {
@@ -129,11 +134,11 @@ class RenameTests {
 
     @Test
     fun `Rename constructor arg`() = testRename("RenameConstructorParam", "newconstruct") {
-        method("<init>",ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(0)
+        method("<init>", ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(0)
     }
 
     @Test
-    fun `Rename Complex Target`() = testRename("ComplexRename","ayyy") {
+    fun `Rename Complex Target`() = testRename("ComplexRename", "ayyy") {
         innerClass("OffsetType").innerClass("complexInner")
             .method("complexMethod").parameter(0)
     }
@@ -153,28 +158,36 @@ class RenameTests {
         }
 
     @Test
-    fun `Add new outer class`() {
+    fun `Add new outer class`() = testRename(
+        testName = "AddOuterClass",
+        newName = "net/minecraft/block/newstuff/AddOuterClass",
+        oldPath = "net/minecraft",
+        newPath = "net/minecraft/block/newstuff",
+        newFileName = "AddOuterClass",
+        oldFileName = "class_4626"
+    )
 
+    @Test
+    fun `Add new inner class`() = testRename("AddInnerClass", "NewClass") {
+        innerClass("class_2249")
     }
 
     @Test
-    fun `Add new inner class`() {
-
+    fun `Add new method`() = testRename("AddMethod", "newMethod") {
+        method("method_9531", PrimitiveType.Int)
     }
 
     @Test
-    fun `Add new method`() {
-
+    fun `Add new field`() = testRename("AddField", "addedField") {
+        field("field_16100")
     }
 
     @Test
-    fun `Add new field`() {
-
-    }
-
-    @Test
-    fun `Add new parameter name`() {
-
+    fun `Add new parameter name`() = testRename("AddParameter","foo") {
+        method("topCoversMediumSquare",
+            ObjectType("net/minecraft/world/BlockView"),
+            ObjectType("net/minecraft/util/math/BlockPos")
+        ).parameter(2)
     }
 
 }

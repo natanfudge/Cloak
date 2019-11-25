@@ -5,41 +5,58 @@ import cloak.idea.LatestIntermediaryNames
 import cloak.idea.util.ProjectWrapper
 import cloak.mapping.descriptor.MethodDescriptor
 import cloak.mapping.descriptor.read
+import cloak.mapping.doesNotExist
+import cloak.mapping.getOrKey
 import cloak.mapping.mappings.*
-import cloak.mapping.plus
 
-fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, project: ProjectWrapper): Mapping? {
+fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, project: ProjectWrapper, namedToInt: Map<String, String>): Mapping? {
     val path = topLevelClass.let { "${it.packageName}/${it.className}$MappingsExtension" }
-    val mappingsFile = MappingsFile.read(yarnRepo.getMappingsFile(path))
-    val matchingExistingMapping = getMatchingMappingIn(mappingsFile)
-    // This is the result most of the time. We do the expensive fetching/caching of intermediaries only after we do this check.
-    if (matchingExistingMapping != null) return matchingExistingMapping
-    return addDummyMappingTo(mappingsFile, project.getLatestIntermediaryNames(yarnRepo.getTargetMinecraftVersion()))
-}
+    val mappingsFilePath = yarnRepo.getMappingsFile(path)
 
-//private val Name.selfName
-//    get() = when (this) {
-//        is ClassName -> className
-//        is FieldName -> fieldName
-//        is MethodName -> methodName
-//        is ParamName -> throw UnsupportedOperationException("selfName not applicable for ParamName")
-//    }
-
-// This goes from top to bottom
-private val ClassName.parents get() = generateSequence(this) { this.innerClass }.toList()
-private val ClassName.parentsAndSelf get() = this + parents
-
-
-private val Name.parent
-    get() = when (this) {
-        is ClassName -> parents.lastOrNull()
-        is FieldName -> classIn
-        is MethodName -> classIn
-        is ParamName -> methodIn
+    // Add a new top level class in case this one doesn't exist
+    if (mappingsFilePath.doesNotExist) {
+        if (this is ClassName && this.isTopLevelClass) {
+            return createDummyTopLevelClass(project.getLatestIntermediaryNames(yarnRepo.getTargetMinecraftVersion()))
+        } else error("Could not find mappings file at $mappingsFilePath for name $this")
     }
 
-private val ClassName.fullyQualifiedName
-    get() = "$packageName/${parentsAndSelf.joinToString("$") { className }}"
+    val mappingsFile = MappingsFile.read(mappingsFilePath)
+    val matchingExistingMapping = getMatchingMappingIn(mappingsFile)
+    // This is the result most of the time.
+    // We do the expensive fetching/caching of intermediaries only after we do this check.
+    if (matchingExistingMapping != null) return matchingExistingMapping
+    return addDummyMappingTo(
+        mappingsFile,
+        project.getLatestIntermediaryNames(yarnRepo.getTargetMinecraftVersion()),
+        namedToInt
+    )
+
+
+}
+
+private fun ClassName.createDummyTopLevelClass(
+    intermediaries: LatestIntermediaryNames
+): ClassMapping? {
+    val name = this.fullyQualifiedName()
+    // Make sure we don't add stuff that doesn't exist
+    if (name !in intermediaries.classNames) return null
+    return ClassMapping(
+        // These will be intermediary names
+        name,
+        name,
+        parent = null,
+        methods = mutableListOf(),
+        fields = mutableListOf(),
+        innerClasses = mutableListOf()
+    )
+}
+
+
+private fun ClassName.getIntermediaryName(intermediaryMappings: Map<String, String>): String {
+    val parentsPath = "$packageName/" + this.getParents().joinToString("$") { it.className }
+    val parentIntPath = intermediaryMappings.getOrKey(parentsPath)
+    return "${parentIntPath}$$className"
+}
 
 //TODO: gonna need existingIntermediaryNames to give a descriptor
 
@@ -49,19 +66,23 @@ private val ClassName.fullyQualifiedName
  * Will return null if it can't find a parent to attach to.
  */
 
-private fun Name.addDummyMappingTo(mappingsFile: MappingsFile, intermediaries: LatestIntermediaryNames): Mapping? {
+private fun Name.addDummyMappingTo(
+    mappingsFile: MappingsFile,
+    intermediaries: LatestIntermediaryNames,
+    namedToInt: Map<String, String>
+): Mapping? {
     //TODO: handle renaming a top-level class
     val parent = this.parent ?: return null
     val parentMapping = parent.getMatchingMappingIn(mappingsFile) ?: return null
     return when (this) {
         is ClassName -> {
             // Make sure we don't add stuff that doesn't exist
-            if (this.fullyQualifiedName !in intermediaries.classNames) return null
+            if (this.getIntermediaryName(namedToInt) !in intermediaries.classNames) return null
             val classParent = parentMapping.cast<ClassMapping>()
             ClassMapping(
                 // These will be intermediary names
-                fullyQualifiedName,
-                fullyQualifiedName,
+                className,
+                className,
                 parent = classParent,
                 methods = mutableListOf(),
                 fields = mutableListOf(),
@@ -81,32 +102,37 @@ private fun Name.addDummyMappingTo(mappingsFile: MappingsFile, intermediaries: L
         }
         is ParamName -> {
             val methodParent = parentMapping.cast<MethodMapping>()
+            // <placeholder> will be replaced
             ParameterMapping(index, "<placeholder>", methodParent).also { methodParent.parameters.add(it) }
         }
     }
 }
 
 private fun Name.getMatchingMappingIn(mappingsFile: MappingsFile): Mapping? = when (this) {
-    is ClassName -> getMatchingMappingIn(mappingsFile, isTopLevelClass = true)
+    is ClassName -> getMatchingMappingIn(mappingsFile)
     is FieldName -> getMatchingMappingIn(mappingsFile)
     is MethodName -> getMatchingMappingIn(mappingsFile)
     is ParamName -> getMatchingMappingIn(mappingsFile)
 }
 
-private fun ClassName.getMatchingMappingIn(mapping: ClassMapping, isTopLevelClass: Boolean): ClassMapping? {
-    val currentMappingName = mapping.nonNullName
-    // Only top level classes have the package prefixed
-    val expectedName = if (isTopLevelClass) "$packageName/$className" else className
-    if (currentMappingName != expectedName) return null
-    if (innerClass != null) {
-        for (innerClassMapping in mapping.innerClasses) {
-            val found = innerClass.getMatchingMappingIn(innerClassMapping, isTopLevelClass = false)
-            if (found != null) return found
-        }
-        return null
-    } else {
-        return mapping
-    }
+private fun ClassName.getMatchingMappingIn(mapping: ClassMapping): ClassMapping? {
+    val path = getParentsAndSelf()
+    val topLevelClass = path.first()
+    if ("${topLevelClass.packageName}/${topLevelClass.className}" != mapping.nonNullName) return null
+    // If it's just a top level class then we found it
+    if (path.size == 1) return mapping
+
+    val nameInnerClassIter = path.iterator()
+    nameInnerClassIter.next() // skip the first one
+    var nextOfMapping: ClassMapping? = mapping
+    do {
+        val searchedName = nameInnerClassIter.next()
+        nextOfMapping = nextOfMapping!!.innerClasses.find { it.nonNullName == searchedName.className }
+        if (nextOfMapping == null) return null
+    } while (nameInnerClassIter.hasNext())
+
+    return nextOfMapping
+
 }
 
 private fun FieldName.getMatchingMappingIn(mappings: MappingsFile) =

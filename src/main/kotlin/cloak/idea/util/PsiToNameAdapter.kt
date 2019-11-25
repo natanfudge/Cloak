@@ -33,22 +33,17 @@ val PsiElement.packageName: String
 private fun PsiClass.getClassName(): ClassName? {
     val packageName = packageName.replace(".", "/")
 
-    var name = ClassName(
-        className = name ?: return null,
-        innerClass = null,
-        packageName = packageName
-    )
-    var outerClass = parent
-    while (outerClass is PsiClass) {
-        name = ClassName(
-            outerClass.name ?: error("Wow, a class inside an anonymous class. Guess I'll die."),
-            innerClass = name,
+    val parents = this.parents().filterIsInstance<PsiClass>().toList().reversed()
+    var nextName: ClassName? = null
+    for (parent in parents) {
+        nextName = ClassName(
+            className = parent.name ?: return null,
+            classIn = nextName,
             packageName = packageName
         )
-        outerClass = outerClass.parent
     }
 
-    return name
+    return nextName
 }
 
 private fun PsiField.getFieldName() = (parent as PsiClass).getClassName()?.let {
@@ -61,7 +56,7 @@ private fun PsiMethod.getMethodName(): MethodName? {
     val methodOwner = (superMethods.firstOrNull()?.parent ?: this.parent) as PsiClass
     return methodOwner.getClassName()?.let { className ->
         MethodName(
-            methodName = if(this.isConstructor) ConstructorName else name,
+            methodName = if (this.isConstructor) ConstructorName else name,
             classIn = className,
             parameterTypes = getSignature(PsiSubstitutor.EMPTY).parameterTypes.map {
                 val name = (if (it is PsiClassReferenceType) it.resolveName() else it.canonicalText) ?: return null
@@ -70,7 +65,6 @@ private fun PsiMethod.getMethodName(): MethodName? {
         )
     }
 }
-
 
 
 private fun PsiClassReferenceType.resolveName(): String? {
