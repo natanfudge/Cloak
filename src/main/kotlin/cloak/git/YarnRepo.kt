@@ -103,6 +103,7 @@ class YarnRepo private constructor(private val localPath: File) {
     private fun getOrCloneGit(): GitRepository {
         return if (localPath.exists()) GitRepository(Git.open(localPath))
         else {
+            println("Cloning yarn repo to $localPath")
             val jgit = Git.cloneRepository()
                 .setURI(OriginUrl)
                 .setDirectory(localPath)

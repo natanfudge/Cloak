@@ -10,7 +10,7 @@ import java.nio.file.Paths
 
 
 class TestPlatform(private val userInput: Pair<String, String?>) : ExtendedPlatform {
-    override val storageDirectory: Path = Paths.get("caches")
+    override val storageDirectory: Path = Paths.get(System.getProperty("user.dir"),"caches")
     override val persistentSaver: PersistentSaver = object : PersistentSaver() {
         override fun registerProjectCloseCallback(callback: () -> Unit) {
             Runtime.getRuntime().addShutdownHook(object : Thread() {

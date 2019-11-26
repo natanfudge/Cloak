@@ -2,6 +2,7 @@ import cloak.util.StringError
 import cloak.format.descriptor.ObjectType
 import cloak.format.rename.Renamer
 import cloak.platform.saved.GitUser
+import cloak.platform.saved.renamedNames
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -37,6 +38,7 @@ class RenameErrorTests {
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
+        platform.renamedNames.clear()
         val targetName = className(oldFullPath, nameInit)
         val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
         assert(result is StringError)

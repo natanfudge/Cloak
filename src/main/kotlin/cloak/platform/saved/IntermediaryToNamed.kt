@@ -10,7 +10,7 @@ import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.internal.nullable
 
 private var ExtendedPlatform.namedToIntermediary: MutableMap<String, String>? by SavedState(
-    mutableMapOf(),
+    null,
     (StringSerializer to StringSerializer).mutableMap.nullable
 )
 

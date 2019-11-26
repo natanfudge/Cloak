@@ -3,6 +3,7 @@ import cloak.util.StringSuccess
 import cloak.format.descriptor.ObjectType
 import cloak.format.descriptor.PrimitiveType
 import cloak.format.rename.Renamer
+import cloak.platform.saved.renamedNames
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -53,9 +54,10 @@ class RenameTests {
         val isTopLevelClass = newFileName != oldFileName
 
         useFile("$oldFullPath.mapping")
-        val project = TestPlatform(Pair(newName, explanation))
+        val platform = TestPlatform(Pair(newName, explanation))
+        platform.renamedNames.clear()
         val targetName = className(oldFullPath, nameInit)
-        val result = with(Renamer) { project.rename(targetName, isTopLevelClass) }
+        val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
         assert(result is StringSuccess) { result.toString() }
 
         if (isTopLevelClass) {

@@ -47,9 +47,11 @@ data class ClassName(val className: String, val packageName: String, val classIn
         }
 
     override fun toString() = fullyQualifiedName()
-    fun fullyQualifiedName() = "$packageName/" + getParentsAndSelf().joinToString("\$") { it.className }
 
 }
+
+fun ClassName.fullyQualifiedName() = "$packageName/" + getParentsAndSelf().joinToString("\$") { it.className }
+
 
 @Serializable
 data class FieldName(val fieldName: String, val classIn: ClassName) : Name() {
