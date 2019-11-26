@@ -1,6 +1,6 @@
-package cloak.mapping.mappings
+package cloak.format.mappings
 
-import cloak.mapping.descriptor.MethodDescriptor
+import cloak.format.descriptor.MethodDescriptor
 
 
 object Joiner {

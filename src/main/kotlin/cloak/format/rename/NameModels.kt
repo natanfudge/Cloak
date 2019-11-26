@@ -1,20 +1,19 @@
-package cloak.mapping.rename
+package cloak.format.rename
 
-import cloak.mapping.Errorable
-import cloak.mapping.descriptor.ParameterDescriptor
-import cloak.mapping.descriptor.ParameterDescriptorSerializer
-import cloak.mapping.mappings.ClassMapping
-import cloak.mapping.mappings.Joiner
-import cloak.mapping.mappings.Mapping
-import cloak.mapping.success
+import cloak.util.Errorable
+import cloak.format.descriptor.ParameterDescriptor
+import cloak.format.descriptor.ParameterDescriptorSerializer
+import cloak.format.mappings.ClassMapping
+import cloak.format.mappings.Joiner
+import cloak.format.mappings.Mapping
+import cloak.util.success
 import kotlinx.serialization.Serializable
 
-//TODO: handle renaming top-level classes without a previous mapping.
-data class Rename(
+data class RenameInstance(
     val originalName: Name,
     private val newName: String,
     private val newPackageName: String?,
-    private val explanation: String?
+    val explanation: String?
 ) {
 
     fun rename(mappings: Mapping): Errorable<Unit> {
@@ -30,6 +29,7 @@ data class Rename(
 
 }
 
+@Serializable
 sealed class Name {
     abstract val topLevelClass: ClassName
 }

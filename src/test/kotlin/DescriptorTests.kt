@@ -1,4 +1,4 @@
-import cloak.mapping.descriptor.*
+import cloak.format.descriptor.*
 import org.junit.Test
 import kotlin.test.assertEquals
 

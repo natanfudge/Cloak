@@ -1,13 +1,13 @@
-package cloak.mapping.descriptor
+package cloak.format.descriptor
 
-import cloak.mapping.descriptor.PrimitiveType.Boolean
-import cloak.mapping.descriptor.PrimitiveType.Byte
-import cloak.mapping.descriptor.PrimitiveType.Char
-import cloak.mapping.descriptor.PrimitiveType.Double
-import cloak.mapping.descriptor.PrimitiveType.Float
-import cloak.mapping.descriptor.PrimitiveType.Int
-import cloak.mapping.descriptor.PrimitiveType.Long
-import cloak.mapping.descriptor.PrimitiveType.Short
+import cloak.format.descriptor.PrimitiveType.Boolean
+import cloak.format.descriptor.PrimitiveType.Byte
+import cloak.format.descriptor.PrimitiveType.Char
+import cloak.format.descriptor.PrimitiveType.Double
+import cloak.format.descriptor.PrimitiveType.Float
+import cloak.format.descriptor.PrimitiveType.Int
+import cloak.format.descriptor.PrimitiveType.Long
+import cloak.format.descriptor.PrimitiveType.Short
 
 fun FieldDescriptorCompanion.read(descriptor: String): FieldDescriptor {
     baseTypesMap[descriptor]?.let { return it }

@@ -1,6 +1,6 @@
 package cloak.git
 
-import cloak.mapping.NormalJson
+import cloak.util.NormalJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import org.apache.http.HttpResponse

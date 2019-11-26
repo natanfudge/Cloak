@@ -1,10 +1,10 @@
 package cloak.idea.util
 
-import cloak.mapping.descriptor.FieldType
-import cloak.mapping.descriptor.parsePresentableTypeName
-import cloak.mapping.mappings.ConstructorName
-import cloak.mapping.mappings.Joiner
-import cloak.mapping.rename.*
+import cloak.format.descriptor.FieldType
+import cloak.format.descriptor.parsePresentableTypeName
+import cloak.format.mappings.ConstructorName
+import cloak.format.mappings.Joiner
+import cloak.format.rename.*
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.util.parents
@@ -53,7 +53,7 @@ private fun PsiField.getFieldName() = (parent as PsiClass).getClassName()?.let {
 
 private fun PsiMethod.getMethodName(): MethodName? {
     val superMethods = findSuperMethods()
-    val methodOwner = (superMethods.firstOrNull()?.parent ?: this.parent) as PsiClass
+    val methodOwner = (superMethods.firstOrNull()?.parent ?: this.parent ?: return null) as PsiClass
     return methodOwner.getClassName()?.let { className ->
         MethodName(
             methodName = if (this.isConstructor) ConstructorName else name,

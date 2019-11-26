@@ -14,7 +14,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="ClassNameProvider"/>
         <applicationService serviceImplementation="RenamedNamesProvider"/>
-        <applicationService serviceImplementation="cloak.idea.ExistingIntermediaryNamesProvider"/>
+        <applicationService serviceImplementation="cloak.idea.cache.ExistingIntermediaryNamesProvider"/>
+        <applicationService serviceImplementation="cloak.platform.saved.ChangesProvider"/>
     </extensions>
 
     <project-components>

@@ -1,13 +1,13 @@
 package cloak.util
 
-import cloak.mapping.descriptor.FieldDescriptor
-import cloak.mapping.descriptor.FieldType
-import cloak.mapping.descriptor.MethodDescriptor
-import cloak.mapping.descriptor.ReturnDescriptor
-import cloak.mapping.mappings.ClassMapping
-import cloak.mapping.mappings.FieldMapping
-import cloak.mapping.mappings.MethodMapping
-import cloak.mapping.mappings.ParameterMapping
+import cloak.format.descriptor.FieldDescriptor
+import cloak.format.descriptor.FieldType
+import cloak.format.descriptor.MethodDescriptor
+import cloak.format.descriptor.ReturnDescriptor
+import cloak.format.mappings.ClassMapping
+import cloak.format.mappings.FieldMapping
+import cloak.format.mappings.MethodMapping
+import cloak.format.mappings.ParameterMapping
 
 
 @DslMarker

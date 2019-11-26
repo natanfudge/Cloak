@@ -1,22 +1,23 @@
-package cloak.mapping.rename
+package cloak.format.rename
 
 import cloak.git.YarnRepo
-import cloak.idea.LatestIntermediaryNames
-import cloak.idea.util.ProjectWrapper
-import cloak.mapping.descriptor.MethodDescriptor
-import cloak.mapping.descriptor.read
-import cloak.mapping.doesNotExist
-import cloak.mapping.getOrKey
-import cloak.mapping.mappings.*
+import cloak.format.descriptor.MethodDescriptor
+import cloak.format.descriptor.read
+import cloak.format.mappings.*
+import cloak.platform.ExtendedPlatform
+import cloak.platform.saved.LatestIntermediaryNames
+import cloak.platform.saved.getIntermediaryNamesOfVersion
+import cloak.util.doesNotExist
+import cloak.util.getOrKey
 
-fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, project: ProjectWrapper, namedToInt: Map<String, String>): Mapping? {
+fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, platform: ExtendedPlatform, namedToInt: Map<String, String>): Mapping? {
     val path = topLevelClass.let { "${it.packageName}/${it.className}$MappingsExtension" }
     val mappingsFilePath = yarnRepo.getMappingsFile(path)
 
     // Add a new top level class in case this one doesn't exist
     if (mappingsFilePath.doesNotExist) {
         if (this is ClassName && this.isTopLevelClass) {
-            return createDummyTopLevelClass(project.getLatestIntermediaryNames(yarnRepo.getTargetMinecraftVersion()))
+            return createDummyTopLevelClass(platform.getIntermediaryNamesOfVersion(yarnRepo.getTargetMinecraftVersion()))
         } else error("Could not find mappings file at $mappingsFilePath for name $this")
     }
 
@@ -27,7 +28,7 @@ fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, project: ProjectWrapper, named
     if (matchingExistingMapping != null) return matchingExistingMapping
     return addDummyMappingTo(
         mappingsFile,
-        project.getLatestIntermediaryNames(yarnRepo.getTargetMinecraftVersion()),
+        platform.getIntermediaryNamesOfVersion(yarnRepo.getTargetMinecraftVersion()),
         namedToInt
     )
 
@@ -58,7 +59,6 @@ private fun ClassName.getIntermediaryName(intermediaryMappings: Map<String, Stri
     return "${parentIntPath}$$className"
 }
 
-//TODO: gonna need existingIntermediaryNames to give a descriptor
 
 /**
  * In cases where a method/field/inner class does exist, but there is no mappings line for it yet, we need to add it ourselves.
@@ -71,7 +71,6 @@ private fun Name.addDummyMappingTo(
     intermediaries: LatestIntermediaryNames,
     namedToInt: Map<String, String>
 ): Mapping? {
-    //TODO: handle renaming a top-level class
     val parent = this.parent ?: return null
     val parentMapping = parent.getMatchingMappingIn(mappingsFile) ?: return null
     return when (this) {

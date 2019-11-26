@@ -1,22 +1,19 @@
-import cloak.idea.util.RenameInput
-import cloak.mapping.StringSuccess
-import cloak.mapping.descriptor.ObjectType
-import cloak.mapping.descriptor.PrimitiveType
-import cloak.mapping.rename.Renamer
-import cloak.mapping.rename.cloakUser
+import RenameErrorTests.Companion.TestAuthor
+import cloak.util.StringSuccess
+import cloak.format.descriptor.ObjectType
+import cloak.format.descriptor.PrimitiveType
+import cloak.format.rename.Renamer
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
-import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
 private val yarn = TestYarnRepo
 fun useFile(path: String) {
-    val git = yarn.getOrCloneGit()
     val file = getTestResource(path)
-    if(file.exists()){
+    if (file.exists()) {
         file.copyTo(yarn.getMappingsFile(path), overwrite = true)
-        git.stageChanges("mappings/$path")
+        yarn.stageMappingsFile(path)
     }
 
 }
@@ -27,18 +24,13 @@ class RenameTests {
         @JvmStatic
         @BeforeClass
         fun prepare() {
-            with(yarn.getOrCloneGit()) {
-                commit(GitTests.TestAuthor, "preparation")
-                internalSwitchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+            with(TestYarnRepo) {
+                commitChanges(TestAuthor, "preparation")
+                switchToBranch(TestAuthor.branchName)
                 TestYarnRepo.getMappingsFilesLocations()
             }
         }
 
-        @JvmStatic
-        @AfterClass
-        fun cleanup() {
-            saveIntermediaryMap()
-        }
     }
 
 
@@ -61,9 +53,9 @@ class RenameTests {
         val isTopLevelClass = newFileName != oldFileName
 
         useFile("$oldFullPath.mapping")
-        val project = TestProjectWrapper(RenameInput(newName, explanation))
+        val project = TestPlatform(Pair(newName, explanation))
         val targetName = className(oldFullPath, nameInit)
-        val result = Renamer.rename(project, targetName, isTopLevelClass)
+        val result = with(Renamer) { project.rename(targetName, isTopLevelClass) }
         assert(result is StringSuccess) { result.toString() }
 
         if (isTopLevelClass) {
@@ -123,7 +115,6 @@ class RenameTests {
         field("testField")
     }
 
-    //TODO: complete these tests
     @Test
     fun `Rename Parameter`() = testRename("RenameParameter", "foobarbaz") {
         method(
@@ -183,8 +174,9 @@ class RenameTests {
     }
 
     @Test
-    fun `Add new parameter name`() = testRename("AddParameter","foo") {
-        method("topCoversMediumSquare",
+    fun `Add new parameter name`() = testRename("AddParameter", "foo") {
+        method(
+            "topCoversMediumSquare",
             ObjectType("net/minecraft/world/BlockView"),
             ObjectType("net/minecraft/util/math/BlockPos")
         ).parameter(2)

@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package cloak.mapping.mappings
+package cloak.format.mappings
 
 import java.io.BufferedWriter
 import java.io.File

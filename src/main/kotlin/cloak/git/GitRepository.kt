@@ -12,8 +12,7 @@ import org.eclipse.jgit.transport.URIish
 
 open class GitRepository(private val git: Git) {
 
-    //TODO: more properly layer this as cloak.git-only, and only use API from yarnRepo (make getOrCloneGit private)
-    fun internalSwitchToBranch(
+    fun switchToBranch(
         branchName: String,
         startFromBranch: String? = null,
         force: Boolean = false,
@@ -31,15 +30,15 @@ open class GitRepository(private val git: Git) {
             localBranchAlreadyExists -> branchName
             remoteBranchExists -> "origin/$branchName"
             else -> defaultBaseBranch()
-//            "refs/heads/master"
         }
+
+        updateRemote("upstream")
 
         git.checkout()
             .setCreateBranch(!localBranchAlreadyExists)
             .setName(branchName).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
             .setForced(force)
             .setStartPoint(startPoint).call()
-
 
     }
 
@@ -52,7 +51,7 @@ open class GitRepository(private val git: Git) {
         return git.add().addFilepattern(path).call()
     }
 
-    fun actuallyDeleteBranch(branchName: String, credentialsProvider: CredentialsProvider) {
+    fun deleteBranch(branchName: String, credentialsProvider: CredentialsProvider) {
         git.branchDelete().setBranchNames("refs/heads/$branchName").setForce(true).call()
         val refspec = RefSpec().setSource(null).setDestination("refs/heads/$branchName")
         git.push().setRefSpecs(refspec).setRemote("origin").setCredentialsProvider(credentialsProvider).call()
@@ -65,7 +64,7 @@ open class GitRepository(private val git: Git) {
         git.commit().setAuthor(author).setCommitter(author).setMessage(commitMessage).call()
     }
 
-    open fun actuallyPush(remoteUrl: String, credentialsProvider: CredentialsProvider) {
+    open fun push(remoteUrl: String, credentialsProvider: CredentialsProvider) {
         git.remoteAdd().setName("origin").setUri(URIish(remoteUrl)).call()
         git.push().setCredentialsProvider(credentialsProvider).call()
     }

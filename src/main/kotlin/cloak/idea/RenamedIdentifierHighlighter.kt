@@ -1,11 +1,13 @@
 package cloak.idea
 
 
-import RenamedNamesProvider
 import cloak.idea.actions.isMinecraftPackageName
+import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
 import cloak.idea.util.editor
 import cloak.idea.util.psiFile
+import cloak.platform.ExtendedPlatform
+import cloak.platform.saved.renamedNames
 import com.intellij.codeHighlighting.TextEditorHighlightingPass
 import com.intellij.codeHighlighting.TextEditorHighlightingPassFactory
 import com.intellij.codeHighlighting.TextEditorHighlightingPassRegistrar
@@ -34,7 +36,6 @@ private val HighlightInfoType: HighlightInfoType =
 private val RenamedStyle = TextAttributes(JbColors.Green, null, null, null, Font.PLAIN)
 
 
-
 class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassRegistrar) :
     TextEditorHighlightingPassFactory {
     init {
@@ -48,8 +49,13 @@ class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassR
 }
 
 
-class RenamedIdentifierHighlighter(project: Project, private val file: PsiFile, editor: Editor) :
+class RenamedIdentifierHighlighter(
+    project: Project,
+    private val file: PsiFile,
+    editor: Editor
+) :
     TextEditorHighlightingPass(project, editor.document, true) {
+    private val platform = IdeaPlatform(project, editor)
 
     companion object {
         fun rerun(event: AnActionEvent) {
@@ -67,14 +73,14 @@ class RenamedIdentifierHighlighter(project: Project, private val file: PsiFile, 
     override fun doApplyInformationToEditor() {
         if (file !is PsiJavaFile) return
 
-        if (!RenamedNamesProvider.getInstance().anythingWasRenamed()) return
+        if (platform.renamedNames.isEmpty()) return
         if (!isMinecraftPackageName(file.packageName)) return
 
         val highlights = mutableListOf<HighlightInfo>()
         if (file is PsiCompiledElement) {
-            CompiledVisitor(highlights).visitFile(file)
+            CompiledVisitor(highlights, platform).visitFile(file)
         } else {
-            WalkingVisitor(highlights).visitFile(file)
+            WalkingVisitor(highlights, platform).visitFile(file)
         }
 
 
@@ -93,11 +99,11 @@ class RenamedIdentifierHighlighter(project: Project, private val file: PsiFile, 
 
 private interface IVisitor {
     val highlights: MutableList<HighlightInfo>
-    val renamedProvider: RenamedNamesProvider
+    val platform: ExtendedPlatform
 }
 
 private fun IVisitor.highlight(element: PsiElement, range: TextRange) {
-    val rename = renamedProvider.getRenameOf(element.asNameOrNull() ?: return) ?: return
+    val rename = platform.renamedNames[element.asNameOrNull() ?: return] ?: return
     val builder = HighlightInfo.newHighlightInfo(HighlightInfoType)
     builder.range(range)
 
@@ -111,12 +117,14 @@ private fun IVisitor.highlight(element: PsiNameIdentifierOwner) {
     highlight(element, element.nameIdentifier?.textRange ?: return)
 }
 
-private class WalkingVisitor(override val highlights: MutableList<HighlightInfo>) :
-    JavaRecursiveElementWalkingVisitor(), IVisitor {
-    override val renamedProvider: RenamedNamesProvider = RenamedNamesProvider.getInstance()
+private class WalkingVisitor(
+    override val highlights: MutableList<HighlightInfo>,
+    override val platform: ExtendedPlatform
+) : JavaRecursiveElementWalkingVisitor(), IVisitor {
 
     override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
-        reference.resolve().let { if (it is PsiNameIdentifierOwner) highlight(it, reference.textRange ?: return) }
+        reference.resolve()
+            .let { if (it is PsiNameIdentifierOwner) highlight(it, reference.textRange ?: return) }
         super.visitReferenceElement(reference)
     }
 
@@ -143,12 +151,14 @@ private class WalkingVisitor(override val highlights: MutableList<HighlightInfo>
 
 }
 
-private class CompiledVisitor(override val highlights: MutableList<HighlightInfo>) : JavaRecursiveElementVisitor(),
-    IVisitor {
-    override val renamedProvider: RenamedNamesProvider = RenamedNamesProvider.getInstance()
+private class CompiledVisitor(
+    override val highlights: MutableList<HighlightInfo>,
+    override val platform: ExtendedPlatform
+) : JavaRecursiveElementVisitor(), IVisitor {
 
     override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
-        reference.resolve().let { if (it is PsiNameIdentifierOwner) highlight(it, reference.textRange ?: return) }
+        reference.resolve()
+            .let { if (it is PsiNameIdentifierOwner) highlight(it, reference.textRange ?: return) }
         super.visitReferenceElement(reference)
     }
 

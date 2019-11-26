@@ -1,32 +1,26 @@
-import cloak.idea.util.RenameInput
-import cloak.mapping.StringError
-import cloak.mapping.descriptor.ObjectType
-import cloak.mapping.rename.Renamer
-import cloak.mapping.rename.cloakUser
+import cloak.util.StringError
+import cloak.format.descriptor.ObjectType
+import cloak.format.rename.Renamer
+import cloak.platform.saved.GitUser
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
-import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
 class RenameErrorTests {
 
     companion object {
+        val TestAuthor = GitUser("natanfudge", "natandestroyer100@gmail.com")
         @JvmStatic
         @BeforeClass
         fun prepare() {
-            with(TestYarnRepo.getOrCloneGit()) {
-                commit(GitTests.TestAuthor, "preparation")
-                internalSwitchToBranch(GitTests.TestAuthor.cloakUser.branchName)
+            with(TestYarnRepo) {
+                commitChanges(TestAuthor, "preparation")
+                switchToBranch(TestAuthor.branchName)
                 TestYarnRepo.getMappingsFilesLocations()
             }
         }
 
-        @JvmStatic
-        @AfterClass
-        fun cleanup() {
-            saveIntermediaryMap()
-        }
     }
 
     private fun testError(
@@ -42,9 +36,9 @@ class RenameErrorTests {
 
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
-        val project = TestProjectWrapper(RenameInput(newName, explanation))
+        val platform = TestPlatform(Pair(newName, explanation))
         val targetName = className(oldFullPath, nameInit)
-        val result = Renamer.rename(project, targetName, isTopLevelClass)
+        val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
         assert(result is StringError)
     }
 
@@ -84,23 +78,22 @@ class RenameErrorTests {
     }
 
     @Test
-    fun `Errors when you add an outer class that doesn't exist in the intermediaries`() {
-        TODO()
-    }
+    fun `Errors when you add an outer class that doesn't exist in the intermediaries`() =
+        testError(newName = "nomatter", oldFileName = "class_123456")
 
 
     @Test
-    fun `Errors when you add an inner class that doesn't exist in the intermediaries`() {
-        TODO()
+    fun `Errors when you add an inner class that doesn't exist in the intermediaries`() = testError("foo") {
+        innerClass("noexist")
     }
 
     @Test
-    fun `Errors when you add a method that doesn't exist in the intermediaries`() {
-        TODO()
+    fun `Errors when you add a method that doesn't exist in the intermediaries`() = testError("bar") {
+        method("noexist2")
     }
 
     @Test
-    fun `Errors when you add a field that doesn't exist in the intermediaries`() {
-        TODO()
+    fun `Errors when you add a field that doesn't exist in the intermediaries`() = testError("baz") {
+        field("noexist3")
     }
 }

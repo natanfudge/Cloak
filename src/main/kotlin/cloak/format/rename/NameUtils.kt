@@ -1,4 +1,6 @@
-package cloak.mapping.rename
+package cloak.format.rename
+
+import cloak.util.splitOn
 
 private fun <T> flatten(seed: T, getNext: T.() -> T?): List<T> {
     val result = mutableListOf<T>()
@@ -37,3 +39,9 @@ val Name.parent: Name?
             is ParamName -> methodIn
         }
     }
+
+fun splitPackageAndName(rawName: String): Pair<String?, String> {
+    val lastSlashIndex = rawName.lastIndexOf('/')
+    return if (lastSlashIndex == -1) null to rawName
+    else rawName.splitOn(lastSlashIndex)
+}

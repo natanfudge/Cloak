@@ -1,9 +1,10 @@
-package cloak.mapping.descriptor
+package cloak.format.descriptor
 
-import cloak.mapping.getOrKey
-import kotlinx.serialization.*
-import kotlinx.serialization.internal.ArrayListClassDesc
-import kotlinx.serialization.internal.ListLikeDescriptor
+import cloak.util.getOrKey
+import kotlinx.serialization.Decoder
+import kotlinx.serialization.Encoder
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializer
 import kotlinx.serialization.internal.StringDescriptor
 
 fun FieldType.Companion.parsePresentableTypeName(rawTypeName: String): FieldType {
@@ -15,7 +16,7 @@ fun FieldType.Companion.parsePresentableTypeName(rawTypeName: String): FieldType
     // We trust that if a type doesn't have a package it means it's a generic type
     if ("." !in rawTypeName) return ObjectType("java/lang/Object")
 
-    return ObjectType(rawTypeName.replace(".","/"))
+    return ObjectType(rawTypeName.replace(".", "/"))
 }
 
 
@@ -40,7 +41,7 @@ fun <T : Descriptor> T.remap(map: Map<String, String>): T = when (this) {
 } as T
 
 @Serializer(forClass = ParameterDescriptor::class)
-object ParameterDescriptorSerializer : KSerializer<ParameterDescriptor>{
+object ParameterDescriptorSerializer : KSerializer<ParameterDescriptor> {
     override val descriptor = StringDescriptor
 
     override fun deserialize(decoder: Decoder) = ParameterDescriptor.read(decoder.decodeString())

@@ -1,10 +1,10 @@
 package cloak.fabric
 
-import cloak.idea.LatestIntermediaryNames
-import cloak.mapping.descriptor.FieldDescriptor
-import cloak.mapping.descriptor.MethodDescriptor
-import cloak.mapping.descriptor.read
-import cloak.mapping.descriptor.remap
+import cloak.format.descriptor.FieldDescriptor
+import cloak.format.descriptor.MethodDescriptor
+import cloak.format.descriptor.read
+import cloak.format.descriptor.remap
+import cloak.platform.saved.LatestIntermediaryNames
 import com.google.common.net.UrlEscapers
 import net.fabricmc.mapping.reader.v2.MappingGetter
 import net.fabricmc.mapping.reader.v2.TinyV2Factory
@@ -57,7 +57,11 @@ private class Visitor : TinyVisitor {
             .mapValues { MethodDescriptor.read(it.value).remap(classNames).classFileName }
         val remappedFieldNames = fieldNames
             .mapValues { FieldDescriptor.read(it.value).remap(classNames).classFileName }
-        return LatestIntermediaryNames(classNames.values.toSet(), remappedMethodNames, remappedFieldNames)
+        return LatestIntermediaryNames(
+            classNames.values.toSet(),
+            remappedMethodNames,
+            remappedFieldNames
+        )
     }
 
 }

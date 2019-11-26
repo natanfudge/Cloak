@@ -1,8 +1,8 @@
-import cloak.mapping.descriptor.ObjectType
-import cloak.mapping.descriptor.PrimitiveType
-import cloak.mapping.mappings.MappingsFile
-import cloak.mapping.mappings.read
-import cloak.mapping.mappings.writeTo
+import cloak.format.descriptor.ObjectType
+import cloak.format.descriptor.PrimitiveType
+import cloak.format.mappings.MappingsFile
+import cloak.format.mappings.read
+import cloak.format.mappings.writeTo
 import org.junit.Test
 import cloak.util.assertEqualsIgnoreLineBreaks
 import cloak.util.getTestResource

@@ -1,9 +1,9 @@
-package cloak.mapping.rename
+package cloak.format.rename
 
-import cloak.mapping.Errorable
-import cloak.mapping.fail
-import cloak.mapping.mappings.*
-import cloak.mapping.success
+import cloak.util.Errorable
+import cloak.util.fail
+import cloak.format.mappings.*
+import cloak.util.success
 
 fun rename(mapping: Mapping, newName: String): Errorable<Unit> = when (mapping) {
     is ClassMapping -> renameClass(mapping, newName)

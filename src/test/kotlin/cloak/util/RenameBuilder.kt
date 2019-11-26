@@ -1,8 +1,7 @@
 package cloak.util
 
-import cloak.mapping.descriptor.ParameterDescriptor
-import cloak.mapping.rename.*
-import cloak.mapping.splitOn
+import cloak.format.descriptor.ParameterDescriptor
+import cloak.format.rename.*
 
 
 fun className(

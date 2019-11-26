@@ -1,15 +1,26 @@
 package cloak.git
 
-import cloak.mapping.mappings.MappingsExtension
+import cloak.format.mappings.MappingsExtension
+import cloak.platform.ExtendedPlatform
+import cloak.platform.saved.GitUser
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.File
 import java.nio.file.Paths
+private const val YarnRepositoryDirectory = "yarn"
+
+val ExtendedPlatform.yarnRepoDir get() = storageDirectory.resolve(YarnRepositoryDirectory).toFile()
 
 class YarnRepo private constructor(private val localPath: File) {
 
-    private var git: GitRepository? = null
+    private var _git: GitRepository? = null
+    private val git: GitRepository
+        get() {
+            if (_git == null) _git = getOrCloneGit()
+            return _git!!
+        }
+
 
     companion object {
         // Might want to cache YarnRepo instances at some point
@@ -34,26 +45,6 @@ class YarnRepo private constructor(private val localPath: File) {
 
     fun clean() = localPath.deleteRecursively()
 
-    fun getOrCloneGit(): GitRepository {
-        if (git == null) {
-            if (localPath.exists()) git = GitRepository(Git.open(localPath))
-            else {
-                val jgit = Git.cloneRepository()
-                    .setURI(OriginUrl)
-                    .setDirectory(localPath)
-                    .call()
-
-                git = GitRepository(jgit)
-                jgit.remoteAdd().setName("upstream").setUri(URIish(UpstreamUrl)).call()
-                git!!.updateRemote("upstream")
-            }
-        }
-
-        return git!!
-    }
-
-
-    fun getFile(path: String): File = localPath.toPath().resolve(path).toFile()
 
     /**
      * Returns all the paths in the mappings folder relative to the mappings folder, NOT including extensions.
@@ -64,26 +55,28 @@ class YarnRepo private constructor(private val localPath: File) {
             .toHashSet()
     }
 
-
-    fun pathOfMappingFromGitRoot(relativeMappingPath: String): String {
-        return Paths.get(MappingsDirName, relativeMappingPath).toString().replace("\\", "/")
-    }
-
     fun getMappingsFile(path: String): File = mappingsDirectory.toPath().resolve(path).toFile()
 
-    fun push() = getOrCloneGit().actuallyPush(
-        OriginUrl, credentials
+    fun push() = git.push(OriginUrl, credentials)
+
+    fun deleteBranch(branchName: String) = git.deleteBranch(branchName, credentials)
+
+    fun close() = _git?.close()
+
+    fun switchToBranch(branchName: String, startFromBranch: String? = null, force: Boolean = false): Unit = git.switchToBranch(
+        branchName = branchName,
+        defaultBaseBranch = { "upstream/${getTargetMinecraftVersion()}" },
+        startFromBranch = startFromBranch,
+        force = force
     )
 
-    fun deleteBranch(branchName: String) = getOrCloneGit().actuallyDeleteBranch(branchName, credentials)
+    fun removeMappingsFile(path: String) {
+        git.remove(pathOfMappingFromGitRoot(path))
+    }
 
-    fun close() = git?.close()
-
-
-    //TODO: delete mcversionfile before publishing
-    fun switchToBranch(branchName: String): Unit = getOrCloneGit().internalSwitchToBranch(branchName,
-        defaultBaseBranch = { "upstream/${getTargetMinecraftVersion()}" }
-    )
+    fun stageMappingsFile(path: String) {
+        git.stageChanges(pathOfMappingFromGitRoot(path))
+    }
 
     fun getTargetMinecraftVersion(): String {
         val file = getFile(McVersionFile)
@@ -93,8 +86,35 @@ class YarnRepo private constructor(private val localPath: File) {
         return file.readText()
     }
 
+    fun commitChanges(author: GitUser, commitMessage: String) {
+        git.commit(author.jgit, commitMessage)
+    }
+
+
+    private fun pathOfMappingFromGitRoot(relativeMappingPath: String): String {
+        return Paths.get(MappingsDirName, relativeMappingPath).toString().replace("\\", "/")
+    }
+
     private val credentials = UsernamePasswordCredentialsProvider(
         GithubUsername,
         GithubPassword
     )
+
+    private fun getOrCloneGit(): GitRepository {
+        return if (localPath.exists()) GitRepository(Git.open(localPath))
+        else {
+            val jgit = Git.cloneRepository()
+                .setURI(OriginUrl)
+                .setDirectory(localPath)
+                .call()
+
+            GitRepository(jgit).also {
+                jgit.remoteAdd().setName("upstream").setUri(URIish(UpstreamUrl)).call()
+                it.updateRemote("upstream")
+            }
+        }
+    }
+
+
+    private fun getFile(path: String): File = localPath.toPath().resolve(path).toFile()
 }
