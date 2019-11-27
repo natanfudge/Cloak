@@ -1,13 +1,20 @@
-import cloak.util.StringError
+import RenameErrorTests.Companion.TestAuthor
 import cloak.format.descriptor.ObjectType
 import cloak.format.rename.Renamer
 import cloak.platform.saved.GitUser
-import cloak.platform.saved.renamedNames
+import cloak.platform.saved.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
 import org.junit.Test
 
+fun prepareRenames(){
+    with(TestYarnRepo) {
+        commitChanges(TestAuthor, "preparation")
+        switchToBranch(TestAuthor.branchName,false)
+        TestYarnRepo.getMappingsFilesLocations()
+    }
+}
 class RenameErrorTests {
 
     companion object {
@@ -15,11 +22,7 @@ class RenameErrorTests {
         @JvmStatic
         @BeforeClass
         fun prepare() {
-            with(TestYarnRepo) {
-                commitChanges(TestAuthor, "preparation")
-                switchToBranch(TestAuthor.branchName)
-                TestYarnRepo.getMappingsFilesLocations()
-            }
+            prepareRenames()
         }
 
     }
@@ -38,7 +41,7 @@ class RenameErrorTests {
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.renamedNames.clear()
+        platform.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks()
         val targetName = className(oldFullPath, nameInit)
         val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
         assert(result is StringError)

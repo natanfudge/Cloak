@@ -11,7 +11,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.reflect.KProperty
 
-//TODO: figure out where the caches are
 private const val SavedDirectory = "saved"
 
 abstract class PersistentSaver {

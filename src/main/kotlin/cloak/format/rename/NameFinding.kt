@@ -1,23 +1,23 @@
 package cloak.format.rename
 
-import cloak.git.YarnRepo
 import cloak.format.descriptor.MethodDescriptor
 import cloak.format.descriptor.read
 import cloak.format.mappings.*
+import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.LatestIntermediaryNames
 import cloak.platform.saved.getIntermediaryNamesOfVersion
 import cloak.util.doesNotExist
 import cloak.util.getOrKey
 
-fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, platform: ExtendedPlatform, namedToInt: Map<String, String>): Mapping? {
+fun Name.getMatchingMappingIn(platform: ExtendedPlatform, namedToInt: Map<String, String>): Mapping? {
     val path = topLevelClass.let { "${it.packageName}/${it.className}$MappingsExtension" }
-    val mappingsFilePath = yarnRepo.getMappingsFile(path)
+    val mappingsFilePath = platform.yarnRepo.getMappingsFile(path)
 
     // Add a new top level class in case this one doesn't exist
     if (mappingsFilePath.doesNotExist) {
         if (this is ClassName && this.isTopLevelClass) {
-            return createDummyTopLevelClass(platform.getIntermediaryNamesOfVersion(yarnRepo.getTargetMinecraftVersion()))
+            return createDummyTopLevelClass(platform.getIntermediaryNamesOfVersion(platform.yarnRepo.getTargetMinecraftVersion()))
         } else error("Could not find mappings file at $mappingsFilePath for name $this")
     }
 
@@ -28,7 +28,7 @@ fun Name.getMatchingMappingIn(yarnRepo: YarnRepo, platform: ExtendedPlatform, na
     if (matchingExistingMapping != null) return matchingExistingMapping
     return addDummyMappingTo(
         mappingsFile,
-        platform.getIntermediaryNamesOfVersion(yarnRepo.getTargetMinecraftVersion()),
+        platform.getIntermediaryNamesOfVersion(platform.yarnRepo.getTargetMinecraftVersion()),
         namedToInt
     )
 

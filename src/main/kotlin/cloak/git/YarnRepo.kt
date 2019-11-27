@@ -2,17 +2,38 @@ package cloak.git
 
 import cloak.format.mappings.MappingsExtension
 import cloak.platform.ExtendedPlatform
+import cloak.platform.SavedState
 import cloak.platform.saved.GitUser
+import kotlinx.serialization.internal.BooleanSerializer
+import kotlinx.serialization.internal.StringSerializer
+import kotlinx.serialization.internal.nullable
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.File
 import java.nio.file.Paths
+
 private const val YarnRepositoryDirectory = "yarn"
 
-val ExtendedPlatform.yarnRepoDir get() = storageDirectory.resolve(YarnRepositoryDirectory).toFile()
+private val ExtendedPlatform.yarnRepoDir get() = storageDirectory.resolve(YarnRepositoryDirectory).toFile()
+val ExtendedPlatform.yarnRepo get() = YarnRepo.at(yarnRepoDir, this)
 
-class YarnRepo private constructor(private val localPath: File) {
+private var ExtendedPlatform.currentBranchStore: String? by SavedState(null, StringSerializer.nullable)
+
+val ExtendedPlatform.currentBranch
+    get() = currentBranchStore ?: error("The branch wasn't switched to something usable yet")
+
+val ExtendedPlatform.currentBranchOrNull get() = currentBranchStore
+
+var ExtendedPlatform.inSubmittedBranch: Boolean by SavedState(false, BooleanSerializer)
+    private set
+
+fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
+    if (currentBranchStore == null) currentBranchStore = gitUser.branchName
+}
+
+
+class YarnRepo private constructor(private val localPath: File, val platform: ExtendedPlatform) {
 
     private var _git: GitRepository? = null
     private val git: GitRepository
@@ -21,10 +42,9 @@ class YarnRepo private constructor(private val localPath: File) {
             return _git!!
         }
 
-
     companion object {
         // Might want to cache YarnRepo instances at some point
-        fun at(location: File) = YarnRepo(location)
+        fun at(location: File, platform: ExtendedPlatform) = YarnRepo(location, platform)
 
         const val GithubUsername = "Cloak-Bot"
         //        const val CloakEmail = "natandestroyer101@gmail.com"
@@ -63,12 +83,20 @@ class YarnRepo private constructor(private val localPath: File) {
 
     fun close() = _git?.close()
 
-    fun switchToBranch(branchName: String, startFromBranch: String? = null, force: Boolean = false): Unit = git.switchToBranch(
+    fun switchToBranch(
+        branchName: String,
+        isSubmittedBranch: Boolean,
+        startFromBranch: String? = null,
+        force: Boolean = false
+    ): Unit = git.switchToBranch(
         branchName = branchName,
         defaultBaseBranch = { "upstream/${getTargetMinecraftVersion()}" },
         startFromBranch = startFromBranch,
         force = force
-    )
+    ).also { mcVersion = null }.also {
+        platform.currentBranchStore = branchName
+        platform.inSubmittedBranch = isSubmittedBranch
+    }
 
     fun removeMappingsFile(path: String) {
         git.remove(pathOfMappingFromGitRoot(path))
@@ -78,12 +106,18 @@ class YarnRepo private constructor(private val localPath: File) {
         git.stageChanges(pathOfMappingFromGitRoot(path))
     }
 
+    private var mcVersion: String? = null
+
     fun getTargetMinecraftVersion(): String {
-        val file = getFile(McVersionFile)
-        if (!file.exists()) {
-            getFile(McVersionFile).writeText(GithubApi.getDefaultBranch(RepoName, UpstreamUsername))
+        if (mcVersion == null) {
+            val file = getFile(McVersionFile)
+            if (!file.exists()) {
+                getFile(McVersionFile).writeText(GithubApi.getDefaultBranch(RepoName, UpstreamUsername))
+            }
+            mcVersion = file.readText()
         }
-        return file.readText()
+
+        return mcVersion!!
     }
 
     fun commitChanges(author: GitUser, commitMessage: String) {

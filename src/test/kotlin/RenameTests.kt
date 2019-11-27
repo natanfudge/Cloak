@@ -3,7 +3,7 @@ import cloak.util.StringSuccess
 import cloak.format.descriptor.ObjectType
 import cloak.format.descriptor.PrimitiveType
 import cloak.format.rename.Renamer
-import cloak.platform.saved.renamedNames
+import cloak.platform.saved.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -25,11 +25,7 @@ class RenameTests {
         @JvmStatic
         @BeforeClass
         fun prepare() {
-            with(TestYarnRepo) {
-                commitChanges(TestAuthor, "preparation")
-                switchToBranch(TestAuthor.branchName)
-                TestYarnRepo.getMappingsFilesLocations()
-            }
+            prepareRenames()
         }
 
     }
@@ -55,7 +51,7 @@ class RenameTests {
 
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.renamedNames.clear()
+        platform.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks()
         val targetName = className(oldFullPath, nameInit)
         val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
         assert(result is StringSuccess) { result.toString() }

@@ -1,7 +1,7 @@
 package cloak.platform.saved
 
-import cloak.git.YarnRepo
 import cloak.format.mappings.*
+import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
 import cloak.util.buildMap
@@ -9,19 +9,19 @@ import cloak.util.mutableMap
 import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.internal.nullable
 
-private var ExtendedPlatform.namedToIntermediary: MutableMap<String, String>? by SavedState(
+private var ExtendedPlatform.namedToIntermediaryStore: MutableMap<String, String>? by SavedState(
     null,
     (StringSerializer to StringSerializer).mutableMap.nullable
 )
 
 fun ExtendedPlatform.setIntermediaryName(named: String, intermediary: String) {
-    namedToIntermediary?.set(named, intermediary)
+    namedToIntermediaryStore?.set(named, intermediary)
 }
 
 
-fun ExtendedPlatform.getNamedToIntermediary(yarnRepo: YarnRepo): Map<String, String> {
-    if (namedToIntermediary == null) {
-        namedToIntermediary = buildMap {
+fun ExtendedPlatform.getNamedToIntermediary(): Map<String, String> {
+    if (namedToIntermediaryStore == null) {
+        namedToIntermediaryStore = buildMap {
             for (relativePath in yarnRepo.getMappingsFilesLocations()) {
                 MappingsFile.read(yarnRepo.getMappingsFile("$relativePath$MappingsExtension")).visitClasses { mapping ->
                     mapping.getAsKeyValue()?.let { (obf, deobf) -> put(deobf, obf) }
@@ -29,7 +29,7 @@ fun ExtendedPlatform.getNamedToIntermediary(yarnRepo: YarnRepo): Map<String, Str
             }
         }
     }
-    return namedToIntermediary!!
+    return namedToIntermediaryStore!!
 }
 
 

@@ -5,7 +5,7 @@ import java.io.File
 import kotlin.test.assertEquals
 
 fun getTestResource(path: String): File = File("src/test/resources/$path")
-val TestYarnRepo = YarnRepo.at(File("caches/yarn"))
+val TestYarnRepo = YarnRepo.at(File("caches/yarn"), TestPlatform(Pair("", null)))
 
 inline fun <reified T> Errorable<T>.assertSucceeds(): T = when (this) {
     is StringSuccess -> this.value

@@ -1,13 +1,15 @@
 package cloak.idea
 
 
+import cloak.git.yarnRepo
 import cloak.idea.actions.isMinecraftPackageName
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
 import cloak.idea.util.editor
 import cloak.idea.util.psiFile
 import cloak.platform.ExtendedPlatform
-import cloak.platform.saved.renamedNames
+import cloak.platform.saved.getRenamedTo
+import cloak.platform.saved.nothingWasRenamed
 import com.intellij.codeHighlighting.TextEditorHighlightingPass
 import com.intellij.codeHighlighting.TextEditorHighlightingPassFactory
 import com.intellij.codeHighlighting.TextEditorHighlightingPassRegistrar
@@ -48,7 +50,7 @@ class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassR
 
 }
 
-
+//TODO: it's being applied twice for some reason (only classes)
 class RenamedIdentifierHighlighter(
     project: Project,
     private val file: PsiFile,
@@ -73,7 +75,7 @@ class RenamedIdentifierHighlighter(
     override fun doApplyInformationToEditor() {
         if (file !is PsiJavaFile) return
 
-        if (platform.renamedNames.isEmpty()) return
+        if (platform.nothingWasRenamed()) return
         if (!isMinecraftPackageName(file.packageName)) return
 
         val highlights = mutableListOf<HighlightInfo>()
@@ -103,8 +105,9 @@ private interface IVisitor {
 }
 
 private fun IVisitor.highlight(element: PsiElement, range: TextRange) {
-    val rename = platform.renamedNames[element.asNameOrNull() ?: return] ?: return
+    val rename = platform.getRenamedTo(element.asNameOrNull() ?: return) ?: return
     val builder = HighlightInfo.newHighlightInfo(HighlightInfoType)
+    //TODO: the range is too big, it includes the receiver too, needs to be more narrow.
     builder.range(range)
 
     builder.textAttributes(RenamedStyle)

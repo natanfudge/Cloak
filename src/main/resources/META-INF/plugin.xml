@@ -12,10 +12,6 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="ClassNameProvider"/>
-        <applicationService serviceImplementation="RenamedNamesProvider"/>
-        <applicationService serviceImplementation="cloak.idea.cache.ExistingIntermediaryNamesProvider"/>
-        <applicationService serviceImplementation="cloak.platform.saved.ChangesProvider"/>
     </extensions>
 
     <project-components>
@@ -26,7 +22,7 @@
 
     <actions>
 
-        <action id="Cloak.Rename" class="cloak.idea.actions.RenameAction" text="Rename"
+        <action id="Cloak.Rename" class="cloak.idea.actions.RenameIdeaAction" text="Rename"
                 description="Provides a yarn mapping to the target identifier">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
@@ -40,12 +36,17 @@
 <!--        </group>-->
         <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <action class="cloak.idea.actions.SubmitAction" id="Cloak.Submit" text="Submit Mappings"
+            <action class="cloak.idea.actions.SubmitIdeaAction" id="Cloak.Submit" text="Submit Mappings"
                     description="Sends a pull request with the renamed mappings to the main Yarn repository">
 <!--                <add-to-group group-id="Cloak.GlobalMenu"/>-->
                 <keyboard-shortcut first-keystroke="ctrl alt F2" keymap="$default"/>
             </action>
+            <action id="switchBranch" class="cloak.idea.actions.SwitchBranchIdeaAction" text="Switch Yarn Branch"
+                    description="Starts tracking a difference set of proposed yarn mappings">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl B"/>
+            </action>
         </group>
+
     </actions>
 
 

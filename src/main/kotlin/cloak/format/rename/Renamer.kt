@@ -1,9 +1,11 @@
 package cloak.format.rename
 
-import cloak.git.YarnRepo
-import cloak.git.yarnRepoDir
 import cloak.format.descriptor.remap
 import cloak.format.mappings.*
+import cloak.git.currentBranch
+import cloak.git.inSubmittedBranch
+import cloak.git.setCurrentBranchToDefaultIfNeeded
+import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
@@ -14,26 +16,43 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.lang.model.SourceVersion
 
+//TODO: need some way to reduce the amount of mutable state and global variables
+
+//TODO: can't rename parameters in constructors
 object Renamer {
 
-    private suspend fun ExtendedPlatform.failWithErrorMessage(message: String) = fail<NewName>(
-        message
-    ).also {
-        showErrorPopup(message, title = "Cannot rename")
-    }
+    private suspend fun ExtendedPlatform.failWithErrorMessage(message: String) = fail<NewName>(message)
+        .also { showErrorPopup(message, title = "Cannot rename") }
 
     /**
      * Returns the new name
      */
-    suspend fun ExtendedPlatform.rename( nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
+    suspend fun ExtendedPlatform.rename(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
         val user = getGitUser() ?: return fail("User didn't provide git info")
-        val oldName = nameBeforeRenames.updateAccordingToRenames(renamedNames)
+
+        setCurrentBranchToDefaultIfNeeded(user)
+        if (!showedNoteAboutLicense) {
+            showMessageDialog(
+                message = """Yarn mappings are licensed under a permissive license and should stay so.
+| If you know the name of something from another, less permissive mappings 
+| set (such as MCP(Forge) or Mojang Proguard output), DO NOT use that name.""".trimMargin(),
+                title = "Warning"
+            )
+            showedNoteAboutLicense = true
+        }
+        val oldName = nameBeforeRenames.updateAccordingToRenames(this)
 
         val matchingMapping = findMatchingMapping(user, oldName)
             ?: return failWithErrorMessage("This was already renamed or doesn't exist in a newer version.")
 
 
-        val (newFullName, explanation) = requestRenameInput { validateUserInput(it, isTopLevelClass,matchingMapping.typeName()) }
+        val (newFullName, explanation) = requestRenameInput {
+            validateUserInput(
+                it,
+                isTopLevelClass,
+                matchingMapping.typeName()
+            )
+        }
             ?: return fail("User didn't input a new name")
 
         val (packageName, newShortName) = splitPackageAndName(newFullName)
@@ -48,7 +67,7 @@ object Renamer {
             when (val result = applyRename(renameInstance, matchingMapping)) {
                 is StringSuccess -> {
                     val newName = NewName(newShortName, packageName)
-                    renamedNames[nameBeforeRenames] = newName
+                    setRenamedTo(nameBeforeRenames, newName)
                     newName.success
                 }
                 is StringError -> {
@@ -74,7 +93,7 @@ object Renamer {
         updateNamedIntermediaryMap(renameTarget)
 
         val newPath = renameTarget.getFilePath()
-        val newMappingLocation = YarnRepo.at(yarnRepoDir).getMappingsFile(newPath)
+        val newMappingLocation = yarnRepo.getMappingsFile(newPath)
 
 
         if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
@@ -106,17 +125,15 @@ object Renamer {
         presentableNewName: String,
         rename: RenameInstance
     ) {
-        val yarn = YarnRepo.at(yarnRepoDir)
-        if (oldPath != newPath) yarn.removeMappingsFile(oldPath)
+        if (oldPath != newPath) yarnRepo.removeMappingsFile(oldPath)
 
         val user = getGitUser()!!
         renameTarget.root.writeTo(newMappingLocation)
-        yarn.stageMappingsFile(newPath)
-        yarn.commitChanges(author = user, commitMessage = "$presentableOldName -> $presentableNewName")
+        yarnRepo.stageMappingsFile(newPath)
+        yarnRepo.commitChanges(author = user, commitMessage = "$presentableOldName -> $presentableNewName")
 
         appendYarnChange(
-            //TODO: modify this when you can switch between branches
-            branch = user.branchName,
+            branch = currentBranch,
             change = Change(
                 oldName = presentableOldName,
                 newName = presentableNewName,
@@ -138,34 +155,37 @@ object Renamer {
      * After the player renames something, the yarn repository has different information than what is in the editor.
      * This updates the information in the editor to be up to date to the repo.
      * */
-    private fun Name.updateAccordingToRenames(renames: Map<Name, NewName>) = when (this) {
-        is ClassName -> updateAccordingToRenames(renames)
-        is FieldName -> updateAccordingToRenames(renames)
-        is MethodName -> updateAccordingToRenames(renames)
-        is ParamName -> updateAccordingToRenames(renames)
+    private fun Name.updateAccordingToRenames(platform: ExtendedPlatform): Name {
+         fun ClassName.updateAccordingToRenames(): ClassName =
+            platform.getRenamedTo(this)?.let {
+                var newName = copy(className = it.newName)
+                if (it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
+                newName
+            } ?: this
+
+         fun FieldName.updateAccordingToRenames(): FieldName {
+            val newClassName = classIn.updateAccordingToRenames()
+            return platform.getRenamedTo(this)?.let { copy(fieldName = it.newName, classIn = newClassName) }
+                ?: copy(classIn = newClassName)
+        }
+
+         fun MethodName.updateAccordingToRenames(): MethodName {
+            val newClassName = classIn.updateAccordingToRenames()
+            return platform.getRenamedTo(this)?.let { copy(methodName = it.newName, classIn = newClassName) }
+                ?: copy(classIn = newClassName)
+        }
+
+         fun ParamName.updateAccordingToRenames() = copy(methodIn = methodIn.updateAccordingToRenames())
+
+        return when (this) {
+            is ClassName -> updateAccordingToRenames()
+            is FieldName -> updateAccordingToRenames()
+            is MethodName -> updateAccordingToRenames()
+            is ParamName -> updateAccordingToRenames()
+        }
     }
 
-    private fun ClassName.updateAccordingToRenames(renames: Map<Name, NewName>): ClassName =
-        renames[this]?.let {
-            var newName = copy(className = it.newName)
-            if (it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
-            newName
-        } ?: this
 
-    private fun FieldName.updateAccordingToRenames(renames: Map<Name, NewName>): FieldName {
-        val newClassName = classIn.updateAccordingToRenames(renames)
-        return renames[this]?.let { copy(fieldName = it.newName, classIn = newClassName) }
-            ?: copy(classIn = newClassName)
-    }
-
-    private fun MethodName.updateAccordingToRenames(renames: Map<Name, NewName>): MethodName {
-        val newClassName = classIn.updateAccordingToRenames(renames)
-        return renames[this]?.let { copy(methodName = it.newName, classIn = newClassName) }
-            ?: copy(classIn = newClassName)
-    }
-
-    private fun ParamName.updateAccordingToRenames(renames: Map<Name, NewName>) =
-        copy(methodIn = methodIn.updateAccordingToRenames(renames))
 
 
     private fun ExtendedPlatform.updateNamedIntermediaryMap(renameTarget: Mapping) {
@@ -182,13 +202,12 @@ object Renamer {
         name: Name
     ): Mapping? {
         return asyncWithText("Preparing rename...") {
-            switchToUserBranch(gitUser = user, yarnRepo = yarnRepoDir)
-            val namedToIntermediaryClasses = getNamedToIntermediary(YarnRepo.at(yarnRepoDir))
-            val yarn = YarnRepo.at(yarnRepoDir)
+            switchToCorrectBranch(user)
+            val namedToIntermediaryClasses = getNamedToIntermediary()
 
             val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
 
-            oldName.getMatchingMappingIn(yarn, platform = this, namedToInt = namedToIntermediaryClasses)
+            oldName.getMatchingMappingIn(platform = this, namedToInt = namedToIntermediaryClasses)
 
         }
     }
@@ -208,9 +227,8 @@ object Renamer {
      * Call this while the user is busy (typing the new name) to prevent lag later on.
      * This method will be executed asynchronously so it will return immediately and do the work in the background.
      */
-    private suspend fun switchToUserBranch(gitUser: GitUser, yarnRepo: File): Unit = withContext(Dispatchers.IO) {
-        val yarn = YarnRepo.at(yarnRepo)
-        yarn.switchToBranch(gitUser.branchName)
+    private suspend fun ExtendedPlatform.switchToCorrectBranch(user: GitUser): Unit = withContext(Dispatchers.IO) {
+        yarnRepo.switchToBranch(currentBranch, isSubmittedBranch = user.branchName != currentBranch)
     }
 
 
@@ -218,7 +236,7 @@ object Renamer {
      * Returns a string if [userInputForNewName] invalid, null if valid.
      * @param isTopLevelClass whether the element to rename is a top level class
      */
-    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean,mappingType : String): String? {
+    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean, mappingType: String): String? {
         val (packageName, shortName) = splitPackageAndName(userInputForNewName)
 
         if (!isTopLevelClass && packageName != null) return "Package rename can only be done on top-level classes"

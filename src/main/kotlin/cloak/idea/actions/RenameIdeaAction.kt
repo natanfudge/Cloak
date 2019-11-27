@@ -1,10 +1,10 @@
 package cloak.idea.actions
 
+import cloak.actions.RenameAction
 import cloak.idea.RenamedIdentifierHighlighter
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.*
 import cloak.util.StringSuccess
-import cloak.format.rename.*
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
@@ -33,7 +33,8 @@ import kotlinx.coroutines.launch
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
-class RenameAction : CloakAction() {
+class RenameIdeaAction : CloakAction() {
+    //TODO: rename highlighting not working
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
@@ -55,18 +56,9 @@ class RenameAction : CloakAction() {
 
         val platform = IdeaPlatform(event.project ?: return, event.editor ?: return)
         GlobalScope.launch {
-            val result = with(Renamer) {
-                platform.rename(nameBeforeRenames, isTopLevelClass)
-            }
-
-            if (result is StringSuccess) {
-                println("$nameBeforeRenames was renamed to ${result.value}")
-                RenamedIdentifierHighlighter.rerun(event)
-            } else {
-                println("Could not rename: $result")
-            }
+            val result = RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
+            if (result is StringSuccess) RenamedIdentifierHighlighter.rerun(event)
         }
-
 
     }
 
