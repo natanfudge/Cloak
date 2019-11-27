@@ -33,7 +33,7 @@ object Renamer {
             ?: return failWithErrorMessage("This was already renamed or doesn't exist in a newer version.")
 
 
-        val (newFullName, explanation) = requestRenameInput { validateUserInput(it, isTopLevelClass) }
+        val (newFullName, explanation) = requestRenameInput { validateUserInput(it, isTopLevelClass,matchingMapping.typeName()) }
             ?: return fail("User didn't input a new name")
 
         val (packageName, newShortName) = splitPackageAndName(newFullName)
@@ -218,8 +218,8 @@ object Renamer {
      * Returns a string if [userInputForNewName] invalid, null if valid.
      * @param isTopLevelClass whether the element to rename is a top level class
      */
-    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean): String? {
-        val (packageName, className) = splitPackageAndName(userInputForNewName)
+    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean,mappingType : String): String? {
+        val (packageName, shortName) = splitPackageAndName(userInputForNewName)
 
         if (!isTopLevelClass && packageName != null) return "Package rename can only be done on top-level classes"
 
@@ -227,7 +227,7 @@ object Renamer {
             if (!SourceVersion.isIdentifier(part)) return "'$part' is not a valid package name"
         }
 
-        if (!SourceVersion.isName(className)) return "'$className' is not a valid class name"
+        if (!SourceVersion.isName(shortName)) return "'$shortName' is not a valid $mappingType name"
 
         return null
     }

@@ -3,8 +3,10 @@ package cloak.platform
 import cloak.util.createDirectories
 import cloak.util.exists
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.reflect.KProperty
@@ -28,17 +30,17 @@ abstract class PersistentSaver {
                 val storagePath = state.storagePath
                 storagePath.parent.createDirectories()
                 println("Saving $storagePath")
-//TODO: restore                Files.write(
-//                    storagePath,
-//                    // We know that each SavedState instance as the correct serializer for the memory cache,
-//                    // but kotlin doesn't know that, so we need to cast
-//                Cbor.plain.dump(state.serializer as KSerializer<Any?>, state.memoryCache)
-//                )
-                storagePath.toFile().writeText(
-                    Json(
-                        JsonConfiguration.Stable.copy(prettyPrint = true)
-                    ).stringify(state.serializer as KSerializer<Any?>, state.memoryCache)
+                Files.write(
+                    storagePath,
+                    // We know that each SavedState instance as the correct serializer for the memory cache,
+                    // but kotlin doesn't know that, so we need to cast
+                    Cbor.plain.dump(state.serializer as KSerializer<Any?>, state.memoryCache)
                 )
+//                storagePath.toFile().writeText(
+//                    Json(
+//                        JsonConfiguration.Stable.copy(prettyPrint = true)
+//                    ).stringify(state.serializer as KSerializer<Any?>, state.memoryCache)
+//                )
             }
         }
     }
@@ -62,10 +64,10 @@ class SavedState<T : Any?>(defaultValue: T, internal val serializer: KSerializer
                 return memoryCache
             }
 
-//            memoryCache = Cbor.plain.load(serializer, Files.readAllBytes(storagePath))
-            memoryCache = Json(
-                JsonConfiguration.Stable.copy(prettyPrint = true)
-            ).parse(serializer, storagePath.toFile().readText())
+            memoryCache = Cbor.plain.load(serializer, Files.readAllBytes(storagePath))
+//            memoryCache = Json(
+//                JsonConfiguration.Stable.copy(prettyPrint = true)
+//            ).parse(serializer, storagePath.toFile().readText())
         }
 
         return memoryCache
