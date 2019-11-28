@@ -28,6 +28,7 @@ interface ExtendedPlatform {
         validator: PlatformInputValidator? = null
     ): String?
 
+    suspend fun getChoiceBetweenOptions(title: String, options: List<String>): String
 
     suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T
 }

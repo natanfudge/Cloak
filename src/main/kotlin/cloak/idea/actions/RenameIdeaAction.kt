@@ -57,7 +57,7 @@ class RenameIdeaAction : CloakAction() {
         val platform = IdeaPlatform(event.project ?: return, event.editor ?: return)
         GlobalScope.launch {
             val result = RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
-            if (result is StringSuccess) RenamedIdentifierHighlighter.rerun(event)
+//            if (result is StringSuccess) RenamedIdentifierHighlighter.rerun(event)
         }
 
     }

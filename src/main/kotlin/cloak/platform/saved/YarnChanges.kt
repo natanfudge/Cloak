@@ -10,9 +10,10 @@ import kotlinx.serialization.internal.StringSerializer
 @Serializable
 data class Change(val oldName: String, val newName: String, val explanation: String?)
 
-
+// Mapped per branch
 private val ExtendedPlatform.yarnChanges: MutableMap<String, MutableList<Change>> by SavedState(
     mutableMapOf(),
+    "YarnChangelog",
     serializer = (StringSerializer to Change.serializer().mutableList).mutableMap
 )
 

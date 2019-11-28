@@ -12,15 +12,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 //TODO: clean caches command
 class SubmitIdeaAction : CloakAction() {
     override fun isEnabled(event: AnActionEvent): Boolean {
-        return IdeaPlatform(event.project ?: return false, event.editor).run {
-            anythingWasRenamed() && !inSubmittedBranch
-        }
+        return IdeaPlatform(event.project ?: return false, event.editor).anythingWasRenamed()
     }
 
     override fun actionPerformed(event: AnActionEvent) {
         val platform = IdeaPlatform(event.project ?: return, event.editor)
         SubmitAction.submit(platform)
-        RenamedIdentifierHighlighter.rerun(event)
+//        RenamedIdentifierHighlighter.rerun(event)
     }
 
 }

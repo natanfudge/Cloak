@@ -8,13 +8,17 @@ import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
 import org.junit.Test
 
-fun prepareRenames(){
+fun prepareRenames() {
     with(TestYarnRepo) {
-        commitChanges(TestAuthor, "preparation")
-        switchToBranch(TestAuthor.branchName,false)
-        TestYarnRepo.getMappingsFilesLocations()
+        runBlocking {
+            commitChanges(TestAuthor, "preparation")
+            switchToBranch(TestAuthor.branchName)
+            TestYarnRepo.getMappingsFilesLocations()
+        }
+
     }
 }
+
 class RenameErrorTests {
 
     companion object {

@@ -1,5 +1,6 @@
 package cloak.idea.platformImpl
 
+import cloak.idea.util.NiceDropdownList
 import cloak.idea.util.CommonIcons
 import cloak.idea.util.showTwoInputsDialog
 import cloak.platform.ExtendedPlatform
@@ -14,6 +15,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Path
@@ -98,6 +100,21 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
             validator?.let { InputValidatorWrapper(it) }
         )
     }
+
+    override suspend fun getChoiceBetweenOptions(title: String, options: List<String>): String =
+        suspendCoroutine { cont ->
+            inUiThread {
+                JBPopupFactory.getInstance().createPopupChooserBuilder(options).setTitle(title)
+                    .setNamerForFiltering { it }
+                    .setItemChosenCallback { cont.resume(it) }
+                    .setMovable(true)
+                    .setRenderer(NiceDropdownList())
+                    .createPopup()
+                    .showCenteredInCurrentWindow(project)
+            }
+
+        }
+
 
     override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T =
         suspendCoroutine { cont ->

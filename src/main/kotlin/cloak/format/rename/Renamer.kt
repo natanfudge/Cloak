@@ -42,7 +42,7 @@ object Renamer {
         }
         val oldName = nameBeforeRenames.updateAccordingToRenames(this)
 
-        val matchingMapping = findMatchingMapping(user, oldName)
+        val matchingMapping = findMatchingMapping(oldName)
             ?: return failWithErrorMessage("This was already renamed or doesn't exist in a newer version.")
 
 
@@ -197,12 +197,9 @@ object Renamer {
         }
     }
 
-    private suspend fun ExtendedPlatform.findMatchingMapping(
-        user: GitUser,
-        name: Name
-    ): Mapping? {
+    private suspend fun ExtendedPlatform.findMatchingMapping(name: Name): Mapping? {
         return asyncWithText("Preparing rename...") {
-            switchToCorrectBranch(user)
+            switchToCorrectBranch()
             val namedToIntermediaryClasses = getNamedToIntermediary()
 
             val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
@@ -227,8 +224,8 @@ object Renamer {
      * Call this while the user is busy (typing the new name) to prevent lag later on.
      * This method will be executed asynchronously so it will return immediately and do the work in the background.
      */
-    private suspend fun ExtendedPlatform.switchToCorrectBranch(user: GitUser): Unit = withContext(Dispatchers.IO) {
-        yarnRepo.switchToBranch(currentBranch, isSubmittedBranch = user.branchName != currentBranch)
+    private suspend fun ExtendedPlatform.switchToCorrectBranch(): Unit = withContext(Dispatchers.IO) {
+        yarnRepo.switchToBranch(currentBranch)
     }
 
 

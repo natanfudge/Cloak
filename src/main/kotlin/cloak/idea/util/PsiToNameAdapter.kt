@@ -68,7 +68,7 @@ private fun PsiMethod.getMethodName(): MethodName? {
 
 
 private fun PsiClassReferenceType.resolveName(): String? {
-    val resolved = rawType().resolve() ?: error("Could not resolve type: $this")
+    val resolved = rawType().resolve() ?: return null
     val parents = resolved.parents().filterIsInstance<PsiClass>().toList().reversed()
     // We use the full name for the outer class, and only the short name for the inner class.
     var className = parents.first().qualifiedName

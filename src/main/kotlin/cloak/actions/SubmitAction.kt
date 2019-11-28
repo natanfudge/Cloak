@@ -1,9 +1,6 @@
 package cloak.actions
 
-import cloak.git.GithubApi
-import cloak.git.PullRequestResponse
-import cloak.git.YarnRepo
-import cloak.git.yarnRepo
+import cloak.git.*
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.saved.*
@@ -16,6 +13,12 @@ object SubmitAction {
 
         GlobalScope.launch {
             val gitUser = getGitUser() ?: return@launch
+            if (inSubmittedBranch) {
+                asyncWithText("Submitting") {
+                    yarnRepo.push()
+                }
+                return@launch
+            }
 
             val prName = getUserInput(
                 title = "Pull Request",
@@ -24,11 +27,13 @@ object SubmitAction {
             ) ?: return@launch
 
             val upstreamOwner = "natanfudge"//TODO: switch to YarnRepo.upstreamuser
-            val pr = createPr(prName, gitUser, upstreamOwner)
+            val newBranchName = Repository.normalizeBranchName(prName)
+            val pr = createPr(prName, newBranchName, gitUser, upstreamOwner)
 
             showMessageDialog(
                 title = "Success",
-                message = "<html>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>.</html>"
+                message = "<html>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>." +
+                        "\nYou can go back and modify your submitted mappings with <b>Tools -> Fabric -> Switch Yarn Branch -> $newBranchName</b></html>"
             )
 
             resetWorkspace(gitUser)
@@ -39,24 +44,27 @@ object SubmitAction {
 private suspend fun ExtendedPlatform.resetWorkspace(gitUser: GitUser) {
     val repo = yarnRepo
     asyncWithText("Cleaning...") {
-        repo.switchToBranch("master", isSubmittedBranch = false)
+        repo.switchToBranch("master")
         repo.deleteBranch(gitUser.branchName)
-        repo.switchToBranch(gitUser.branchName, isSubmittedBranch = false)
+        repo.switchToBranch(gitUser.branchName)
         // This will update the mc version because the 'McVersion' file will be deleted
         updateIntermediaryNamesToVersion(repo.getTargetMinecraftVersion())
     }
 
 }
 
+
 private suspend fun ExtendedPlatform.createPr(
     prName: String,
+    newBranchName: String,
     gitUser: GitUser,
     upstreamOwner: String
 ): PullRequestResponse = asyncWithText("Submitting...") {
-    val newBranchName = Repository.normalizeBranchName(prName)
-    yarnRepo.switchToBranch(newBranchName, startFromBranch = gitUser.branchName, isSubmittedBranch = true)
+
+    yarnRepo.switchToBranch(newBranchName, startFromBranch = gitUser.branchName)
     migrateYarnChangeList(oldBranch = gitUser.branchName, newBranch = newBranchName)
     migrateRenamedNamesBranch(oldBranch = gitUser.branchName, newBranch = newBranchName)
+    resetNamedToIntermediary()
 
     yarnRepo.push()
     GithubApi.createPullRequest(

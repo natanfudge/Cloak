@@ -1,7 +1,6 @@
 package cloak.idea
 
 
-import cloak.git.yarnRepo
 import cloak.idea.actions.isMinecraftPackageName
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
@@ -10,6 +9,7 @@ import cloak.idea.util.psiFile
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.getRenamedTo
 import cloak.platform.saved.nothingWasRenamed
+import cloak.util.buildList
 import com.intellij.codeHighlighting.TextEditorHighlightingPass
 import com.intellij.codeHighlighting.TextEditorHighlightingPassFactory
 import com.intellij.codeHighlighting.TextEditorHighlightingPassRegistrar
@@ -50,7 +50,6 @@ class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassR
 
 }
 
-//TODO: it's being applied twice for some reason (only classes)
 class RenamedIdentifierHighlighter(
     project: Project,
     private val file: PsiFile,
@@ -60,31 +59,31 @@ class RenamedIdentifierHighlighter(
     private val platform = IdeaPlatform(project, editor)
 
     companion object {
-        fun rerun(event: AnActionEvent) {
-            ApplicationManager.getApplication().invokeLater {
-                RenamedIdentifierHighlighter(
-                    event.project ?: return@invokeLater,
-                    event.psiFile ?: return@invokeLater,
-                    event.editor ?: return@invokeLater
-                ).doApplyInformationToEditor()
-            }
-        }
+//        fun rerun(event: AnActionEvent) {
+//            ApplicationManager.getApplication().invokeLater {
+//                RenamedIdentifierHighlighter(
+//                    event.project ?: return@invokeLater,
+//                    event.psiFile ?: return@invokeLater,
+//                    event.editor ?: return@invokeLater
+//                ).doApplyInformationToEditor()
+//            }
+//        }
     }
 
     override fun doCollectInformation(progress: ProgressIndicator) {}
     override fun doApplyInformationToEditor() {
         if (file !is PsiJavaFile) return
 
-        if (platform.nothingWasRenamed()) return
         if (!isMinecraftPackageName(file.packageName)) return
 
-        val highlights = mutableListOf<HighlightInfo>()
-        if (file is PsiCompiledElement) {
-            CompiledVisitor(highlights, platform).visitFile(file)
-        } else {
-            WalkingVisitor(highlights, platform).visitFile(file)
+        val highlights = if (platform.nothingWasRenamed()) listOf<HighlightInfo>()
+        else buildList {
+            if (file is PsiCompiledElement) {
+                CompiledVisitor(this, platform).visitFile(file)
+            } else {
+                WalkingVisitor(this, platform).visitFile(file)
+            }
         }
-
 
         UpdateHighlightersUtil.setHighlightersToEditor(
             myProject,
@@ -107,7 +106,6 @@ private interface IVisitor {
 private fun IVisitor.highlight(element: PsiElement, range: TextRange) {
     val rename = platform.getRenamedTo(element.asNameOrNull() ?: return) ?: return
     val builder = HighlightInfo.newHighlightInfo(HighlightInfoType)
-    //TODO: the range is too big, it includes the receiver too, needs to be more narrow.
     builder.range(range)
 
     builder.textAttributes(RenamedStyle)
@@ -127,7 +125,7 @@ private class WalkingVisitor(
 
     override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
         reference.resolve()
-            .let { if (it is PsiNameIdentifierOwner) highlight(it, reference.textRange ?: return) }
+            .let { if (it is PsiNameIdentifierOwner) highlight(it, reference.lastChild.textRange ?: return) }
         super.visitReferenceElement(reference)
     }
 

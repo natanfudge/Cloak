@@ -38,6 +38,10 @@ class TestPlatform(private val userInput: Pair<String, String?>) : ExtendedPlatf
     override suspend fun showMessageDialog(message: String, title: String) {}
     override suspend fun showErrorPopup(message: String, title: String) {}
     override suspend fun getUserInput(title: String, message: String, validator: PlatformInputValidator?) = null
+    override suspend fun getChoiceBetweenOptions(title: String, options: List<String>): String {
+        return ""
+    }
+
     override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T = action()
 
 }

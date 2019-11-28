@@ -19,6 +19,7 @@ data class NewName(val newName: String, val newPackageName: String?) {
 // Mapped per branch
 private val ExtendedPlatform.renamedNames: MutableMap<String, MutableMap<Name, NewName>> by SavedState(
     mutableMapOf(),
+    "RenamedNames",
     (StringSerializer to (Name.serializer() to NewName.serializer()).mutableMap).mutableMap
 )
 
@@ -40,4 +41,4 @@ fun ExtendedPlatform.nothingWasRenamed(): Boolean {
 }
 fun ExtendedPlatform.anythingWasRenamed() = !nothingWasRenamed()
 
-
+val ExtendedPlatform.allBranches get() = renamedNames.keys

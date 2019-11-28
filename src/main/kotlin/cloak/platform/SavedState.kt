@@ -49,13 +49,13 @@ abstract class PersistentSaver {
 /**
  * Make sure the property name is unique
  */
-class SavedState<T : Any?>(defaultValue: T, internal val serializer: KSerializer<T>) {
+class SavedState<T : Any?>(defaultValue: T, private val key : String, internal val serializer: KSerializer<T>) {
     internal var memoryCache: T = defaultValue
     internal lateinit var storagePath: Path
 
     operator fun getValue(platform: ExtendedPlatform, property: KProperty<*>): T {
         if (!::storagePath.isInitialized) {
-            storagePath = Paths.get(platform.storageDirectory.toString(), SavedDirectory, "${property.name}.cbor")
+            storagePath = Paths.get(platform.storageDirectory.toString(), SavedDirectory, "$key.cbor")
             platform.persistentSaver.markDirty(this)
 
             if (!storagePath.exists()) {

@@ -11,6 +11,7 @@ import kotlinx.serialization.internal.nullable
 
 private var ExtendedPlatform.namedToIntermediaryStore: MutableMap<String, String>? by SavedState(
     null,
+    "NamedToIntermediary",
     (StringSerializer to StringSerializer).mutableMap.nullable
 )
 
@@ -18,16 +19,19 @@ fun ExtendedPlatform.setIntermediaryName(named: String, intermediary: String) {
     namedToIntermediaryStore?.set(named, intermediary)
 }
 
+fun ExtendedPlatform.resetNamedToIntermediary() {
+    namedToIntermediaryStore = buildMap {
+        for (relativePath in yarnRepo.getMappingsFilesLocations()) {
+            MappingsFile.read(yarnRepo.getMappingsFile("$relativePath$MappingsExtension")).visitClasses { mapping ->
+                mapping.getAsKeyValue()?.let { (obf, deobf) -> put(deobf, obf) }
+            }
+        }
+    }
+}
 
 fun ExtendedPlatform.getNamedToIntermediary(): Map<String, String> {
     if (namedToIntermediaryStore == null) {
-        namedToIntermediaryStore = buildMap {
-            for (relativePath in yarnRepo.getMappingsFilesLocations()) {
-                MappingsFile.read(yarnRepo.getMappingsFile("$relativePath$MappingsExtension")).visitClasses { mapping ->
-                    mapping.getAsKeyValue()?.let { (obf, deobf) -> put(deobf, obf) }
-                }
-            }
-        }
+        resetNamedToIntermediary()
     }
     return namedToIntermediaryStore!!
 }

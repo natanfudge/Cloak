@@ -14,7 +14,7 @@ data class GitUser(val name: String, val email: String) {
     val branchName get() = name
 }
 
-private var ExtendedPlatform.gitUser: GitUser? by SavedState(null, GitUser.serializer().nullable)
+private var ExtendedPlatform.gitUser: GitUser? by SavedState(null,"CurrentGitUser", GitUser.serializer().nullable)
 
 private suspend fun ExtendedPlatform.getNewGitUser(): GitUser? {
     val (username, email) = getTwoInputs(

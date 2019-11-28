@@ -28,17 +28,11 @@
             <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
         </action>
 
-<!--        <group id="org.jetbrains.tutorials.actions.GroupedActions" text="Example Grouped Actions" popup="true">-->
-<!--            <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="org.jetbrains.tutorials.actions.SimpleAction"/>-->
-<!--            <action class="org.jetbrains.tutorials.actions.SimplePopDialogAction"-->
-<!--                    id="org.jetbrains.tutorials.actions.SimpleGroupedAction" text="A Grouped Action" description="Grouped Action Demo">-->
-<!--            </action>-->
-<!--        </group>-->
-        <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true">
+
+        <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true" icon="/assets/fabric_logo.png">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <action class="cloak.idea.actions.SubmitIdeaAction" id="Cloak.Submit" text="Submit Mappings"
                     description="Sends a pull request with the renamed mappings to the main Yarn repository">
-<!--                <add-to-group group-id="Cloak.GlobalMenu"/>-->
                 <keyboard-shortcut first-keystroke="ctrl alt F2" keymap="$default"/>
             </action>
             <action id="switchBranch" class="cloak.idea.actions.SwitchBranchIdeaAction" text="Switch Yarn Branch"

@@ -4,6 +4,7 @@ import cloak.format.mappings.MappingsExtension
 import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
 import cloak.platform.saved.GitUser
+import cloak.platform.saved.getGitUser
 import kotlinx.serialization.internal.BooleanSerializer
 import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.internal.nullable
@@ -18,14 +19,14 @@ private const val YarnRepositoryDirectory = "yarn"
 private val ExtendedPlatform.yarnRepoDir get() = storageDirectory.resolve(YarnRepositoryDirectory).toFile()
 val ExtendedPlatform.yarnRepo get() = YarnRepo.at(yarnRepoDir, this)
 
-private var ExtendedPlatform.currentBranchStore: String? by SavedState(null, StringSerializer.nullable)
+private var ExtendedPlatform.currentBranchStore: String? by SavedState(null,"", StringSerializer.nullable)
 
 val ExtendedPlatform.currentBranch
     get() = currentBranchStore ?: error("The branch wasn't switched to something usable yet")
 
 val ExtendedPlatform.currentBranchOrNull get() = currentBranchStore
 
-var ExtendedPlatform.inSubmittedBranch: Boolean by SavedState(false, BooleanSerializer)
+var ExtendedPlatform.inSubmittedBranch: Boolean by SavedState(false, "InSubmittedBranch" ,BooleanSerializer)
     private set
 
 fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
@@ -83,9 +84,8 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
     fun close() = _git?.close()
 
-    fun switchToBranch(
+    suspend fun switchToBranch(
         branchName: String,
-        isSubmittedBranch: Boolean,
         startFromBranch: String? = null,
         force: Boolean = false
     ): Unit = git.switchToBranch(
@@ -95,7 +95,8 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         force = force
     ).also { mcVersion = null }.also {
         platform.currentBranchStore = branchName
-        platform.inSubmittedBranch = isSubmittedBranch
+        val userBranch = platform.getGitUser()?.branchName
+        platform.inSubmittedBranch = userBranch != branchName
     }
 
     fun removeMappingsFile(path: String) {

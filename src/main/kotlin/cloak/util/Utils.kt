@@ -12,6 +12,7 @@ import java.nio.file.Path
 import kotlin.system.measureTimeMillis
 
 fun <K, V> buildMap(init: MutableMap<K, V>.() -> Unit) = mutableMapOf<K, V>().apply(init)
+fun <T> buildList(init: MutableList<T>.() -> Unit) = mutableListOf<T>().apply(init)
 
 val <K, V> Pair<KSerializer<K>, KSerializer<V>>.mutableMap: KSerializer<MutableMap<K, V>>
     get() = map as KSerializer<MutableMap<K, V>>

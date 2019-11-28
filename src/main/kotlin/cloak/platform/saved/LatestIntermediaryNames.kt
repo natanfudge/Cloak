@@ -16,6 +16,7 @@ data class LatestIntermediaryNames(
 
 private var ExtendedPlatform.latestIntermediaryNames: LatestIntermediaryNames by SavedState(
     LatestIntermediaryNames(),
+    "LatestIntermediaries",
     LatestIntermediaryNames.serializer()
 )
 
