@@ -16,9 +16,9 @@ fun Name.getMatchingMappingIn(platform: ExtendedPlatform, namedToInt: Map<String
 
     // Add a new top level class in case this one doesn't exist
     if (mappingsFilePath.doesNotExist) {
-        if (this is ClassName && this.isTopLevelClass) {
-            return createDummyTopLevelClass(platform.getIntermediaryNamesOfVersion(platform.yarnRepo.getTargetMinecraftVersion()))
-        } else error("Could not find mappings file at $mappingsFilePath for name $this")
+        return if (this is ClassName && this.isTopLevelClass) {
+            createDummyTopLevelClass(platform.getIntermediaryNamesOfVersion(platform.yarnRepo.getTargetMinecraftVersion()))
+        } else null
     }
 
     val mappingsFile = MappingsFile.read(mappingsFilePath)

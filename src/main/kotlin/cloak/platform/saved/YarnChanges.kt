@@ -23,6 +23,10 @@ fun ExtendedPlatform.appendYarnChange(branch: String, change: Change) {
     yarnChanges[branch]!!.add(change)
 }
 
+fun ExtendedPlatform.deleteYarnChangesOfBranch(branch: String) {
+    yarnChanges.remove(branch)
+}
+
 //TODO: need some way to clean up old branches and their changes data
 fun ExtendedPlatform.migrateYarnChangeList(oldBranch: String, newBranch: String) {
     yarnChanges[oldBranch]?.let { yarnChanges[newBranch] = it }

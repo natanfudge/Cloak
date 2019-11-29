@@ -29,7 +29,7 @@
         </action>
 
 
-        <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true" icon="/assets/fabric_logo.png">
+        <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true" icon="/assets/fabric_logo_16.png">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <action class="cloak.idea.actions.SubmitIdeaAction" id="Cloak.Submit" text="Submit Mappings"
                     description="Sends a pull request with the renamed mappings to the main Yarn repository">
@@ -38,6 +38,10 @@
             <action id="switchBranch" class="cloak.idea.actions.SwitchBranchIdeaAction" text="Switch Yarn Branch"
                     description="Starts tracking a difference set of proposed yarn mappings">
                 <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl B"/>
+            </action>
+            <action class="cloak.idea.actions.DeleteBranchesIdeaAction" id="Cloak.DeleteBranches" text="Delete Branches"
+                    description="Allows selecting a list of branches to delete on git and from cache">
+                <keyboard-shortcut first-keystroke="ctrl alt d" keymap="$default"/>
             </action>
         </group>
 

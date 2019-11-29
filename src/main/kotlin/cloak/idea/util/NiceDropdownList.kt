@@ -13,7 +13,8 @@ import javax.swing.ListCellRenderer
 
 class NiceDropdownList : SimpleColoredComponent(),
     ListCellRenderer<Any?> {
-    private val FONT: Font
+    val scheme = EditorColorsManager.getInstance().globalScheme
+    private val FONT= Font(scheme.editorFontName, Font.PLAIN, scheme.editorFontSize)
     override fun getListCellRendererComponent(
         list: JList<*>,
         value: Any?,
@@ -46,14 +47,7 @@ class NiceDropdownList : SimpleColoredComponent(),
         return this
     }
 
-    companion object {
-        private val LOG =
-            Logger.getInstance("#com.intellij.ide.util.FQNameCellRenderer")
-    }
-
     init {
-        val scheme = EditorColorsManager.getInstance().globalScheme
-        FONT = Font(scheme.editorFontName, Font.PLAIN, scheme.editorFontSize)
         isOpaque = true
     }
 }

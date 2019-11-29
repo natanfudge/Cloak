@@ -1,10 +1,8 @@
 package cloak.platform.saved
 
 import cloak.format.rename.Name
-import cloak.git.YarnRepo
 import cloak.git.currentBranch
 import cloak.git.currentBranchOrNull
-import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
 import cloak.util.mutableMap
@@ -31,6 +29,10 @@ fun ExtendedPlatform.setRenamedTo(name: Name, newName: NewName) {
     renamedNames[currentBranch]!![name] = newName
 }
 
+fun ExtendedPlatform.deleteRenamesNamesOfBranch(branch: String) {
+    renamedNames.remove(branch)
+}
+
 fun ExtendedPlatform.migrateRenamedNamesBranch(oldBranch: String, newBranch: String) {
     renamedNames[oldBranch]?.let { renamedNames[newBranch] = it }
     renamedNames.remove(oldBranch)
@@ -39,6 +41,7 @@ fun ExtendedPlatform.migrateRenamedNamesBranch(oldBranch: String, newBranch: Str
 fun ExtendedPlatform.nothingWasRenamed(): Boolean {
     return currentBranchOrNull?.let { renamedNames[it]?.isEmpty() } != false
 }
+
 fun ExtendedPlatform.anythingWasRenamed() = !nothingWasRenamed()
 
 val ExtendedPlatform.allBranches get() = renamedNames.keys

@@ -33,8 +33,8 @@ import kotlinx.coroutines.launch
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
+//TODO: when renaming classes, put the existing name as a default value, and select only the class name.
 class RenameIdeaAction : CloakAction() {
-    //TODO: rename highlighting not working
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false
         // Only allow minecraft classes
@@ -47,7 +47,6 @@ class RenameIdeaAction : CloakAction() {
             else -> false
         }
     }
-    //TODO: allow going back to already submitted branches to fix after review
 
     override fun actionPerformed(event: AnActionEvent) {
         val element = event.psiElement ?: return
@@ -56,8 +55,7 @@ class RenameIdeaAction : CloakAction() {
 
         val platform = IdeaPlatform(event.project ?: return, event.editor ?: return)
         GlobalScope.launch {
-            val result = RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
-//            if (result is StringSuccess) RenamedIdentifierHighlighter.rerun(event)
+            RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
         }
 
     }

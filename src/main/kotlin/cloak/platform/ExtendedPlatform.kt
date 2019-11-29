@@ -30,5 +30,7 @@ interface ExtendedPlatform {
 
     suspend fun getChoiceBetweenOptions(title: String, options: List<String>): String
 
+    suspend fun getMultipleChoicesBetweenOptions(title : String, options: List<String>) : List<String>
+
     suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T
 }

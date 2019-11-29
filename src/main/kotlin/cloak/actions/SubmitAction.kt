@@ -32,8 +32,8 @@ object SubmitAction {
 
             showMessageDialog(
                 title = "Success",
-                message = "<html>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>." +
-                        "\nYou can go back and modify your submitted mappings with <b>Tools -> Fabric -> Switch Yarn Branch -> $newBranchName</b></html>"
+                message = "<html><p>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>.</p>\n" +
+                        "<p>You can go back and modify your submitted mappings with <b>Tools -> Fabric -> Switch Yarn Branch -> $newBranchName</b></html></p>"
             )
 
             resetWorkspace(gitUser)

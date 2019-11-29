@@ -43,7 +43,7 @@ object Renamer {
         val oldName = nameBeforeRenames.updateAccordingToRenames(this)
 
         val matchingMapping = findMatchingMapping(oldName)
-            ?: return failWithErrorMessage("This was already renamed or doesn't exist in a newer version.")
+            ?: return failWithErrorMessage("This was already renamed, is a non-mc method, or doesn't exist in a newer version.")
 
 
         val (newFullName, explanation) = requestRenameInput {

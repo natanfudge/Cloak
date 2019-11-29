@@ -1,7 +1,8 @@
 package cloak.idea.platformImpl
 
-import cloak.idea.util.NiceDropdownList
+import cloak.idea.util.CheckboxListDialog
 import cloak.idea.util.CommonIcons
+import cloak.idea.util.NiceDropdownList
 import cloak.idea.util.showTwoInputsDialog
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
@@ -113,6 +114,13 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
                     .showCenteredInCurrentWindow(project)
             }
 
+        }
+
+    override suspend fun getMultipleChoicesBetweenOptions(title: String, options: List<String>): List<String> =
+        getFromUiThread {
+            val dialog = CheckboxListDialog(options, title)
+            dialog.show()
+            dialog.getChosenOptions()
         }
 
 

@@ -16,6 +16,8 @@ data class GitUser(val name: String, val email: String) {
 
 private var ExtendedPlatform.gitUser: GitUser? by SavedState(null,"CurrentGitUser", GitUser.serializer().nullable)
 
+suspend fun ExtendedPlatform.getDefaultUserBranch() = getGitUser()?.branchName
+
 private suspend fun ExtendedPlatform.getNewGitUser(): GitUser? {
     val (username, email) = getTwoInputs(
         "Enter your Github user to attribute contributions to",
