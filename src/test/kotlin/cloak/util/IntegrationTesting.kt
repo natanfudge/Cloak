@@ -42,6 +42,10 @@ class TestPlatform(private val userInput: Pair<String, String?>) : ExtendedPlatf
         return ""
     }
 
+    override suspend fun getMultipleChoicesBetweenOptions(title: String, options: List<String>): List<String> {
+        return listOf()
+    }
+
     override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T = action()
 
 }

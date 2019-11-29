@@ -3,7 +3,6 @@ package cloak.format.rename
 import cloak.format.descriptor.remap
 import cloak.format.mappings.*
 import cloak.git.currentBranch
-import cloak.git.inSubmittedBranch
 import cloak.git.setCurrentBranchToDefaultIfNeeded
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
@@ -46,14 +45,13 @@ object Renamer {
             ?: return failWithErrorMessage("This was already renamed, is a non-mc method, or doesn't exist in a newer version.")
 
 
-        val (newFullName, explanation) = requestRenameInput {
+        val (newFullName, explanation) = requestRenameInput(oldName) {
             validateUserInput(
                 it,
                 isTopLevelClass,
                 matchingMapping.typeName()
             )
-        }
-            ?: return fail("User didn't input a new name")
+        } ?: return fail("User didn't input a new name")
 
         val (packageName, newShortName) = splitPackageAndName(newFullName)
 
@@ -142,12 +140,13 @@ object Renamer {
         )
     }
 
+
     /** User input is in named but the repo is in intermediary */
     private fun <T> T.remapParameterDescriptors(namedToIntermediary: Map<String, String>): T = when (this) {
         is MethodName -> copy(
             parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
         ) as T
-        is ParamName -> copy(index, methodIn.remapParameterDescriptors(namedToIntermediary)) as T
+        is ParamName -> copy(methodIn = methodIn.remapParameterDescriptors(namedToIntermediary)) as T
         else -> this
     }
 
@@ -156,26 +155,26 @@ object Renamer {
      * This updates the information in the editor to be up to date to the repo.
      * */
     private fun Name.updateAccordingToRenames(platform: ExtendedPlatform): Name {
-         fun ClassName.updateAccordingToRenames(): ClassName =
+        fun ClassName.updateAccordingToRenames(): ClassName =
             platform.getRenamedTo(this)?.let {
                 var newName = copy(className = it.newName)
                 if (it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
                 newName
             } ?: this
 
-         fun FieldName.updateAccordingToRenames(): FieldName {
+        fun FieldName.updateAccordingToRenames(): FieldName {
             val newClassName = classIn.updateAccordingToRenames()
             return platform.getRenamedTo(this)?.let { copy(fieldName = it.newName, classIn = newClassName) }
                 ?: copy(classIn = newClassName)
         }
 
-         fun MethodName.updateAccordingToRenames(): MethodName {
+        fun MethodName.updateAccordingToRenames(): MethodName {
             val newClassName = classIn.updateAccordingToRenames()
             return platform.getRenamedTo(this)?.let { copy(methodName = it.newName, classIn = newClassName) }
                 ?: copy(classIn = newClassName)
         }
 
-         fun ParamName.updateAccordingToRenames() = copy(methodIn = methodIn.updateAccordingToRenames())
+        fun ParamName.updateAccordingToRenames() = copy(methodIn = methodIn.updateAccordingToRenames())
 
         return when (this) {
             is ClassName -> updateAccordingToRenames()
@@ -184,8 +183,6 @@ object Renamer {
             is ParamName -> updateAccordingToRenames()
         }
     }
-
-
 
 
     private fun ExtendedPlatform.updateNamedIntermediaryMap(renameTarget: Mapping) {
@@ -209,11 +206,21 @@ object Renamer {
         }
     }
 
-    private suspend fun ExtendedPlatform.requestRenameInput(newNameValidator: (String) -> String?): Pair<String, String?>? {
+    private suspend fun ExtendedPlatform.requestRenameInput(
+        oldName: Name,
+        newNameValidator: (String) -> String?
+    ): Pair<String, String?>? {
+        val initialValue = oldName.getOwnName()
+        val defaultSelectionRange = if (oldName is ClassName && oldName.isTopLevelClass) {
+            (initialValue.lastIndexOf('/') + 1) until initialValue.length
+        } else initialValue.indices
+
         val (newName, explanation) = getTwoInputs(
             message = null, request = UserInputRequest.NewName, descriptionA = "New Name", descriptionB = "Explanation",
             validatorA = PlatformInputValidator(allowEmptyString = false, tester = newNameValidator),
-            validatorB = PlatformInputValidator(allowEmptyString = true)
+            validatorB = PlatformInputValidator(allowEmptyString = true),
+            initialValueA = initialValue,
+            defaultSelectionA = defaultSelectionRange
         ) ?: return null
 
         return Pair(newName, if (explanation == "") null else explanation)

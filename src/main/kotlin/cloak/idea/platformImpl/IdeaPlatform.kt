@@ -1,9 +1,6 @@
 package cloak.idea.platformImpl
 
-import cloak.idea.util.CheckboxListDialog
-import cloak.idea.util.CommonIcons
-import cloak.idea.util.NiceDropdownList
-import cloak.idea.util.showTwoInputsDialog
+import cloak.idea.util.*
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
@@ -57,6 +54,8 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         descriptionB: String?,
         initialValueA: String?,
         initialValueB: String?,
+        defaultSelectionA: IntRange?,
+        defaultSelectionB: IntRange?,
         validatorA: PlatformInputValidator?,
         validatorB: PlatformInputValidator?
     ) = getFromUiThread {
@@ -64,13 +63,17 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
             project,
             message,
             request.title,
-            descriptionA,
-            descriptionB,
             CommonIcons.Question,
-            initialValueA,
-            initialValueB,
-            validatorA?.let { InputValidatorWrapper(it) },
-            validatorB?.let { InputValidatorWrapper(it) }
+            InputFieldData(
+                descriptionA,
+                initialValueA,
+                defaultSelectionA,
+                validatorA?.let { InputValidatorWrapper(it) }),
+            InputFieldData(
+                descriptionB,
+                initialValueB,
+                defaultSelectionB,
+                validatorB?.let { InputValidatorWrapper(it) })
         )?.run { Pair(first, if (second == "") null else second) }
     }
 

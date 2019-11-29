@@ -79,5 +79,5 @@ private fun PsiClassReferenceType.resolveName(): String? {
 
 private fun PsiParameter.getIndex() = (parent as PsiParameterList).getParameterIndex(this)
 private fun PsiParameter.getParameterName(): ParamName? = (this.parent.parent as PsiMethod).getMethodName()?.let {
-    ParamName(index = this.getIndex(), methodIn = it)
+    ParamName(index = this.getIndex(), methodIn = it, paramName = this.name)
 }

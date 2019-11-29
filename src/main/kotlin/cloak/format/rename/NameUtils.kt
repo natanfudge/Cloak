@@ -45,3 +45,11 @@ fun splitPackageAndName(rawName: String): Pair<String?, String> {
     return if (lastSlashIndex == -1) null to rawName
     else rawName.splitOn(lastSlashIndex)
 }
+
+
+ fun Name.getOwnName() = when(this){
+    is ClassName -> if(isTopLevelClass) "$packageName/$className" else className
+    is FieldName -> fieldName
+    is MethodName -> methodName
+    is ParamName -> paramName
+}

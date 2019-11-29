@@ -18,72 +18,100 @@ fun showTwoInputsDialog(
     project: Project,
     message: String?,
     title: String,
-    descriptionA: String?,
-    descriptionB: String?,
     icon: Icon = CommonIcons.Question,
-    initialValueA: String? = null,
-    initialValueB: String? = null,
-    validatorA: InputValidator? = null,
-    validatorB: InputValidator? = null
+    inputA : InputFieldData,
+    inputB: InputFieldData
 ): Pair<String, String>? {
 
     val dialog = TwoInputsDialog(
         project,
         message,
-        descriptionA,
-        descriptionB,
         title,
         icon,
-        initialValueA,
-        initialValueB,
-        validatorA,
-        validatorB,
         arrayOf(
             Messages.OK_BUTTON,
             Messages.CANCEL_BUTTON
         ),
-        0
+        0,
+        inputA, inputB
     )
 
     dialog.show()
 
-    val inputA = dialog.inputStringA
-    val inputB = dialog.inputStringB
-    return if (inputA != null && inputB != null) inputA to inputB
+    val inputStringA = dialog.inputStringA
+    val inputStringB = dialog.inputStringB
+    return if (inputStringA != null && inputStringB != null) inputStringA to inputStringB
     else null
+}
+
+fun <T : JComponent> JPanel.add(component: T, position: String, init: T.() -> Unit = {}) =
+    add(component.apply(init), position)
+
+data class InputFieldData(
+    val description: String? = null,
+    val initialValue: String? = null,
+    val defaultSelection: IntRange? = null,
+    val validator: InputValidator? = null
+) {
+    lateinit var textField: JTextComponent
+        private set
+
+    fun getInputString(exitCode: Int): String? = if (exitCode == 0) {
+        textField.text.trim { it <= ' ' }
+    } else null
+
+    fun initText() {
+        textField.text = initialValue
+    }
+
+    fun textValid(): Boolean {
+        val inputString = textField.text.trim { it <= ' ' }
+        return validator == null ||
+                validator.checkInput(inputString) &&
+                validator.canClose(inputString)
+    }
+
+    //TODO: use select() to implement default selection here
+
+    fun createTextFieldComponent() = JPanel(BorderLayout()).apply {
+        add(JLabel(description), BorderLayout.LINE_START) {
+            border = EmptyBorder(0, 0, 0, 5)
+        }
+        add(JTextField(30), BorderLayout.LINE_END) {
+            margin = JBInsets(0, 10, 0, 0)
+            textField = this
+        }
+    }
 }
 
 class TwoInputsDialog(
     project: Project?,
     message: String?,
-    private val descriptionA: String?,
-    private val descriptionB: String?,
     title: String?,
     icon: Icon?,
-    initialValueA: String?,
-    initialValueB: String?,
-    private val validatorA: InputValidator?,
-    private val validatorB: InputValidator?,
     options: Array<String?>,
-    defaultOption: Int
+    defaultOption: Int,
+    private val inputA: InputFieldData,
+    private val inputB: InputFieldData
 ) : MessageDialog(project, true) {
-    lateinit var textFieldA: JTextComponent
-        private set
 
-    lateinit var textFieldB: JTextComponent
-        private set
+    private fun bothInputs(code: InputFieldData.() -> Unit) {
+        inputA.code()
+        inputB.code()
+    }
 
     init {
         _init(title, message, options, defaultOption, -1, icon, null)
-        textFieldA.text = initialValueA
-        textFieldB.text = initialValueB
+        bothInputs { initText() }
         enableOkAction()
     }
 
     private fun enableOkAction() {
         okAction.isEnabled = true
-        if (validatorA != null && !validatorA.checkInput(textFieldA.text.trim { it <= ' ' })) okAction.isEnabled = false
-        if (validatorB != null && !validatorB.checkInput(textFieldB.text.trim { it <= ' ' })) okAction.isEnabled = false
+        bothInputs {
+            if (validator != null && !validator.checkInput(textField.text.trim { it <= ' ' })) okAction.isEnabled =
+                false
+        }
     }
 
     private fun Document.onTextChange(callback: (DocumentEvent) -> Unit) = addDocumentListener(
@@ -101,38 +129,23 @@ class TwoInputsDialog(
                 actions[0] = okAction
                 actions[0]!!.putValue(DialogWrapper.DEFAULT_ACTION, true)
 
-                fun validateInput(textField: JTextComponent, validator: InputValidator?) {
-                    val text = textField.text.trim { it <= ' ' }
-                    if (validator != null) {
-                        if (!validator.checkInput(text)) {
-                            actions[i]!!.isEnabled = false
-                        }
+                bothInputs {
+                    textField.document.onTextChange {
+                        actions[i]!!.isEnabled = true
+                        val text = textField.text.trim { it <= ' ' }
+                        if (validator != null) {
+                            if (!validator.checkInput(text)) {
+                                actions[i]!!.isEnabled = false
+                            }
 
-                        if (validator is InputValidatorEx) {
-                            val errorText = validator.getErrorText(text)
-                            setErrorText(errorText, textField)
-                            if (errorText != null) actions[i]!!.isEnabled = false
+                            if (validator is InputValidatorEx) {
+                                val errorText = validator.getErrorText(text)
+                                setErrorText(errorText, textField)
+                                if (errorText != null) actions[i]!!.isEnabled = false
+                            }
                         }
                     }
                 }
-
-                fun validateBoth() {
-                    actions[i]!!.isEnabled = true
-                    validateInput(textFieldA, validatorA)
-                    validateInput(textFieldB, validatorB)
-                }
-
-
-                textFieldA.document.onTextChange {
-                    actions[i]!!.isEnabled = true
-                    validateInput(textFieldA, validatorA)
-                }
-
-                textFieldB.document.onTextChange {
-                    actions[i]!!.isEnabled = true
-                    validateInput(textFieldB, validatorB)
-                }
-
 
             } else {
                 actions[i] = object : AbstractAction(option) {
@@ -146,16 +159,8 @@ class TwoInputsDialog(
     }
 
 
-
-    private fun textValid(textField: JTextComponent, validator: InputValidator?): Boolean {
-        val inputString = textField.text.trim { it <= ' ' }
-        return validator == null ||
-                validator.checkInput(inputString) &&
-                validator.canClose(inputString)
-    }
-
     override fun doOKAction() {
-        if (textValid(textFieldA, validatorA) && textValid(textFieldB, validatorB)) {
+        if (inputA.textValid() && inputB.textValid()) {
             close(0)
         }
     }
@@ -175,8 +180,8 @@ class TwoInputsDialog(
             val textComponent = createTextComponent()
             messagePanel.add(textComponent, BorderLayout.NORTH)
         }
-        val inputRowA = createTextFieldComponentA()
-        val inputRowB = createTextFieldComponentB()
+        val inputRowA = inputA.createTextFieldComponent()
+        val inputRowB = inputB.createTextFieldComponent()
         messagePanel.add(inputRowA, BorderLayout.CENTER)
         messagePanel.add(inputRowB, BorderLayout.SOUTH)
         return messagePanel
@@ -184,52 +189,24 @@ class TwoInputsDialog(
 
 
     private fun createTextComponent(): JComponent {
-        val textComponent: JComponent
-        if (BasicHTML.isHTMLString(myMessage)) {
-            textComponent = createMessageComponent(myMessage)
+        val textComponent: JComponent = if (BasicHTML.isHTMLString(myMessage)) {
+            createMessageComponent(myMessage)
         } else {
             val textLabel = JLabel(myMessage)
             textLabel.ui = MultiLineLabelUI()
-            textComponent = textLabel
+            textLabel
         }
         textComponent.border = BorderFactory.createEmptyBorder(0, 0, 5, 20)
         return textComponent
     }
 
-    private fun <T : JComponent> JPanel.add(component: T, position: String, init: T.() -> Unit = {}) =
-        add(component.apply(init), position)
-
-    private fun createTextFieldComponentA(): JComponent = JPanel(BorderLayout()).apply {
-        add(JLabel(descriptionA), BorderLayout.LINE_START) {
-            border = EmptyBorder(0, 0, 0, 5)
-        }
-        add(JTextField(30), BorderLayout.LINE_END) {
-            margin = JBInsets(0, 10, 0, 0)
-            textFieldA = this
-        }
-    }
-
-    private fun createTextFieldComponentB(): JComponent = JPanel(BorderLayout()).apply {
-        add(JLabel(descriptionB), BorderLayout.LINE_START) {
-            border = EmptyBorder(0, 0, 0, 5)
-        }
-        add(JTextField(30), BorderLayout.LINE_END) {
-            margin = JBInsets(0, 10, 0, 0)
-            textFieldB = this
-        }
-    }
 
     override fun getPreferredFocusedComponent(): JComponent? {
-        return textFieldA
+        return inputA.textField
     }
 
     val inputStringA: String?
-        get() = if (exitCode == 0) {
-            textFieldA.text.trim { it <= ' ' }
-        } else null
-
+        get() = inputA.getInputString(exitCode)
     val inputStringB: String?
-        get() = if (exitCode == 0) {
-            textFieldB.text.trim { it <= ' ' }
-        } else null
+        get() = inputB.getInputString(exitCode)
 }

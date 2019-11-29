@@ -18,7 +18,6 @@ class SubmitIdeaAction : CloakAction() {
     override fun actionPerformed(event: AnActionEvent) {
         val platform = IdeaPlatform(event.project ?: return, event.editor)
         SubmitAction.submit(platform)
-//        RenamedIdentifierHighlighter.rerun(event)
     }
 
 }

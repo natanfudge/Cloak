@@ -69,7 +69,7 @@ data class MethodName(
 }
 
 @Serializable
-data class ParamName(val index: Int, val methodIn: MethodName) : Name() {
+data class ParamName(val index: Int,val paramName : String, val methodIn: MethodName) : Name() {
     override val topLevelClass = methodIn.topLevelClass
     override fun toString() = "$methodIn[$index]"
 }

@@ -14,6 +14,8 @@ interface ExtendedPlatform {
         descriptionB: String?,
         initialValueA: String? = null,
         initialValueB: String? = null,
+        defaultSelectionA : IntRange? = null,
+        defaultSelectionB: IntRange? = null,
         validatorA: PlatformInputValidator? = null,
         validatorB: PlatformInputValidator? = null
     ): Pair<String, String?>?
