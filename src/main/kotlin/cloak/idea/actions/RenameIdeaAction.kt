@@ -33,7 +33,6 @@ import kotlinx.coroutines.launch
 
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
-//TODO: when renaming classes, put the existing name as a default value, and select only the class name.
 class RenameIdeaAction : CloakAction() {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
         val element = event.psiElement ?: return false

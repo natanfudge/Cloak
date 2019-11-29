@@ -4,8 +4,8 @@ package cloak.idea
 import cloak.idea.actions.isMinecraftPackageName
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
-import cloak.idea.util.editor
-import cloak.idea.util.psiFile
+import cloak.idea.util.isInnerClass
+import cloak.idea.util.packageName
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.getRenamedTo
 import cloak.platform.saved.nothingWasRenamed
@@ -18,8 +18,6 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType.HighlightInfoTypeImpl
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.lang.annotation.HighlightSeverity
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.TextAttributes
@@ -109,7 +107,11 @@ private fun IVisitor.highlight(element: PsiElement, range: TextRange) {
     builder.range(range)
 
     builder.textAttributes(RenamedStyle)
-    builder.descriptionAndTooltip("Renamed to $rename")
+    // Only show the new class name if the package name didn't change
+    val newName = if (element is PsiClass && !element.isInnerClass && element.packageName.replace('.','/') == rename.newPackageName) {
+        rename.newName
+    } else rename.toString()
+    builder.descriptionAndTooltip("Renamed to $newName")
 
     highlights.add(builder.createUnconditionally())
 }

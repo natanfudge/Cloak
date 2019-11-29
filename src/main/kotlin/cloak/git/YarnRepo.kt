@@ -151,6 +151,5 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         }
     }
 
-
     private fun getFile(path: String): File = localPath.toPath().resolve(path).toFile()
 }

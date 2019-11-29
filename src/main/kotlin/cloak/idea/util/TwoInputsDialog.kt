@@ -19,7 +19,7 @@ fun showTwoInputsDialog(
     message: String?,
     title: String,
     icon: Icon = CommonIcons.Question,
-    inputA : InputFieldData,
+    inputA: InputFieldData,
     inputB: InputFieldData
 ): Pair<String, String>? {
 
@@ -35,6 +35,8 @@ fun showTwoInputsDialog(
         0,
         inputA, inputB
     )
+    inputA.applySelection()
+    inputB.applySelection()
 
     dialog.show()
 
@@ -71,8 +73,6 @@ data class InputFieldData(
                 validator.canClose(inputString)
     }
 
-    //TODO: use select() to implement default selection here
-
     fun createTextFieldComponent() = JPanel(BorderLayout()).apply {
         add(JLabel(description), BorderLayout.LINE_START) {
             border = EmptyBorder(0, 0, 0, 5)
@@ -81,6 +81,11 @@ data class InputFieldData(
             margin = JBInsets(0, 10, 0, 0)
             textField = this
         }
+    }
+
+    fun applySelection() {
+        if (defaultSelection != null) textField.select(defaultSelection.first, defaultSelection.last + 1)
+        textField.putClientProperty(DialogWrapperPeer.HAVE_INITIAL_SELECTION, true)
     }
 }
 
@@ -95,7 +100,7 @@ class TwoInputsDialog(
     private val inputB: InputFieldData
 ) : MessageDialog(project, true) {
 
-    private fun bothInputs(code: InputFieldData.() -> Unit) {
+    private inline fun bothInputs(code: InputFieldData.() -> Unit) {
         inputA.code()
         inputB.code()
     }

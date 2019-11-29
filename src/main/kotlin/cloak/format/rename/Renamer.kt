@@ -17,7 +17,6 @@ import javax.lang.model.SourceVersion
 
 //TODO: need some way to reduce the amount of mutable state and global variables
 
-//TODO: can't rename parameters in constructors
 object Renamer {
 
     private suspend fun ExtendedPlatform.failWithErrorMessage(message: String) = fail<NewName>(message)
@@ -26,6 +25,7 @@ object Renamer {
     /**
      * Returns the new name
      */
+    // Note: there's no need for the ability to rename top level classes just by their short name anymore.
     suspend fun ExtendedPlatform.rename(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
         val user = getGitUser() ?: return fail("User didn't provide git info")
 

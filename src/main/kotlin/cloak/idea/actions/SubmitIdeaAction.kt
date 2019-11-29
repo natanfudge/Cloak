@@ -9,7 +9,6 @@ import cloak.idea.util.editor
 import cloak.platform.saved.anythingWasRenamed
 import com.intellij.openapi.actionSystem.AnActionEvent
 
-//TODO: clean caches command
 class SubmitIdeaAction : CloakAction() {
     override fun isEnabled(event: AnActionEvent): Boolean {
         return IdeaPlatform(event.project ?: return false, event.editor).anythingWasRenamed()
