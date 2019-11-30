@@ -48,7 +48,6 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         fun at(location: File, platform: ExtendedPlatform) = YarnRepo(location, platform)
 
         const val GithubUsername = "Cloak-Bot"
-        //        const val CloakEmail = "natandestroyer101@gmail.com"
         //TODO: this should be used when sending PRs
         const val UpstreamUsername = "fabricmc"
         private const val RepoName = "yarn"
@@ -57,8 +56,6 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         private const val MappingsDirName = "mappings"
         private const val McVersionFile = "mcversion.txt"
 
-        //TODO: use .rc with encryption or smthn
-        private val GithubPassword = System.getenv("GITHUB_PASSWORD")
     }
 
     val mappingsDirectory: File = getFile(MappingsDirName)

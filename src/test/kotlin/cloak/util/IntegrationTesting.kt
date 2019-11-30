@@ -28,12 +28,15 @@ class TestPlatform(private val userInput: Pair<String, String?>) : ExtendedPlatf
         descriptionB: String?,
         initialValueA: String?,
         initialValueB: String?,
+        defaultSelectionA: IntRange?,
+        defaultSelectionB: IntRange?,
         validatorA: PlatformInputValidator?,
         validatorB: PlatformInputValidator?
     ): Pair<String, String?>? = when (request) {
         UserInputRequest.NewName -> userInput
         UserInputRequest.GitUserAuthor -> Pair(TestAuthor.name, TestAuthor.email)
     }
+
 
     override suspend fun showMessageDialog(message: String, title: String) {}
     override suspend fun showErrorPopup(message: String, title: String) {}

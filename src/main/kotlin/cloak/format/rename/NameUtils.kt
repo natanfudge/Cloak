@@ -25,6 +25,7 @@ private fun <T> flattenWithSelf(seed: T, getNext: T.() -> T?): List<T> {
 
 // This goes from top to bottom. Does not include self.
 fun ClassName.getParents(): List<ClassName> = flatten(this) { this.classIn }.reversed()
+
 // Includes self
 fun ClassName.getParentsAndSelf(): List<ClassName> = flattenWithSelf(this) { this.classIn }.reversed()
 
@@ -47,9 +48,14 @@ fun splitPackageAndName(rawName: String): Pair<String?, String> {
 }
 
 
- fun Name.getOwnName() = when(this){
-    is ClassName -> if(isTopLevelClass) "$packageName/$className" else className
-    is FieldName -> fieldName
-    is MethodName -> methodName
-    is ParamName -> paramName
-}
+fun Name.getOwnName() = if (this is ClassName && isTopLevelClass) "$packageName/$className"
+else shortName
+
+
+val Name.shortName
+    get() = when (this) {
+        is ClassName -> className
+        is FieldName -> fieldName
+        is MethodName -> methodName
+        is ParamName -> paramName
+    }

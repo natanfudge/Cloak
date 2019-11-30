@@ -52,7 +52,7 @@ class MethodBuilder(
     private val parameterTypes: List<ParameterDescriptor>
 ) : NameBuilder<MethodName> {
     override fun build() = MethodName(method, className, parameterTypes)
-    fun parameter(index: Int) = ParamBuilder(ParamName(index, build()))
+    fun parameter(index: Int, name: String = "") = ParamBuilder(ParamName(index, name, build()))
 }
 
 class ParamBuilder(private val param: ParamName) : NameBuilder<ParamName> {

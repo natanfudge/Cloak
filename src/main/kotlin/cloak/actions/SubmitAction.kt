@@ -81,7 +81,6 @@ private suspend fun ExtendedPlatform.createPr(
 
 
 private fun ExtendedPlatform.constructPrBody(branchName: String): String {
-    //TODO: change branch name when we can switch between branches
     val changes = allChangesOfBranch(branchName)
     return changes.filter { it.explanation != null }.joinToString("  \n") { change ->
         """- ${change.oldName} -> ${change.newName}  

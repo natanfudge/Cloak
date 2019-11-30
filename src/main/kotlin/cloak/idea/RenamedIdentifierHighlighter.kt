@@ -1,6 +1,8 @@
 package cloak.idea
 
 
+import cloak.format.rename.getOwnName
+import cloak.format.rename.shortName
 import cloak.idea.actions.isMinecraftPackageName
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
@@ -102,9 +104,13 @@ private interface IVisitor {
 }
 
 private fun IVisitor.highlight(element: PsiElement, range: TextRange) {
-    val rename = platform.getRenamedTo(element.asNameOrNull() ?: return) ?: return
+    val oldName = element.asNameOrNull() ?: return
+    val rename = platform.getRenamedTo(oldName) ?: return
     val builder = HighlightInfo.newHighlightInfo(HighlightInfoType)
-    builder.range(range)
+
+    // Sometimes the element captures too much so we only take the part that contains the name itself
+    val actualRange = TextRange(range.endOffset - oldName.shortName.length, range.endOffset)
+    builder.range(actualRange)
 
     builder.textAttributes(RenamedStyle)
     // Only show the new class name if the package name didn't change
@@ -127,7 +133,9 @@ private class WalkingVisitor(
 
     override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
         reference.resolve()
-            .let { if (it is PsiNameIdentifierOwner) highlight(it, reference.lastChild.textRange ?: return) }
+            .let {
+                if (it is PsiNameIdentifierOwner) highlight(it, reference.textRange ?: return)
+            }
         super.visitReferenceElement(reference)
     }
 
