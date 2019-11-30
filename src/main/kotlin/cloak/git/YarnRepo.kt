@@ -78,9 +78,9 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
     fun getMappingsFile(path: String): File = mappingsDirectory.toPath().resolve(path).toFile()
 
-    fun push() = git.push(OriginUrl, credentials)
+    fun push() = git.push(OriginUrl)
 
-    fun deleteBranch(branchName: String) = git.deleteBranch(branchName, credentials)
+    fun deleteBranch(branchName: String) = git.deleteBranch(branchName)
 
     fun close() = _git?.close()
 
@@ -130,10 +130,10 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         return Paths.get(MappingsDirName, relativeMappingPath).toString().replace("\\", "/")
     }
 
-    private val credentials = UsernamePasswordCredentialsProvider(
-        GithubUsername,
-        GithubPassword
-    )
+//    private val credentials = UsernamePasswordCredentialsProvider(
+//        GithubUsername,
+//        GithubPassword
+//    )
 
     private fun getOrCloneGit(): GitRepository {
         return if (localPath.exists()) GitRepository(Git.open(localPath))

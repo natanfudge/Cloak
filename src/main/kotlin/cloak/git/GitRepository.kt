@@ -1,5 +1,6 @@
 package cloak.git
 
+import TP
 import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
@@ -57,6 +58,7 @@ open class GitRepository(private val git: Git) {
         git.push().setRefSpecs(refspec).setRemote("origin").setCredentialsProvider(credentialsProvider).call()
     }
 
+    fun deleteBranch(branchName: String) = TP.deleteBranch(branchName, git)
 
     fun getBranches(): List<Ref> = git.branchList().call()
 
@@ -68,6 +70,8 @@ open class GitRepository(private val git: Git) {
         git.remoteAdd().setName("origin").setUri(URIish(remoteUrl)).call()
         git.push().setCredentialsProvider(credentialsProvider).call()
     }
+
+    open fun push(remoteUrl: String) = TP.push(remoteUrl, git)
 
     fun updateRemote(remote: String) = git.fetch().setRemote(remote).call()
 
