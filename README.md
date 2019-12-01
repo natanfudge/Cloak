@@ -41,5 +41,4 @@ It's not a dynamic language. `var` is just type inference (see, Java 10).
 - Submit mappings with `Tools -> Fabric -> Submit mappings` or `ctrl+alt+F2`.
 - Revisit already submitted mappings with `Tools -> Fabric -> Switch Branch` or `shift+ctrl+B`, and update them by submitting mappings again.
 - Delete branches to clear up space with `Tools -> Fabric -> Delete Branches` or `ctrl+alt+D`. 
-- 
 

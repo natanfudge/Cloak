@@ -13,7 +13,7 @@ object SubmitAction {
 
         GlobalScope.launch {
             val gitUser = getGitUser() ?: return@launch
-            if (inSubmittedBranch) {
+            if (inSubmittedBranch()) {
                 asyncWithText("Submitting") {
                     yarnRepo.push()
                 }

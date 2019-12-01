@@ -26,8 +26,7 @@ val ExtendedPlatform.currentBranch
 
 val ExtendedPlatform.currentBranchOrNull get() = currentBranchStore
 
-var ExtendedPlatform.inSubmittedBranch: Boolean by SavedState(false, "InSubmittedBranch" ,BooleanSerializer)
-    private set
+suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean  = currentBranch != getGitUser()?.branchName
 
 fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
     if (currentBranchStore == null) currentBranchStore = gitUser.branchName
@@ -93,7 +92,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
     ).also { mcVersion = null }.also {
         platform.currentBranchStore = branchName
         val userBranch = platform.getGitUser()?.branchName
-        platform.inSubmittedBranch = userBranch != branchName
+//        platform.inSubmittedBranch = userBranch != branchName
     }
 
     fun removeMappingsFile(path: String) {
