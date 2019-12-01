@@ -12,8 +12,14 @@ object SwitchBranchAction {
     fun switch(platform: ExtendedPlatform) = with(platform) {
         GlobalScope.launch {
             val user = getGitUser() ?: return@launch
-            val options = (allBranches + user.branchName).filter { it != currentBranch }
+
+            val mainBranchLabel = "${user.branchName} (Main)"
+            val options = mutableListOf(mainBranchLabel)
+            options.addAll(allBranches)
+            options.removeIf { it == currentBranch || it == "$currentBranch (Main)" }
+
             val branch = platform.getChoiceBetweenOptions("Switch from $currentBranch", options)
+                .let { if(it == mainBranchLabel) user.branchName else it }
             asyncWithText("Switching...") {
                 yarnRepo.switchToBranch(branchName = branch)
             }

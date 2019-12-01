@@ -30,6 +30,8 @@ object SubmitAction {
             val newBranchName = Repository.normalizeBranchName(prName)
             val pr = createPr(prName, newBranchName, gitUser, upstreamOwner)
 
+            assert(pr.htmlUrl != null){ "Could not get PR url of PR: $pr" }
+
             showMessageDialog(
                 title = "Success",
                 message = "<html><p>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>.</p>\n" +

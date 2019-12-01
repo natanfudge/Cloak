@@ -42,7 +42,8 @@ object Renamer {
         val oldName = nameBeforeRenames.updateAccordingToRenames(this)
 
         val matchingMapping = findMatchingMapping(oldName)
-            ?: return failWithErrorMessage("This was already renamed, is a non-mc method, or doesn't exist in a newer version.")
+            //TODO: specialized error for each case
+            ?: return failWithErrorMessage("This was already renamed, is automatically named, is a non-mc method, or doesn't exist in a newer version.")
 
 
         val (newFullName, explanation) = requestRenameInput(oldName) {
@@ -97,7 +98,7 @@ object Renamer {
         if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
             return fail("There's another ${renameTarget.typeName()} named that way already.")
         }
-        val presentableNewName = renameTarget.readableName()
+        val presentableNewName = renameTarget.nonNullName
 
         commitChanges(
             oldPath,
@@ -130,6 +131,7 @@ object Renamer {
         yarnRepo.stageMappingsFile(newPath)
         yarnRepo.commitChanges(author = user, commitMessage = "$presentableOldName -> $presentableNewName")
 
+        //TODO: remap the parameter of methods to named
         appendYarnChange(
             branch = currentBranch,
             change = Change(

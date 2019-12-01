@@ -35,11 +35,6 @@ abstract class PersistentSaver {
                     // but kotlin doesn't know that, so we need to cast
                     Cbor.plain.dump(state.serializer as KSerializer<Any?>, state.memoryCache)
                 )
-//                storagePath.toFile().writeText(
-//                    Json(
-//                        JsonConfiguration.Stable.copy(prettyPrint = true)
-//                    ).stringify(state.serializer as KSerializer<Any?>, state.memoryCache)
-//                )
             }
         }
     }
@@ -64,9 +59,6 @@ class SavedState<T : Any?>(defaultValue: T, private val key : String, internal v
             }
 
             memoryCache = Cbor.plain.load(serializer, Files.readAllBytes(storagePath))
-//            memoryCache = Json(
-//                JsonConfiguration.Stable.copy(prettyPrint = true)
-//            ).parse(serializer, storagePath.toFile().readText())
         }
 
         return memoryCache
