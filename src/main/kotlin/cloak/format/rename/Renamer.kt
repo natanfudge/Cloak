@@ -2,7 +2,6 @@ package cloak.format.rename
 
 import cloak.format.descriptor.remap
 import cloak.format.mappings.*
-import cloak.git.YarnRepo
 import cloak.git.currentBranch
 import cloak.git.setCurrentBranchToDefaultIfNeeded
 import cloak.git.yarnRepo
@@ -70,6 +69,7 @@ object Renamer {
                 when (val result = applyRename(renameInstance, matchingMapping)) {
                     is StringSuccess -> {
                         val newName = NewName(newShortName, packageName)
+
                         setRenamedTo(nameBeforeRenames, newName)
                         newName.success
                     }
@@ -94,15 +94,15 @@ object Renamer {
         val result = rename.rename(renameTarget)
         if (result is StringError) return result.map { Unit }
 
-        updateNamedIntermediaryMap(renameTarget)
-
         val newPath = renameTarget.getFilePath()
         val newMappingLocation = yarnRepo.getMappingsFile(newPath)
-
 
         if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
             return fail("There's another ${renameTarget.typeName()} named that way already.")
         }
+
+        updateNamedIntermediaryMap(renameTarget)
+
         val presentableNewName = renameTarget.nonNullName
 
         commitChanges(

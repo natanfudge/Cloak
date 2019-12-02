@@ -1,7 +1,6 @@
 package cloak.idea.actions
 
 import cloak.actions.RenameAction
-import cloak.idea.RenamedIdentifierHighlighter
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.*
 import cloak.util.StringSuccess

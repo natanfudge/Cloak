@@ -3,20 +3,13 @@
     <name>Cloak</name>
     <version>${version}</version>
     <vendor>Fudge</vendor>
-    <idea-version since-build="190.0" until-build="1000.*"/>
+    <idea-version since-build="192.3645" until-build="1000.*"/>
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
     <change-notes>This is the first release. Idea, why must you make me type this.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
-
-
-    <project-components>
-        <component>
-            <implementation-class>cloak.idea.RenamedIdentifierHighlighterFactory</implementation-class>
-        </component>
-    </project-components>
 
     <actions>
 
@@ -40,9 +33,13 @@
                     description="Allows selecting a list of branches to delete on git and from cache">
                 <keyboard-shortcut first-keystroke="ctrl alt d" keymap="$default"/>
             </action>
+
         </group>
 
     </actions>
 
 
+    <extensions defaultExtensionNs="com.intellij">
+        <highlightingPassFactory implementation="cloak.idea.RenamedIdentifierHighlighterFactory"/>
+    </extensions>
 </idea-plugin>

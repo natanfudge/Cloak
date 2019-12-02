@@ -14,12 +14,14 @@ import cloak.platform.saved.nothingWasRenamed
 import cloak.util.buildList
 import com.intellij.codeHighlighting.TextEditorHighlightingPass
 import com.intellij.codeHighlighting.TextEditorHighlightingPassFactory
+import com.intellij.codeHighlighting.TextEditorHighlightingPassFactoryRegistrar
 import com.intellij.codeHighlighting.TextEditorHighlightingPassRegistrar
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType.HighlightInfoTypeImpl
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.TextAttributes
@@ -38,17 +40,25 @@ private val HighlightInfoType: HighlightInfoType =
 private val RenamedStyle = TextAttributes(JbColors.Green, null, null, null, Font.PLAIN)
 
 
-class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassRegistrar) :
-    TextEditorHighlightingPassFactory {
-    init {
-        registrar.registerTextEditorHighlightingPass(this, null, null, true, -1);
-    }
+//// Thank you IDEA
+//class RenamedIdentifierHighlighterFactoryRegistrar :  {
+//    override fun registerHighlightingPassFactory(registrar: TextEditorHighlightingPassRegistrar, project: Project) {
+//        RenamedIdentifierHighlighterFactory(registrar)
+//    }
+//
+//}
+
+class RenamedIdentifierHighlighterFactory : TextEditorHighlightingPassFactory,TextEditorHighlightingPassFactoryRegistrar {
 
     override fun createHighlightingPass(file: PsiFile, editor: Editor): TextEditorHighlightingPass {
-        return RenamedIdentifierHighlighter(file.project, file, editor);
+        return RenamedIdentifierHighlighter(file.project, file, editor)
     }
 
+    override fun registerHighlightingPassFactory(registrar: TextEditorHighlightingPassRegistrar, project: Project) {
+        registrar.registerTextEditorHighlightingPass(this, null, null, true, -1)
+    }
 }
+
 
 class RenamedIdentifierHighlighter(
     project: Project,
@@ -57,18 +67,6 @@ class RenamedIdentifierHighlighter(
 ) :
     TextEditorHighlightingPass(project, editor.document, true) {
     private val platform = IdeaPlatform(project, editor)
-
-    companion object {
-//        fun rerun(event: AnActionEvent) {
-//            ApplicationManager.getApplication().invokeLater {
-//                RenamedIdentifierHighlighter(
-//                    event.project ?: return@invokeLater,
-//                    event.psiFile ?: return@invokeLater,
-//                    event.editor ?: return@invokeLater
-//                ).doApplyInformationToEditor()
-//            }
-//        }
-    }
 
     override fun doCollectInformation(progress: ProgressIndicator) {}
     override fun doApplyInformationToEditor() {
