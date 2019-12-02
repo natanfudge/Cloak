@@ -2,6 +2,7 @@ package cloak.format.rename
 
 import cloak.format.descriptor.remap
 import cloak.format.mappings.*
+import cloak.git.YarnRepo
 import cloak.git.currentBranch
 import cloak.git.setCurrentBranchToDefaultIfNeeded
 import cloak.git.yarnRepo
@@ -10,8 +11,7 @@ import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
 import cloak.platform.saved.*
 import cloak.util.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.io.File
 import javax.lang.model.SourceVersion
 
@@ -28,53 +28,58 @@ object Renamer {
     // Note: there's no need for the ability to rename top level classes just by their short name anymore.
     suspend fun ExtendedPlatform.rename(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
         val user = getGitUser() ?: return fail("User didn't provide git info")
-
         setCurrentBranchToDefaultIfNeeded(user)
-        if (!showedNoteAboutLicense) {
-            showMessageDialog(
-                message = """Yarn mappings are licensed under a permissive license and should stay so.
+
+        return coroutineScope {
+            // Start cloning the repo early while the user is reading
+            val repo = async { yarnRepo.warmup() }
+
+            if (!showedNoteAboutLicense) {
+                showMessageDialog(
+                    message = """Yarn mappings are licensed under a permissive license and should stay so.
 | If you know the name of something from another, less permissive mappings 
 | set (such as MCP(Forge) or Mojang Proguard output), DO NOT use that name.""".trimMargin(),
-                title = "Warning"
-            )
-            showedNoteAboutLicense = true
-        }
-        val oldName = nameBeforeRenames.updateAccordingToRenames(this)
+                    title = "Warning"
+                )
+                showedNoteAboutLicense = true
+            }
+            val oldName = nameBeforeRenames.updateAccordingToRenames(this@rename)
 
-        val matchingMapping = findMatchingMapping(oldName)
+            val matchingMapping = findMatchingMapping(oldName, repo)
             //TODO: specialized error for each case
-            ?: return failWithErrorMessage("This was already renamed, is automatically named, is a non-mc method, or doesn't exist in a newer version.")
+                ?: return@coroutineScope failWithErrorMessage("This was already renamed, is automatically named, is a non-mc method, or doesn't exist in a newer version.")
 
 
-        val (newFullName, explanation) = requestRenameInput(oldName) {
-            validateUserInput(
-                it,
-                isTopLevelClass,
-                matchingMapping.typeName()
-            )
-        } ?: return fail("User didn't input a new name")
+            val (newFullName, explanation) = requestRenameInput(oldName) {
+                validateUserInput(
+                    it,
+                    isTopLevelClass,
+                    matchingMapping.typeName()
+                )
+            } ?: return@coroutineScope fail<NewName>("User didn't input a new name")
 
-        val (packageName, newShortName) = splitPackageAndName(newFullName)
+            val (packageName, newShortName) = splitPackageAndName(newFullName)
 
-        if (packageName != null && (oldName !is ClassName || oldName.classIn != null)) {
-            return failWithErrorMessage("Changing the package name can only be done on top level classes.")
-        }
-
-        return asyncWithText("Renaming...") {
-            val renameInstance = RenameInstance(oldName, newShortName, packageName, explanation)
-
-            when (val result = applyRename(renameInstance, matchingMapping)) {
-                is StringSuccess -> {
-                    val newName = NewName(newShortName, packageName)
-                    setRenamedTo(nameBeforeRenames, newName)
-                    newName.success
-                }
-                is StringError -> {
-                    showErrorPopup(message = result.value, title = "Rename Error")
-                    result.map { NewName("", null) }
-                }
+            if (packageName != null && (oldName !is ClassName || oldName.classIn != null)) {
+                return@coroutineScope failWithErrorMessage("Changing the package name can only be done on top level classes.")
             }
 
+            asyncWithText("Renaming...") {
+                val renameInstance = RenameInstance(oldName, newShortName, packageName, explanation)
+
+                when (val result = applyRename(renameInstance, matchingMapping)) {
+                    is StringSuccess -> {
+                        val newName = NewName(newShortName, packageName)
+                        setRenamedTo(nameBeforeRenames, newName)
+                        newName.success
+                    }
+                    is StringError -> {
+                        showErrorPopup(message = result.value, title = "Rename Error")
+                        result.map { NewName("", null) }
+                    }
+                }
+
+            }
         }
 
     }
@@ -196,8 +201,9 @@ object Renamer {
         }
     }
 
-    private suspend fun ExtendedPlatform.findMatchingMapping(name: Name): Mapping? {
+    private suspend fun ExtendedPlatform.findMatchingMapping(name: Name, repoPromise: Deferred<Unit>): Mapping? {
         return asyncWithText("Preparing rename...") {
+            repoPromise.await()
             switchToCorrectBranch()
             val namedToIntermediaryClasses = getNamedToIntermediary()
 

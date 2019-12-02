@@ -5,28 +5,33 @@ import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
 import cloak.platform.saved.GitUser
 import cloak.platform.saved.getGitUser
-import kotlinx.serialization.internal.BooleanSerializer
 import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.internal.nullable
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.URIish
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.File
 import java.nio.file.Paths
 
 private const val YarnRepositoryDirectory = "yarn"
 
 private val ExtendedPlatform.yarnRepoDir get() = storageDirectory.resolve(YarnRepositoryDirectory).toFile()
-val ExtendedPlatform.yarnRepo get() = YarnRepo.at(yarnRepoDir, this)
 
-private var ExtendedPlatform.currentBranchStore: String? by SavedState(null,"", StringSerializer.nullable)
+/**
+ * Don't access this too early
+ */
+val ExtendedPlatform.yarnRepo: YarnRepo
+    get() {
+        return YarnRepo.at(yarnRepoDir, this)
+    }
+
+private var ExtendedPlatform.currentBranchStore: String? by SavedState(null, "CurrentBranch", StringSerializer.nullable)
 
 val ExtendedPlatform.currentBranch
     get() = currentBranchStore ?: error("The branch wasn't switched to something usable yet")
 
 val ExtendedPlatform.currentBranchOrNull get() = currentBranchStore
 
-suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean  = currentBranch != getGitUser()?.branchName
+suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean = currentBranch != getGitUser()?.branchName
 
 fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
     if (currentBranchStore == null) currentBranchStore = gitUser.branchName
@@ -58,6 +63,10 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
     }
 
     val mappingsDirectory: File = getFile(MappingsDirName)
+
+    fun warmup() {
+        git
+    }
 
 
     fun clean() = localPath.deleteRecursively()
