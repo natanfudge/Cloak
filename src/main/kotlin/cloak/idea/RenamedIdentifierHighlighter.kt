@@ -50,7 +50,6 @@ class RenamedIdentifierHighlighterFactory(registrar: TextEditorHighlightingPassR
 
 }
 
-//TODO: it says I renamed Block when I haven't
 class RenamedIdentifierHighlighter(
     project: Project,
     private val file: PsiFile,

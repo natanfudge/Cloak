@@ -31,9 +31,9 @@ It's not a dynamic language. `var` is just type inference (see, Java 10).
 
 #### Any Contributions using Java will be accepted. 
 
-
-
-
+  
+  
+  
 
 ### Additional usage instructions
 

@@ -5,14 +5,12 @@
     <vendor>Fudge</vendor>
     <idea-version since-build="190.0" until-build="1000.*"/>
 
-    <description>A cloak made of fabric</description>
+    <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
-    <change-notes>  <![CDATA[]]></change-notes>
+    <change-notes>This is the first release. Idea, why must you make me type this.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
 
-    <extensions defaultExtensionNs="com.intellij">
-    </extensions>
 
     <project-components>
         <component>
@@ -27,7 +25,6 @@
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
         </action>
-
 
         <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true" icon="/assets/fabric_logo_16.png">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
