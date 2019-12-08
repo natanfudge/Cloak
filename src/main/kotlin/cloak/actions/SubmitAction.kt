@@ -26,17 +26,17 @@ object SubmitAction {
                 validator = PlatformInputValidator(allowEmptyString = false)
             ) ?: return@launch
 
-            val upstreamOwner = "natanfudge"//TODO: switch to YarnRepo.upstreamuser
+            val upstreamOwner = YarnRepo.UpstreamUsername/* "natanfudge"*/
             val newBranchName = Repository.normalizeBranchName(prName)
             val pr = createPr(prName, newBranchName, gitUser, upstreamOwner) ?: return@launch
 
             assert(pr.htmlUrl != null) { "Could not get PR url of PR: $pr" }
 
-            // Can't figure this out. Global scope it is.
-           resetWorkspace(gitUser)
+            //TODO: modify asyncWithText to allow running concurrently
+            resetWorkspace(gitUser)
             showMessageDialog(
                 title = "Success",
-                message = "<html><p>Your mappings have been submitted! Track them <astart c href=\"${pr.htmlUrl}\">here</a>.</p>\n" +
+                message = "<html><p>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>.</p>\n" +
                         "<p>You can go back and modify your submitted mappings with <b>Tools -> Fabric -> Switch Yarn Branch -> $newBranchName</b></html></p>"
             )
 

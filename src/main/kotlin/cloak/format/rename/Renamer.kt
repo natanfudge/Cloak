@@ -46,7 +46,9 @@ object Renamer {
 
             val matchingMapping = findMatchingMapping(oldName, repo)
             //TODO: specialized error for each case
-                ?: return@coroutineScope failWithErrorMessage("This was already renamed, is automatically named, is a non-mc method, or doesn't exist in a newer version.")
+
+//                ?: return@coroutineScope failWithErrorMessage("This was already renamed, is automatically named, is a non-mc method, or doesn't exist in a newer version.")
+                ?: return@coroutineScope failWithErrorMessage("Cannot rename this")
 
 
             val (newFullName, explanation) = requestRenameInput(oldName) {
@@ -181,7 +183,12 @@ object Renamer {
                 ?: copy(classIn = newClassName)
         }
 
-        fun ParamName.updateAccordingToRenames() = copy(methodIn = methodIn.updateAccordingToRenames())
+        fun ParamName.updateAccordingToRenames(): ParamName {
+            val newMethodName = methodIn.updateAccordingToRenames()
+            return platform.getRenamedTo(this)?.let {
+                copy(paramName = it.newName, methodIn = newMethodName)
+            } ?: copy(methodIn = newMethodName)
+        }
 
         return when (this) {
             is ClassName -> updateAccordingToRenames()

@@ -23,7 +23,6 @@ import kotlinx.coroutines.launch
 // build.gradle line to clipboard.
 
 
-
 fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
 
 //TODO: validation:
@@ -34,13 +33,16 @@ class RenameIdeaAction : CloakAction() {
         // Only allow minecraft classes
         if (!isMinecraftPackageName(element.packageName)) return false
 
-
         return when (element) {
             is PsiClass, is PsiField, is PsiParameter -> true
             is PsiMethod -> !element.isConstructor
             else -> false
         }
     }
+
+    //TODO: sort parameters
+    //TODO: shift constructor parameters
+
 
     override fun actionPerformed(event: AnActionEvent) {
         val element = event.psiElement ?: return
@@ -51,16 +53,24 @@ class RenameIdeaAction : CloakAction() {
         val platform = IdeaPlatform(event.project ?: return, editor)
         GlobalScope.launch {
             val rename = RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
-            if (rename is StringSuccess && element is PsiNameIdentifierOwner) {
+
+            if (rename is StringSuccess) {
                 platform.inUiThread {
-                    val range = element.nameIdentifier?.textRange ?: return@inUiThread
+                    val identifier = when (val caretElement = event.elementAtCaret) {
+                        is PsiNameIdentifierOwner -> caretElement.nameIdentifier
+                        is PsiIdentifier -> caretElement
+                        else -> return@inUiThread
+                    }
 
                     CodeFoldingManager.getInstance(event.project)
                         .updateFoldRegionsAsync(editor, true)?.run()
 
+                    val range = identifier?.textRange ?: return@inUiThread
+
                     // Manually fold because idea is a pos (this took like 3+ hours to figure out this code)
                     event.editor?.foldingModel?.runBatchFoldingOperation {
-                        val foldRegion  = editor.foldingModel.getFoldRegion(range.startOffset, range.endOffset) ?: return@runBatchFoldingOperation
+                        val foldRegion = editor.foldingModel.getFoldRegion(range.startOffset, range.endOffset)
+                            ?: return@runBatchFoldingOperation
                         foldRegion.isExpanded = false
                     }
                 }

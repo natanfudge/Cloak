@@ -4,6 +4,7 @@ import cloak.idea.util.*
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.editor.Editor
@@ -22,6 +23,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class IdeaPlatform(private val project: Project, private val editor: Editor? = null) : ExtendedPlatform {
+
     companion object {
         private const val StorageDirectory = "cloak"
     }

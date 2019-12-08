@@ -1,9 +1,7 @@
 package cloak.platform.saved
 
-import cloak.platform.ExtendedPlatform
-import cloak.platform.PlatformInputValidator
-import cloak.platform.SavedState
-import cloak.platform.UserInputRequest
+import cloak.platform.*
+import cloak.util.DebugJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.internal.nullable
 import org.eclipse.jgit.lib.PersonIdent
@@ -14,7 +12,10 @@ data class GitUser(val name: String, val email: String) {
     val branchName get() = name
 }
 
-private var ExtendedPlatform.gitUser: GitUser? by SavedState(null,"CurrentGitUser", GitUser.serializer().nullable)
+private val serializer = GitUser.serializer().nullable
+private var ExtendedPlatform.gitUser: GitUser? by SavedState(null, "CurrentGitUser", serializer)
+
+fun DebugDump.gitUserDump() = DebugJson.stringify(serializer, platform.gitUser)
 
 suspend fun ExtendedPlatform.getDefaultUserBranch() = getGitUser()?.branchName
 

@@ -23,6 +23,12 @@ private fun PsiPackageStatement.getTopLevelClass(): PsiClass? {
     return (containingFile as? PsiJavaFile)?.classes?.find { !it.isInnerClass }
 }
 
+private fun PsiElement.getDefinitionElement(): PsiElement? = when (this) {
+    is PsiClass, is PsiField, is PsiParameter, is PsiMethod -> this
+    is PsiJavaCodeReferenceElement -> resolve()
+    else -> null
+}
+
 class RenameFoldingBuilder : CustomFoldingBuilder() {
 
     override fun isDumbAware() = false
@@ -30,11 +36,7 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
     private fun PsiElement.isCollapsed(platform: ExtendedPlatform) =
         asNameOrNull()?.let { platform.getRenamedTo(it) } != null
 
-    private fun PsiElement.getDefinitionElement(): PsiElement? = when (this) {
-        is PsiClass, is PsiField, is PsiParameter, is PsiMethod -> this
-        is PsiJavaCodeReferenceElement -> resolve()
-        else -> null
-    }
+
 
 
     override fun isRegionCollapsedByDefault(node: ASTNode): Boolean {
@@ -73,6 +75,7 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
         if (platform.nothingWasRenamed()) return
 
         root.accept(WalkingVisitor(descriptors, platform))
+        val x = 2
     }
 
 
@@ -84,7 +87,7 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
         override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
             reference.resolve()
                 .let {
-                    if (it is PsiNameIdentifierOwner) fold(it, reference.textRange ?: return)
+                    if (it is PsiNameIdentifierOwner) fold(it, reference.textRange ?: return, astNode = reference.node)
                 }
             super.visitReferenceElement(reference)
         }
@@ -125,14 +128,14 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
             fold(element, element.nameIdentifier?.textRange ?: return)
         }
 
-        private fun fold(element: PsiElement, range: TextRange) {
+        private fun fold(element: PsiElement, range: TextRange,astNode : ASTNode? = element.node) {
             val oldName = element.asNameOrNull() ?: return
             platform.getRenamedTo(oldName) ?: return
 
             // Sometimes the element captures too much so we only take the part that contains the name itself
             val actualRange = TextRange(range.endOffset - oldName.shortName.length, range.endOffset)
 
-            foldRegions.add(FoldingDescriptor(element.node ?: return, actualRange))
+            foldRegions.add(FoldingDescriptor(astNode ?: return, actualRange,null, mutableSetOf(),true))
 
         }
 

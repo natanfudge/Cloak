@@ -13,6 +13,10 @@ import kotlin.reflect.KProperty
 
 private const val SavedDirectory = "saved"
 
+class DebugDump(val platform : ExtendedPlatform)
+
+val ExtendedPlatform.debug get() = DebugDump(this)
+
 abstract class PersistentSaver {
 
     abstract fun registerProjectCloseCallback(callback: () -> Unit)

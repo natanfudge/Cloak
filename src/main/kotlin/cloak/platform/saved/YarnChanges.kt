@@ -1,7 +1,9 @@
 package cloak.platform.saved
 
+import cloak.platform.DebugDump
 import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
+import cloak.util.DebugJson
 import cloak.util.mutableList
 import cloak.util.mutableMap
 import kotlinx.serialization.Serializable
@@ -13,12 +15,16 @@ import kotlinx.serialization.internal.StringSerializer
 @Serializable
 data class Change(val oldName: String, val newName: String, val explanation: String?)
 
+private val serializer = (StringSerializer to Change.serializer().mutableList).mutableMap
+
 // Mapped per branch
 private val ExtendedPlatform.yarnChanges: MutableMap<String, MutableList<Change>> by SavedState(
     mutableMapOf(),
     "YarnChangelog",
-    serializer = (StringSerializer to Change.serializer().mutableList).mutableMap
+    serializer
 )
+
+fun DebugDump.yarnChangesDump() = DebugJson.stringify(serializer, platform.yarnChanges)
 
 fun ExtendedPlatform.appendYarnChange(branch: String, change: Change) {
     val changesInBranch = yarnChanges[branch]
