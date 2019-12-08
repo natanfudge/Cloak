@@ -20,6 +20,8 @@ val <K, V> Pair<KSerializer<K>, KSerializer<V>>.mutableMap: KSerializer<MutableM
 val <T> KSerializer<T>.mutableList: KSerializer<MutableList<T>>
     get() = list as KSerializer<MutableList<T>>
 
+val DebugJson = Json(JsonConfiguration.Stable.copy(unquoted = true, prettyPrint = true))
+
 
 fun Path.exists(): Boolean = Files.exists(this)
 

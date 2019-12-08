@@ -52,8 +52,8 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         fun at(location: File, platform: ExtendedPlatform) = YarnRepo(location, platform)
 
         const val GithubUsername = "Cloak-Bot"
-        //TODO: this should be used when sending PRs
         const val UpstreamUsername = "fabricmc"
+//        const val UpstreamUsername = "natanfudge"
         private const val RepoName = "yarn"
         private const val OriginUrl = "https://github.com/$GithubUsername/$RepoName"
         private const val UpstreamUrl = "https://github.com/$UpstreamUsername/$RepoName"

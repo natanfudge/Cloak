@@ -101,8 +101,8 @@ private fun Name.addDummyMappingTo(
         }
         is ParamName -> {
             val methodParent = parentMapping.cast<MethodMapping>()
-            // <placeholder> will be replaced
-            ParameterMapping(index, "<placeholder>", methodParent).also { methodParent.parameters.add(it) }
+            // <unnamed> will be replaced
+            ParameterMapping(index, "<unnamed>", methodParent).also { methodParent.parameters.add(it) }
         }
     }
 }
@@ -147,7 +147,7 @@ private fun ParamName.getMatchingMappingIn(mappings: MappingsFile): Mapping? {
     val targetMethod = methodIn.getMatchingMappingIn(mappings) as? MethodMapping ?: return null
     return targetMethod.parameters.find {
         // Parameters in constructors begin from 1 in enigma format
-        val paramIndex = if (targetMethod.isConstructor) it.index - 1 else it.index
+        val paramIndex = it.index
         paramIndex == index
     }
 }

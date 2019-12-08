@@ -3,8 +3,10 @@ package cloak.platform.saved
 import cloak.format.rename.Name
 import cloak.git.currentBranch
 import cloak.git.currentBranchOrNull
+import cloak.platform.DebugDump
 import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
+import cloak.util.DebugJson
 import cloak.util.mutableMap
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.internal.StringSerializer
@@ -14,12 +16,13 @@ data class NewName(val newName: String, val newPackageName: String?) {
     override fun toString() = if (newPackageName != null) "$newPackageName/$newName" else newName
 }
 
+private val serializer = (StringSerializer to (Name.serializer() to NewName.serializer()).mutableMap).mutableMap
 // Mapped per branch
 private val ExtendedPlatform.renamedNames: MutableMap<String, MutableMap<Name, NewName>> by SavedState(
-    mutableMapOf(),
-    "RenamedNames",
-    (StringSerializer to (Name.serializer() to NewName.serializer()).mutableMap).mutableMap
+    mutableMapOf(), "RenamedNames", serializer
 )
+
+fun DebugDump.renamedNamesDump() = DebugJson.stringify(serializer, platform.renamedNames)
 
 fun ExtendedPlatform.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks() = renamedNames.clear()
 

@@ -5,9 +5,8 @@ import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.CloakAction
 import cloak.idea.util.editor
 import cloak.platform.saved.allBranches
+import com.intellij.codeInsight.folding.CodeFoldingManager
 import com.intellij.openapi.actionSystem.AnActionEvent
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 class SwitchBranchIdeaAction : CloakAction() {
     override fun isEnabledAndVisible(event: AnActionEvent): Boolean {
@@ -18,6 +17,11 @@ class SwitchBranchIdeaAction : CloakAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val platform = IdeaPlatform(e.project ?: return, e.editor ?: return)
 
-        SwitchBranchAction.switch(platform)
+        SwitchBranchAction.switch(platform).invokeOnCompletion {
+            platform.inUiThread {
+                CodeFoldingManager.getInstance(e.project)
+                    .updateFoldRegionsAsync(e.editor ?: return@inUiThread, true)?.run()
+            }
+        }
     }
 }

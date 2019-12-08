@@ -19,7 +19,7 @@ private fun ClassMapping.shortName() = toString().lastPart()
 fun Mapping.readableName(): String = when (this) {
     is ClassMapping -> this.toString()
     is MethodMapping -> "${parent.shortName()}${Joiner.Method}$nonNullName" +
-            "(${descriptor.parameterDescriptors.joinToString(" ,") { it.toString().lastPart() }})"
+            "(${descriptor.parameterDescriptors.size})"
     is FieldMapping -> "${parent.shortName()}${Joiner.Field}$nonNullName"
     is ParameterMapping -> "${parent.readableName()}[$index = $nonNullName]"
 }

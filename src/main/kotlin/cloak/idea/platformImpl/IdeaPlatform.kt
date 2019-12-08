@@ -4,6 +4,7 @@ import cloak.idea.util.*
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.editor.Editor
@@ -22,12 +23,13 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class IdeaPlatform(private val project: Project, private val editor: Editor? = null) : ExtendedPlatform {
+
     companion object {
         private const val StorageDirectory = "cloak"
     }
 
-    private fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
-    private suspend fun <T> getFromUiThread(input: () -> T): T = suspendCoroutine { cont ->
+    fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
+    suspend fun <T> getFromUiThread(input: () -> T): T = suspendCoroutine { cont ->
         ApplicationManager.getApplication().invokeAndWait {
             cont.resume(input())
         }
@@ -131,6 +133,7 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         suspendCoroutine { cont ->
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, title) {
                 override fun run(progressIndicator: ProgressIndicator) { // start your process
+                    //TODO: it's probably bad to pass a suspend() -> T and use runBlocking.
                     runBlocking { cont.resume(action()) }
                 }
             })

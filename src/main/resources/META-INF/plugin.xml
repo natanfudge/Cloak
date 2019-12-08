@@ -7,7 +7,7 @@
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
-    <change-notes>This is the first release. Idea, why must you make me type this.</change-notes>
+    <change-notes>Official Release! Mappings will now be submitted to the main yarn repository.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
 
@@ -34,15 +34,18 @@
                 <keyboard-shortcut first-keystroke="ctrl alt d" keymap="$default"/>
             </action>
 
+            <action class = "cloak.idea.actions.DumpStateDebugAction" id ="Cloak.DebugDump" text = "(Debug) Dump State"
+                    description="Dumps state"/>
+
         </group>
 
     </actions>
 
 
     <extensions defaultExtensionNs="com.intellij">
-        <highlightingPassFactory implementation="cloak.idea.RenamedIdentifierHighlighterFactory"/>
-
         <fileType name="Mixin Config" language="JSON" implementationClass="cloak.idea.fileTypes.MixinConfigFileType" fieldName="INSTANCE" patterns="*.mixins.json"/>
         <fileType name="Fabric Mod Config" language="JSON" implementationClass="cloak.idea.fileTypes.FabricModConfigFileType" fieldName="INSTANCE" patterns="*.mod.json"/>
+
+        <lang.foldingBuilder language="JAVA" implementationClass="cloak.idea.folding.RenameFoldingBuilder"/>
     </extensions>
 </idea-plugin>
