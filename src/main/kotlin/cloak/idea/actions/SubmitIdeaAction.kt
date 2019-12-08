@@ -2,11 +2,11 @@ package cloak.idea.actions
 
 import cloak.actions.SubmitAction
 import cloak.git.inSubmittedBranch
-import cloak.idea.RenamedIdentifierHighlighter
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.CloakAction
 import cloak.idea.util.editor
 import cloak.platform.saved.anythingWasRenamed
+import com.intellij.codeInsight.folding.CodeFoldingManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 
 class SubmitIdeaAction : CloakAction() {
@@ -16,7 +16,12 @@ class SubmitIdeaAction : CloakAction() {
 
     override fun actionPerformed(event: AnActionEvent) {
         val platform = IdeaPlatform(event.project ?: return, event.editor)
-        SubmitAction.submit(platform)
+        SubmitAction.submit(platform).invokeOnCompletion {
+            platform.inUiThread {
+                CodeFoldingManager.getInstance(event.project)
+                    .updateFoldRegionsAsync(event.editor ?: return@inUiThread, true)?.run()
+            }
+        }
     }
 
 }

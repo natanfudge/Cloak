@@ -6,9 +6,10 @@ A cloak is a single piece of fabric that you wear around you.
 
 ### What is this?
 
-Cloak is a plugin for [IntelliJ IDEA](https://www.jetbrains.com/idea/) that intends to provide various utilities to aid Fabric development. At the moment it has one sizeable feature - **Cloak Renamer**. While browsing the Minecraft code as-per-normal, Cloak allows you to right click on an identifier and rename it. While the change won't reflect on the code itself immediately, it will be registered. You can then simply press on "Submit mappings", and the changes will be PR'd to the latest branch of the fabric yarn repository. This essentially removes the entry barrier to submitting mappings, and promotes fixing small things when you see them. 
-
- ### Is this an Enigma replacement? 
+Cloak is a plugin for [IntelliJ IDEA](https://www.jetbrains.com/idea/) that intends to provide various utilities to aid Fabric development. At the moment it has one sizeable feature - **Cloak Renamer**. While browsing the Minecraft code as-per-normal, Cloak allows you to right click on an identifier and rename it. While the change won't reflect on the code itself immediately, it will be registered. You can then simply press on "Submit mappings", and the changes will be PR'd to the latest branch of the fabric yarn repository. This essentially removes the entry barrier to submitting mappings, and promotes fixing small things when you see them.   
+https://www.youtube.com/watch?v=mfhZQmR52_8
+ 
+### Is this an Enigma replacement? 
 
 I believe the usage of Cloak is much simpler than that of Enigma, and therefore an ultimate goal would be to replace Enigma. However, there are certain things Enigma can do that Cloak cannot, and therefore Enigma will stick around for now. These are detailed in the next segments. 
 

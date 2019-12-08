@@ -20,6 +20,7 @@ val AnActionEvent.psiElement get() = getData(CommonDataKeys.PSI_ELEMENT)
 val AnActionEvent.document get() = getData(PlatformDataKeys.EDITOR)?.document
 val AnActionEvent.file get() = getData(CommonDataKeys.VIRTUAL_FILE)
 val AnActionEvent.psiFile get() = getData(LangDataKeys.PSI_FILE)
+val AnActionEvent.caret get() = getData(CommonDataKeys.CARET)
 fun Project.executeCommand(name: String? = null, groupId: Any? = null, command: () -> Unit) =
     CommandProcessor.getInstance().executeCommand(this, command, name, groupId)
 

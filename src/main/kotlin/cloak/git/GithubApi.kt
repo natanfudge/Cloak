@@ -1,15 +1,16 @@
 package cloak.git
 
 import TP
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.json.JsonDecodingException
+import kotlinx.serialization.json.*
 
 object GithubApi {
-    class GithubException : Exception {
+    open class GithubException : Exception {
         constructor(message: String, cause: Throwable) : super(message, cause)
         constructor(message: String) : super(message)
     }
+
+    class PullRequestAlreadyExistsException(val pullRequestTitle: String) :
+        GithubException("Pull Request $pullRequestTitle already exists")
 
     fun createPullRequest(
         repositoryName: String,
@@ -30,18 +31,27 @@ object GithubApi {
             body
         )
 
-        try {
-            val json = Json(JsonConfiguration.Stable.copy(strictMode = false)).parse(
-                PullRequestResponse.serializer(),
-                responseText
-            )
+//        try {
+        val json = Json(JsonConfiguration.Stable.copy(strictMode = false))
+        val tree = json.parseJson(responseText)
+        if (tree.isPullRequestAlreadyExistsResponse()) throw PullRequestAlreadyExistsException(title)
 
-            if (json.htmlUrl == null) throw GithubException("Could not perform pull request: $responseText")
+        val parsed = json.fromJson(PullRequestResponse.serializer(), tree)
 
-            return json
-        } catch (e: JsonDecodingException) {
-            throw GithubException("Could not perform pull request: $responseText", e)
-        }
+        if (parsed.htmlUrl == null) throw GithubException("Could not perform pull request: $responseText")
+
+        return parsed
+//        } catch (e: JsonDecodingException) {
+//            throw GithubException("Could not perform pull request: $responseText", e)
+//        }
+    }
+
+    private fun JsonElement.isPullRequestAlreadyExistsResponse(): Boolean {
+        if (this !is JsonObject) return false
+        val errors = this["errors"] as? JsonArray ?: return false
+        val error = errors.firstOrNull() as? JsonObject ?: return false
+        val message = error["message"] as? JsonPrimitive ?: return false
+        return message.content.startsWith(PullRequestExistsMessageStart)
     }
 
 
@@ -49,3 +59,5 @@ object GithubApi {
 
 
 }
+
+private const val PullRequestExistsMessageStart = "A pull request already exists"

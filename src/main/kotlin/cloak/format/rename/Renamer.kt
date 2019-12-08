@@ -149,7 +149,7 @@ object Renamer {
 
 
     /** User input is in named but the repo is in intermediary */
-    private fun <T> T.remapParameterDescriptors(namedToIntermediary: Map<String, String>): T = when (this) {
+    private fun <T : Name> T.remapParameterDescriptors(namedToIntermediary: Map<String, String>): T = when (this) {
         is MethodName -> copy(
             parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
         ) as T

@@ -37,7 +37,7 @@ private fun renameField(mapping: FieldMapping, newName: String): Errorable<Unit>
 
 private fun renameMethod(mapping: MethodMapping, newName: String): Errorable<Unit> {
     if (mapping.parent.methods.any { it.deobfuscatedName == newName && it.descriptor == mapping.descriptor }) {
-        return fail("There's already a method named $newName(TODO PARSE DESCRIPTOR) inside ${mapping.parent.nonNullName}")
+        return fail("There's already a method named $newName(${mapping.descriptor.parameterDescriptors.joinToString(", ")}) inside ${mapping.parent.nonNullName}")
     }
     mapping.deobfuscatedName = newName
     return success()

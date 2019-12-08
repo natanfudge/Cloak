@@ -7,7 +7,7 @@
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
-    <change-notes>This is the first release. Idea, why must you make me type this.</change-notes>
+    <change-notes>This is the first release. This is still the first release.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
 
@@ -40,6 +40,7 @@
 
 
     <extensions defaultExtensionNs="com.intellij">
-        <highlightingPassFactory implementation="cloak.idea.RenamedIdentifierHighlighterFactory"/>
+<!--        <highlightingPassFactory implementation="cloak.idea.RenamedIdentifierHighlighterFactory"/>-->
+        <lang.foldingBuilder language="JAVA" implementationClass="cloak.idea.folding.RenameFoldingBuilder"/>
     </extensions>
 </idea-plugin>

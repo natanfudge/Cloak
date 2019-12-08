@@ -26,8 +26,8 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         private const val StorageDirectory = "cloak"
     }
 
-    private fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
-    private suspend fun <T> getFromUiThread(input: () -> T): T = suspendCoroutine { cont ->
+    fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
+    suspend fun <T> getFromUiThread(input: () -> T): T = suspendCoroutine { cont ->
         ApplicationManager.getApplication().invokeAndWait {
             cont.resume(input())
         }
@@ -131,6 +131,7 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         suspendCoroutine { cont ->
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, title) {
                 override fun run(progressIndicator: ProgressIndicator) { // start your process
+                    //TODO: it's probably bad to pass a suspend() -> T and use runBlocking.
                     runBlocking { cont.resume(action()) }
                 }
             })
