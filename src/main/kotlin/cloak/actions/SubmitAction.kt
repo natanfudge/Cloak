@@ -1,8 +1,12 @@
 package cloak.actions
 
-import cloak.git.*
+import cloak.git.GithubApi
+import cloak.git.YarnRepo
+import cloak.git.inSubmittedBranch
+import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
+import cloak.platform.PullRequestResponse
 import cloak.platform.saved.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -26,17 +30,17 @@ object SubmitAction {
                 validator = PlatformInputValidator(allowEmptyString = false)
             ) ?: return@launch
 
-            val upstreamOwner = YarnRepo.UpstreamUsername/* "natanfudge"*/
+            val upstreamOwner = YarnRepo.UpstreamUsername
             val newBranchName = Repository.normalizeBranchName(prName)
             val pr = createPr(prName, newBranchName, gitUser, upstreamOwner) ?: return@launch
 
-            assert(pr.htmlUrl != null) { "Could not get PR url of PR: $pr" }
+//            assert(pr.prUrl != null) { "Could not get PR url of PR: $pr" }
 
             //TODO: modify asyncWithText to allow running concurrently
             resetWorkspace(gitUser)
             showMessageDialog(
                 title = "Success",
-                message = "<html><p>Your mappings have been submitted! Track them <a href=\"${pr.htmlUrl}\">here</a>.</p>\n" +
+                message = "<html><p>Your mappings have been submitted! Track them <a href=\"${pr.prUrl}\">here</a>.</p>\n" +
                         "<p>You can go back and modify your submitted mappings with <b>Tools -> Fabric -> Switch Yarn Branch -> $newBranchName</b></html></p>"
             )
 
@@ -68,24 +72,35 @@ private suspend fun ExtendedPlatform.createPr(
 
     yarnRepo.switchToBranch(newBranchName, startFromBranch = gitUser.branchName)
     yarnRepo.push()
-    val response = try {
-        GithubApi.createPullRequest(
+    val response = getAuthenticatedUsername()?.let {
+        createPullRequest(
             repositoryName = "yarn",
             targetUser = upstreamOwner,
             targetBranch = GithubApi.getDefaultBranch("yarn", upstreamOwner),
             requestingBranch = newBranchName,
-            requestingUser = YarnRepo.GithubUsername,
+            requestingUser = it,
             title = prName,
             body = constructPrBody(newBranchName)
         )
-    } catch (e: GithubApi.PullRequestAlreadyExistsException) {
+    }
+    if (response == null) {
+        yarnRepo.switchToBranch(gitUser.branchName)
+
+        //TODO: test this, might be wrong
         showMessageDialog(
             title = "Could Not Submit",
             message = "Pull request title '$prName' already exists, please choose a different one."
         )
-        yarnRepo.switchToBranch(gitUser.branchName)
-        null
+
     }
+//    catch (e: GithubApi.PullRequestAlreadyExistsException) {
+//        showMessageDialog(
+//            title = "Could Not Submit",
+//            message = "Pull request title '$prName' already exists, please choose a different one."
+//        )
+//
+//        null
+//    }
 
 
     if (response != null) {

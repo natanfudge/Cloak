@@ -24,7 +24,7 @@ private val ExtendedPlatform.renamedNames: MutableMap<String, MutableMap<Name, N
 
 fun DebugDump.renamedNamesDump() = DebugJson.stringify(serializer, platform.renamedNames)
 
-fun ExtendedPlatform.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks() = renamedNames.clear()
+fun ExtendedPlatform.`This is a test method to not linger renamed names between tests don't use it thanks`() = renamedNames.clear()
 
 fun ExtendedPlatform.getRenamedTo(name: Name): NewName? = renamedNames[currentBranch]?.get(name)
 fun ExtendedPlatform.setRenamedTo(name: Name, newName: NewName) {

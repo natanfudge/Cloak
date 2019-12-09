@@ -1,17 +1,19 @@
 package cloak.git
 
-import TP
 import org.eclipse.jgit.api.CreateBranchCommand
-import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.dircache.DirCache
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.Ref
-import org.eclipse.jgit.transport.CredentialsProvider
-import org.eclipse.jgit.transport.RefSpec
-import org.eclipse.jgit.transport.URIish
+import org.eclipse.jgit.transport.FetchResult
+import java.io.File
+typealias JGit = org.eclipse.jgit.api.Git
 
-open class GitRepository(private val git: Git) {
+abstract class CloakRepository {
+    protected abstract val git: JGit
+    protected abstract val path: File
+
+    fun currentBranch(): String = git.repository.branch
 
     fun switchToBranch(
         branchName: String,
@@ -52,13 +54,13 @@ open class GitRepository(private val git: Git) {
         return git.add().addFilepattern(path).call()
     }
 
-    fun deleteBranch(branchName: String, credentialsProvider: CredentialsProvider) {
-        git.branchDelete().setBranchNames("refs/heads/$branchName").setForce(true).call()
-        val refspec = RefSpec().setSource(null).setDestination("refs/heads/$branchName")
-        git.push().setRefSpecs(refspec).setRemote("origin").setCredentialsProvider(credentialsProvider).call()
-    }
+//    fun deleteBranch(branchName: String, credentialsProvider: CredentialsProvider) {
+//        git.branchDelete().setBranchNames("refs/heads/$branchName").setForce(true).call()
+//        val refspec = RefSpec().setSource(null).setDestination("refs/heads/$branchName")
+//        git.push().setRefSpecs(refspec).setRemote("origin").setCredentialsProvider(credentialsProvider).call()
+//    }
 
-    fun deleteBranch(branchName: String) = TP.deleteBranch(branchName, git)
+    abstract fun deleteBranch(branchName: String)
 
     fun getBranches(): List<Ref> = git.branchList().call()
 
@@ -66,14 +68,15 @@ open class GitRepository(private val git: Git) {
         git.commit().setAuthor(author).setCommitter(author).setMessage(commitMessage).call()
     }
 
-    open fun push(remoteUrl: String, credentialsProvider: CredentialsProvider) {
-        git.remoteAdd().setName("origin").setUri(URIish(remoteUrl)).call()
-        git.push().setCredentialsProvider(credentialsProvider).call()
-    }
+//    open fun push(remoteUrl: String, credentialsProvider: CredentialsProvider) {
+//        git.remoteAdd().setName("origin").setUri(URIish(remoteUrl)).call()
+//        git.push().setCredentialsProvider(credentialsProvider).call()
+//    }
 
-    open fun push(remoteUrl: String) = TP.push(remoteUrl, git)
 
-    fun updateRemote(remote: String) = git.fetch().setRemote(remote).call()
+    abstract fun push(remoteUrl: String, branch: String)
+
+    fun updateRemote(remote: String): FetchResult = git.fetch().setRemote(remote).call()
 
     fun close() = git.close()
 }

@@ -3,13 +3,15 @@
     <name>Cloak</name>
     <version>${version}</version>
     <vendor>Fudge</vendor>
-    <idea-version since-build="192.3645" until-build="1000.*"/>
+    <idea-version since-build="190" until-build="1000.*"/>
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
     <change-notes>Official Release! Mappings will now be submitted to the main yarn repository.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
+    <depends>org.jetbrains.plugins.github</depends>
+    <depends>Git4Idea</depends>
 
     <actions>
 

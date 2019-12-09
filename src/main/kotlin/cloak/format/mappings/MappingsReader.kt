@@ -9,6 +9,7 @@ import java.io.File
 fun MappingsFileCompanion.read(file: File): MappingsFile {
     val classesIn = mutableListOf<ClassMapping>()
     var methodIn: MethodMapping? = null
+    var mappingIn: Mapping? = null
 
     file.bufferedReader().use { reader ->
         reader.lines().forEach { line ->
@@ -29,25 +30,37 @@ fun MappingsFileCompanion.read(file: File): MappingsFile {
                     parseClass(tokens, parentClass).let {
                         parentClass?.innerClasses?.add(it)
                         classesIn.put(nestingLevel, it)
+                        mappingIn = it
                     }
                 }
                 Prefix.Field -> {
                     val parent = classesIn.getOrNull(indentCount - NaturalIndent.Field)
                         ?: error("Missing parent class of field")
-                    parent.fields.add(parseField(tokens, parent))
-
+                    parseField(tokens, parent).let {
+                        parent.fields.add(it)
+                        mappingIn = it
+                    }
                 }
                 Prefix.Method -> {
                     val parent = classesIn.getOrNull(indentCount - NaturalIndent.Method)
                         ?: error("Missing parent class of method")
                     parseMethod(tokens, parent).let {
-                        methodIn = it
                         parent.methods.add(it)
+                        methodIn = it
+                        mappingIn = it
                     }
                 }
                 Prefix.Parameter -> {
                     val parent = methodIn ?: error("Missing parent method of parameter")
-                    parent.parameters.add(parseParameter(tokens, parent))
+                    parseParameter(tokens, parent).let {
+                        parent.parameters.add(it)
+                        mappingIn = it
+                    }
+
+                }
+                Prefix.Comment -> {
+                    val targetMapping = mappingIn ?: error("Comment line without a parent: ${tokens[0]}")
+                    targetMapping.comment.add(tokens.subList(1, tokens.size).joinToString(" "))
                 }
                 else -> error("Unknown token '${tokens[0]}'")
             }
@@ -62,7 +75,7 @@ fun MappingsFileCompanion.read(file: File): MappingsFile {
 fun parseClass(tokens: List<String>, parent: ClassMapping?) = ClassMapping(
     obfuscatedName = tokens[1],
     deobfuscatedName = tokens.getOrNull(2),
-    fields = mutableListOf(), innerClasses = mutableListOf(), methods = mutableListOf(), parent = parent
+    parent = parent
 )
 
 fun parseField(tokens: List<String>, parent: ClassMapping) = FieldMapping(
@@ -90,7 +103,7 @@ fun parseMethod(
     return MethodMapping(
         obfuscatedName = tokens[1],
         deobfuscatedName = deobfName,
-        descriptor = MethodDescriptor.read(descriptor) ,
+        descriptor = MethodDescriptor.read(descriptor),
         parameters = mutableListOf(),
         parent = parent
     )

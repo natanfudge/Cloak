@@ -27,6 +27,7 @@ object Renamer {
     // Note: there's no need for the ability to rename top level classes just by their short name anymore.
     suspend fun ExtendedPlatform.rename(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
         val user = getGitUser() ?: return fail("User didn't provide git info")
+        getAuthenticatedUsername() ?: return fail("User did not provide auth info")
         setCurrentBranchToDefaultIfNeeded(user)
 
         return coroutineScope {
@@ -246,7 +247,7 @@ object Renamer {
      * Call this while the user is busy (typing the new name) to prevent lag later on.
      * This method will be executed asynchronously so it will return immediately and do the work in the background.
      */
-    private suspend fun ExtendedPlatform.switchToCorrectBranch(): Unit = withContext(Dispatchers.IO) {
+    private suspend fun ExtendedPlatform.switchToCorrectBranch() = withContext(Dispatchers.IO) {
         yarnRepo.switchToBranch(currentBranch)
     }
 
@@ -270,11 +271,13 @@ object Renamer {
     }
 
     private fun Mapping.duplicatesAnotherMapping(newMappingLocation: File): Boolean = when (this) {
-        is ClassMapping -> if (parent == null) newMappingLocation.exists() else parent.innerClasses.anythingElseHasTheSameObfName()
+        is ClassMapping -> if (parent == null) newMappingLocation.exists() else parent.innerClasses.anythingElseHasTheSameObfNameAs(
+            this
+        )
         // With methods you can overload the same name as long as the descriptor is different
         is MethodMapping -> parent.methods.any { it !== this && it.deobfuscatedName == deobfuscatedName && it.descriptor == descriptor }
-        is FieldMapping -> parent.fields.anythingElseHasTheSameObfName()
-        is ParameterMapping -> parent.parameters.anythingElseHasTheSameObfName()
+        is FieldMapping -> parent.fields.anythingElseHasTheSameObfNameAs(this)
+        is ParameterMapping -> parent.parameters.anythingElseHasTheSameObfNameAs(this)
     }
 
 }

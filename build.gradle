@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'com.fudge.lettuce'
-version '0.2.0'
+version '1.0.0'
 
 repositories {
     maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
@@ -28,8 +28,8 @@ dependencies {
         exclude group: "org.slf4j"
     }
 
-    implementation name :"tp"
-    shadow name :"tp"
+//    implementation name :"tp"
+//    shadow name :"tp"
 
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
     shadow "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
@@ -44,7 +44,7 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version '2019.3'
-    plugins = ['java']
+    plugins = ['java', "github","git4idea"]
 }
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"

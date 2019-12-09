@@ -1,10 +1,10 @@
 package cloak.idea.platformImpl
 
+import cloak.git.CloakRepository
+import cloak.git.JGit
+import cloak.idea.git.IdeaGitRepository
 import cloak.idea.util.*
-import cloak.platform.ExtendedPlatform
-import cloak.platform.PlatformInputValidator
-import cloak.platform.UserInputRequest
-import com.intellij.openapi.actionSystem.AnActionEvent
+import cloak.platform.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.editor.Editor
@@ -17,6 +17,13 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.plugins.github.api.GithubApiRequestExecutor
+import org.jetbrains.plugins.github.api.GithubApiRequestExecutorManager
+import org.jetbrains.plugins.github.api.GithubApiRequests
+import org.jetbrains.plugins.github.api.GithubServerPath
+import org.jetbrains.plugins.github.authentication.GithubAuthenticationManager
+import org.jetbrains.plugins.github.authentication.accounts.GithubAccount
+import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.coroutines.resume
@@ -107,6 +114,22 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         )
     }
 
+    override suspend fun getMultilineInput(
+        title: String,
+        message: String,
+        validator: PlatformInputValidator?,
+        initialValue: String?
+    ) = getFromUiThread {
+        Messages.showMultilineInputDialog(
+            project,
+            message,
+            title,
+            initialValue,
+            CommonIcons.Question,
+            validator?.let { InputValidatorWrapper(it) }
+        )
+    }
+
     override suspend fun getChoiceBetweenOptions(title: String, options: List<String>): String =
         suspendCoroutine { cont ->
             inUiThread {
@@ -133,11 +156,70 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         suspendCoroutine { cont ->
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, title) {
                 override fun run(progressIndicator: ProgressIndicator) { // start your process
-                    //TODO: it's probably bad to pass a suspend() -> T and use runBlocking.
+                    //TODO: it's bad to use runBlocking here, means we can't run it alongside other things.
                     runBlocking { cont.resume(action()) }
                 }
             })
         }
+
+
+    private fun getAccount(): GithubAccount? {
+        val auth = GithubAuthenticationManager.getInstance()
+        return auth.getDefaultAccount(project) ?: auth.requestNewAccount(project)
+    }
+
+    private fun getGitExecutor(): GithubApiRequestExecutor? {
+        val account = getAccount() ?: return null
+        return GithubApiRequestExecutorManager.getInstance().getExecutor(account, project)
+    }
+
+    //TODO: test comment parsing
+
+    override fun createPullRequest(
+        repositoryName: String,
+        requestingUser: String,
+        requestingBranch: String,
+        targetBranch: String,
+        targetUser: String,
+        title: String,
+        body: String
+    ): PullRequestResponse? {
+        val response = getGitExecutor()?.execute(
+            GithubApiRequests.Repos.PullRequests.create(
+                GithubServerPath.DEFAULT_SERVER,
+                username = requestingUser,
+                title = title,
+                base = targetBranch,
+                head = "$requestingUser:$requestingBranch",
+                description = body,
+                repoName = "$targetUser/$repositoryName"
+            )
+        )
+
+        return response?.htmlUrl?.let { PullRequestResponse(it) }
+    }
+
+
+    override fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult =
+        when (getGitExecutor()?.execute(
+            GithubApiRequests.Repos.Forks.create(
+                GithubServerPath.DEFAULT_SERVER,
+                username = forkingUser,
+                repoName = "$repositoryName/$forkedUser"
+            )
+        )) {
+            null -> ForkResult.Canceled
+            //TODO: somehow figure out if it was forked already
+            else -> ForkResult.Success
+        }
+
+    override fun getAuthenticatedUsername(): String? {
+        return getAccount()?.name
+    }
+
+    override fun createGit(git: JGit, path: File): CloakRepository {
+        return IdeaGitRepository(project, git, path)
+    }
 
 
 }

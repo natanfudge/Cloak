@@ -4,6 +4,7 @@ import cloak.actions.RenameAction
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.*
 import cloak.util.StringSuccess
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.folding.CodeFoldingManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.psi.*
@@ -40,17 +41,14 @@ class RenameIdeaAction : CloakAction() {
         }
     }
 
-    //TODO: sort parameters
-    //TODO: shift constructor parameters
-
-
     override fun actionPerformed(event: AnActionEvent) {
         val element = event.psiElement ?: return
         val editor = event.editor ?: return
+        val project = event.project ?: return
         val isTopLevelClass = element is PsiClass && !element.isInnerClass
         val nameBeforeRenames = element.asName()
 
-        val platform = IdeaPlatform(event.project ?: return, editor)
+        val platform = IdeaPlatform(project, editor)
         GlobalScope.launch {
             val rename = RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
 
@@ -67,7 +65,7 @@ class RenameIdeaAction : CloakAction() {
 
                     val range = identifier?.textRange ?: return@inUiThread
 
-                    // Manually fold because idea is a pos (this took like 3+ hours to figure out this code)
+//                     Manually fold because idea is a pos (this took like 3+ hours to figure out this code)
                     event.editor?.foldingModel?.runBatchFoldingOperation {
                         val foldRegion = editor.foldingModel.getFoldRegion(range.startOffset, range.endOffset)
                             ?: return@runBatchFoldingOperation

@@ -1,63 +1,34 @@
 package cloak.git
 
-import TP
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.content
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.util.EntityUtils
 
 object GithubApi {
-    open class GithubException : Exception {
-        constructor(message: String, cause: Throwable) : super(message, cause)
-        constructor(message: String) : super(message)
+
+    open class GithubException(message: String) : Exception(message)
+
+    fun getDefaultBranch(repo: String, owner: String): String {
+        return HttpClients.createDefault().use { client ->
+            val httpget = HttpGet("https://api.github.com/repos/$owner/$repo")
+
+            //Execute and get the response.
+            val response = client.execute(httpget)
+            val entity = response.entity ?: throw GithubException("http post request did not return a response")
+
+            val responseText = EntityUtils.toString(entity)
+            val serializedResponse = NormalJson.parseJson(responseText) as JsonObject
+            serializedResponse["default_branch"]!!.content
+        }
+
     }
 
-    class PullRequestAlreadyExistsException(val pullRequestTitle: String) :
-        GithubException("Pull Request $pullRequestTitle already exists")
-
-    fun createPullRequest(
-        repositoryName: String,
-        requestingUser: String,
-        requestingBranch: String,
-        targetBranch: String,
-        targetUser: String,
-        title: String,
-        body: String
-    ): PullRequestResponse {
-        val responseText = TP.createPullRequest(
-            repositoryName,
-            requestingUser,
-            requestingBranch,
-            targetBranch,
-            targetUser,
-            title,
-            body
-        )
-
-//        try {
-        val json = Json(JsonConfiguration.Stable.copy(strictMode = false))
-        val tree = json.parseJson(responseText)
-        if (tree.isPullRequestAlreadyExistsResponse()) throw PullRequestAlreadyExistsException(title)
-
-        val parsed = json.fromJson(PullRequestResponse.serializer(), tree)
-
-        if (parsed.htmlUrl == null) throw GithubException("Could not perform pull request: $responseText")
-
-        return parsed
-//        } catch (e: JsonDecodingException) {
-//            throw GithubException("Could not perform pull request: $responseText", e)
-//        }
-    }
-
-    private fun JsonElement.isPullRequestAlreadyExistsResponse(): Boolean {
-        if (this !is JsonObject) return false
-        val errors = this["errors"] as? JsonArray ?: return false
-        val error = errors.firstOrNull() as? JsonObject ?: return false
-        val message = error["message"] as? JsonPrimitive ?: return false
-        return message.content.startsWith(PullRequestExistsMessageStart)
-    }
-
-
-    fun getDefaultBranch(repo: String, owner: String): String = TP.getDefaultBranch(repo, owner)
+    private val NormalJson = Json(JsonConfiguration.Stable)
 
 
 }
 
-private const val PullRequestExistsMessageStart = "A pull request already exists"

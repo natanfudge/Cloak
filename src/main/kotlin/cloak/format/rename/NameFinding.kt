@@ -45,10 +45,7 @@ private fun ClassName.createDummyTopLevelClass(
         // These will be intermediary names
         name,
         name,
-        parent = null,
-        methods = mutableListOf(),
-        fields = mutableListOf(),
-        innerClasses = mutableListOf()
+        parent = null
     )
 }
 
@@ -82,10 +79,7 @@ private fun Name.addDummyMappingTo(
                 // These will be intermediary names
                 className,
                 className,
-                parent = classParent,
-                methods = mutableListOf(),
-                fields = mutableListOf(),
-                innerClasses = mutableListOf()
+                parent = classParent
             ).also { classParent.innerClasses.add(it) }
         }
         is FieldName -> {

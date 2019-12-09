@@ -40,22 +40,22 @@ fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
 
 class YarnRepo private constructor(private val localPath: File, val platform: ExtendedPlatform) {
 
-    private var _git: GitRepository? = null
-    private val git: GitRepository
+    private var git: CloakRepository? = null
         get() {
-            if (_git == null) _git = getOrCloneGit()
-            return _git!!
+            if (field == null) field = getOrCloneGit()
+            return field
         }
+
 
     companion object {
         // Might want to cache YarnRepo instances at some point
         fun at(location: File, platform: ExtendedPlatform) = YarnRepo(location, platform)
 
-        const val GithubUsername = "Cloak-Bot"
-        const val UpstreamUsername = "fabricmc"
-//        const val UpstreamUsername = "natanfudge"
+        //        const val GithubUsername = "Cloak-Bot"
+//        const val UpstreamUsername = "fabricmc"
+        const val UpstreamUsername = "natanfudge"
         private const val RepoName = "yarn"
-        private const val OriginUrl = "https://github.com/$GithubUsername/$RepoName"
+        //        private const val OriginUrl = "https://github.com/$GithubUsername/$RepoName"
         private const val UpstreamUrl = "https://github.com/$UpstreamUsername/$RepoName"
         private const val MappingsDirName = "mappings"
         private const val McVersionFile = "mcversion.txt"
@@ -67,6 +67,8 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
     fun warmup() {
         git
     }
+
+    private fun originUrl(): String? = platform.getAuthenticatedUsername()?.let { "https://github.com/$it/$RepoName" }
 
 
     fun clean() = localPath.deleteRecursively()
@@ -83,33 +85,32 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
     fun getMappingsFile(path: String): File = mappingsDirectory.toPath().resolve(path).toFile()
 
-    fun push() = git.push(OriginUrl)
+    fun push() = originUrl()?.let { originUrl -> git?.currentBranch()?.let { git?.push(originUrl, it) } }
 
-    fun deleteBranch(branchName: String) = git.deleteBranch(branchName)
+    fun deleteBranch(branchName: String) = git?.deleteBranch(branchName)
 
-    fun close() = _git?.close()
+//    fun close() = _git?.close()
 
     suspend fun switchToBranch(
         branchName: String,
         startFromBranch: String? = null,
         force: Boolean = false
-    ): Unit = git.switchToBranch(
+    ) = git?.switchToBranch(
         branchName = branchName,
         defaultBaseBranch = { "upstream/${getTargetMinecraftVersion()}" },
         startFromBranch = startFromBranch,
         force = force
     ).also { mcVersion = null }.also {
         platform.currentBranchStore = branchName
-        val userBranch = platform.getGitUser()?.branchName
-//        platform.inSubmittedBranch = userBranch != branchName
+         platform.getGitUser()?.branchName
     }
 
     fun removeMappingsFile(path: String) {
-        git.remove(pathOfMappingFromGitRoot(path))
+        git?.remove(pathOfMappingFromGitRoot(path))
     }
 
     fun stageMappingsFile(path: String) {
-        git.stageChanges(pathOfMappingFromGitRoot(path))
+        git?.stageChanges(pathOfMappingFromGitRoot(path))
     }
 
     private var mcVersion: String? = null
@@ -127,7 +128,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
     }
 
     fun commitChanges(author: GitUser, commitMessage: String) {
-        git.commit(author.jgit, commitMessage)
+        git?.commit(author.jgit, commitMessage)
     }
 
 
@@ -135,21 +136,17 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         return Paths.get(MappingsDirName, relativeMappingPath).toString().replace("\\", "/")
     }
 
-//    private val credentials = UsernamePasswordCredentialsProvider(
-//        GithubUsername,
-//        GithubPassword
-//    )
-
-    private fun getOrCloneGit(): GitRepository {
-        return if (localPath.exists()) GitRepository(Git.open(localPath))
+    private fun getOrCloneGit(): CloakRepository? {
+        return if (localPath.exists()) platform.createGit(Git.open(localPath), localPath)
         else {
+            val origin = originUrl() ?: return null
             println("Cloning yarn repo to $localPath")
             val jgit = Git.cloneRepository()
-                .setURI(OriginUrl)
+                .setURI(origin)
                 .setDirectory(localPath)
                 .call()
 
-            GitRepository(jgit).also {
+            platform.createGit(jgit, localPath).also {
                 jgit.remoteAdd().setName("upstream").setUri(URIish(UpstreamUrl)).call()
                 it.updateRemote("upstream")
             }

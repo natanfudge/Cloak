@@ -1,7 +1,5 @@
 package cloak.format.mappings
 
-import cloak.format.rename.*
-
 fun Mapping.typeName() = when (this) {
     is ClassMapping -> "class"
     is MethodMapping -> "method"
@@ -24,24 +22,10 @@ fun Mapping.readableName(): String = when (this) {
     is ParameterMapping -> "${parent.readableName()}[$index = $nonNullName]"
 }
 
-//fun Mapping.getOwnName(): String = when (this) {
-//    is ClassMapping -> this.toString()
-//    is MethodMapping -> "${parent.shortName()}${Joiner.Method}$nonNullName" +
-//            "(${descriptor.parameterDescriptors.joinToString(" ,") { it.toString().lastPart() }})"
-//    is FieldMapping -> "${parent.shortName()}${Joiner.Field}$nonNullName"
-//    is ParameterMapping -> "${parent.readableName()}[$index = $nonNullName]"
-//}
+val Mapping.nonNullName get() = deobfuscatedName ?: obfuscatedName
 
-//fun Mapping.getOwnName() = if (this is ClassName && isTopLevelClass) "$packageName/$className"
-//else shortName
+fun List<Mapping>.anythingElseHasTheSameObfNameAs(mapping: Mapping) = any {
+    it !== mapping && it.deobfuscatedName == mapping.deobfuscatedName
+}
 
-
-//val Name.shortName
-//    get() = when (this) {
-//        is ClassName -> className
-//        is FieldName -> fieldName
-//        is MethodName -> methodName
-//        is ParamName -> paramName
-//    }
-
- fun Mapping.getFilePath() = (root.deobfuscatedName ?: root.obfuscatedName) + ".mapping"
+fun Mapping.getFilePath() = (root.deobfuscatedName ?: root.obfuscatedName) + ".mapping"

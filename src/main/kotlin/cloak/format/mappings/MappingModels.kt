@@ -1,6 +1,7 @@
 package cloak.format.mappings
 
 import cloak.format.descriptor.MethodDescriptor
+import java.util.*
 
 
 object Joiner {
@@ -9,6 +10,29 @@ object Joiner {
     const val InnerClass = "$"
     const val Parameter = "["
     val All = listOf(Method, Field, InnerClass, Parameter)
+}
+
+private fun Mapping.hash(vararg values: Any?) =
+    Objects.hash(arrayOf(obfuscatedName, deobfuscatedName, comment, *values))
+
+
+private fun Mapping.eq(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as Mapping
+    if (obfuscatedName != other.obfuscatedName) return false
+    if (deobfuscatedName != other.deobfuscatedName) return false
+    return true
+}
+
+sealed class Mapping {
+    abstract val obfuscatedName: String
+    abstract val deobfuscatedName: String?
+    abstract var comment: MutableList<String>
+    abstract val parent: Mapping?
+
+    abstract val root: ClassMapping
 }
 
 
@@ -24,10 +48,10 @@ typealias MappingsFileCompanion = ClassMapping.Companion
 data class ClassMapping(
     override val obfuscatedName: String,
     override var deobfuscatedName: String?,
-    val methods: MutableList<MethodMapping>,
-    val fields: MutableList<FieldMapping>,
-    val innerClasses: MutableList<ClassMapping>,
-    override val parent: ClassMapping?
+    val methods: MutableList<MethodMapping> = mutableListOf(),
+    val fields: MutableList<FieldMapping> = mutableListOf(),
+    val innerClasses: MutableList<ClassMapping> = mutableListOf(),
+    override val parent: ClassMapping?, override var comment: MutableList<String> = mutableListOf()
 ) : Mapping() {
     // To be able to extend
     companion object;
@@ -37,13 +61,10 @@ data class ClassMapping(
     }
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (eq(other)) return true
 
         other as ClassMapping
 
-        if (obfuscatedName != other.obfuscatedName) return false
-        if (deobfuscatedName != other.deobfuscatedName) return false
         if (methods != other.methods) return false
         if (fields != other.fields) return false
         if (innerClasses != other.innerClasses) return false
@@ -51,14 +72,7 @@ data class ClassMapping(
         return true
     }
 
-    override fun hashCode(): Int {
-        var result = obfuscatedName.hashCode()
-        result = 31 * result + (deobfuscatedName?.hashCode() ?: 0)
-        result = 31 * result + methods.hashCode()
-        result = 31 * result + fields.hashCode()
-        result = 31 * result + innerClasses.hashCode()
-        return result
-    }
+    override fun hashCode(): Int = hash(methods, fields, innerClasses)
 
     override val root: ClassMapping = parent?.root ?: this
 }
@@ -67,34 +81,25 @@ data class MethodMapping(
     override val obfuscatedName: String,
     override var deobfuscatedName: String?,
     val descriptor: MethodDescriptor,
-    val parameters: MutableList<ParameterMapping>,
-    override val parent: ClassMapping
+    val parameters: MutableList<ParameterMapping> = mutableListOf(),
+    override val parent: ClassMapping, override var comment: MutableList<String> = mutableListOf()
 ) : Mapping() {
     override fun toString() =
         "$parent${Joiner.Method}$nonNullName(${descriptor.parameterDescriptors.joinToString(" ,")})" +
                 ": ${descriptor.returnDescriptor}"
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (eq(other)) return true
 
         other as MethodMapping
 
-        if (obfuscatedName != other.obfuscatedName) return false
-        if (deobfuscatedName != other.deobfuscatedName) return false
         if (descriptor != other.descriptor) return false
         if (parameters != other.parameters) return false
 
         return true
     }
 
-    override fun hashCode(): Int {
-        var result = obfuscatedName.hashCode()
-        result = 31 * result + (deobfuscatedName?.hashCode() ?: 0)
-        result = 31 * result + descriptor.hashCode()
-        result = 31 * result + parameters.hashCode()
-        return result
-    }
+    override fun hashCode(): Int  = hash(descriptor,parameters)
 
     override val root = parent.root
 
@@ -103,29 +108,21 @@ data class MethodMapping(
 
 data class FieldMapping(
     override val obfuscatedName: String, override var deobfuscatedName: String,
-    val descriptor: String, override val parent: ClassMapping
+    val descriptor: String, override val parent: ClassMapping, override var comment: MutableList<String> = mutableListOf()
 ) : Mapping() {
 
     override fun toString() = "$parent${Joiner.Field}$nonNullName"
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (eq(other)) return true
 
         other as FieldMapping
 
-        if (obfuscatedName != other.obfuscatedName) return false
-        if (deobfuscatedName != other.deobfuscatedName) return false
         if (descriptor != other.descriptor) return false
 
         return true
     }
 
-    override fun hashCode(): Int {
-        var result = obfuscatedName.hashCode()
-        result = 31 * result + deobfuscatedName.hashCode()
-        result = 31 * result + descriptor.hashCode()
-        return result
-    }
+    override fun hashCode(): Int = hash(descriptor)
 
     override val root = parent.root
 
@@ -134,49 +131,24 @@ data class FieldMapping(
 
 data class ParameterMapping(
     val index: Int, override var deobfuscatedName: String,
-    override val parent: MethodMapping
+    override val parent: MethodMapping, override var comment: MutableList<String> = mutableListOf()
 ) : Mapping() {
     override val obfuscatedName = ""
 
     override fun toString() = "$parent[param $index = $nonNullName]"
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (eq(other)) return true
 
         other as ParameterMapping
 
         if (index != other.index) return false
-        if (deobfuscatedName != other.deobfuscatedName) return false
-        if (obfuscatedName != other.obfuscatedName) return false
 
         return true
     }
 
-    override fun hashCode(): Int {
-        var result = index
-        result = 31 * result + deobfuscatedName.hashCode()
-        result = 31 * result + obfuscatedName.hashCode()
-        return result
-    }
+    override fun hashCode(): Int = hash(index)
 
     override val root = parent.root
-
-
-}
-
-sealed class Mapping {
-    abstract val obfuscatedName: String
-    abstract val deobfuscatedName: String?
-    abstract val parent: Mapping?
-
-    abstract val root: ClassMapping
-
-    val nonNullName get() = deobfuscatedName ?: obfuscatedName
-    fun name(obfuscated: Boolean) = if (obfuscated) obfuscatedName else deobfuscatedName
-
-    fun List<Mapping>.anythingElseHasTheSameObfName() = any {
-        it !== this@Mapping && it.deobfuscatedName == deobfuscatedName
-    }
 }
 
 

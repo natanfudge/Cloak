@@ -1,4 +1,7 @@
 CLASS bgq net/minecraft/block/AbstractBannerBlock
+	FIELD a color Lawa;
+	METHOD b getColor ()Lawa;
+	METHOD obf ()V
 	CLASS testObf testDeobf
 		FIELD a b B
 		METHOD d e ()V
@@ -6,6 +9,3 @@ CLASS bgq net/minecraft/block/AbstractBannerBlock
 	CLASS a b
 		METHOD a b ()V
 	CLASS testMissing
-	FIELD a color Lawa;
-	METHOD b getColor ()Lawa;
-	METHOD obf ()V

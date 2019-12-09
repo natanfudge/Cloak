@@ -17,6 +17,7 @@ object Prefix {
     const val Method = "METHOD"
     const val Field = "FIELD"
     const val Parameter = "ARG"
+    const val Comment = "COMMENT"
 }
 
 object NaturalIndent {
@@ -35,11 +36,12 @@ private class MappingsWriter(val writer: BufferedWriter) {
         if (deobfuscatedName != null) writeLine(classIndent, Prefix.Class, obfuscatedName, deobfuscatedName!!)
         else writeLine(classIndent, Prefix.Class, obfuscatedName)
 
-        for (innerClass in innerClasses) innerClass.write(indent + 1)
+        writeComments(indent)
 
         for (field in fields) {
             val fieldIndent = indent + NaturalIndent.Field
             writeLine(fieldIndent, Prefix.Field, field.obfuscatedName, field.deobfuscatedName, field.descriptor)
+            field.writeComments(fieldIndent)
         }
 
         for (method in methods) {
@@ -54,15 +56,24 @@ private class MappingsWriter(val writer: BufferedWriter) {
                 )
             } else writeLine(methodIndent, Prefix.Method, method.obfuscatedName, method.descriptor.classFileName)
 
+            method.writeComments(methodIndent)
+
             for (parameter in method.parameters.sortedBy { it.index }) {
                 val paramIndent = indent + NaturalIndent.Parameter
                 writeLine(paramIndent, Prefix.Parameter, parameter.index.toString(), parameter.deobfuscatedName)
+                parameter.writeComments(paramIndent)
             }
         }
 
+        for (innerClass in innerClasses) innerClass.write(indent + 1)
 
     }
 
+    private fun Mapping.writeComments(indent: Int) {
+        for (commentLine in comment) {
+            writeLine(indent + 1, Prefix.Comment, commentLine)
+        }
+    }
 
     private inline fun writeSpace() = writer.write(' '.toInt())
     private inline fun writeNewLine() = writer.write('\n'.toInt())

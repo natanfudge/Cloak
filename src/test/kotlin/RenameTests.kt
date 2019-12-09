@@ -1,9 +1,7 @@
-import RenameErrorTests.Companion.TestAuthor
-import cloak.util.StringSuccess
 import cloak.format.descriptor.ObjectType
 import cloak.format.descriptor.PrimitiveType
 import cloak.format.rename.Renamer
-import cloak.platform.saved.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks
+import cloak.platform.saved.`This is a test method to not linger renamed names between tests don't use it thanks`
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -18,6 +16,9 @@ fun useFile(path: String) {
     }
 
 }
+
+fun getExpected(testName: String) = getTestResource("expected").listFiles()!!
+    .find { it.name.startsWith(testName) } ?: error("Could not find tes resource: $testName")
 
 class RenameTests {
 
@@ -51,7 +52,7 @@ class RenameTests {
 
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.thisIsAMethodForTestToNotLongerRenamesNamesBetweenTestsDontUseItThanks()
+        platform.`This is a test method to not linger renamed names between tests don't use it thanks`()
         val targetName = className(oldFullPath, nameInit)
         val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
         assert(result is StringSuccess) { result.toString() }
@@ -68,8 +69,6 @@ class RenameTests {
         assertEqualsIgnoreLineBreaks(expected.readText(), actual.readText())
     }
 
-    private fun getExpected(testName: String) = getTestResource("expected").listFiles()!!
-        .find { it.name.startsWith(testName) } ?: error("Could not find tes resource: $testName")
 
     @Test
     fun `Rename Class`() = testRename(
@@ -123,7 +122,7 @@ class RenameTests {
 
     @Test
     fun `Rename constructor arg`() = testRename("RenameConstructorParam", "newconstruct") {
-        method("<init>", ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(0)
+        method("<init>", ObjectType("net/minecraft/client/gui/widget/LockButtonWidget\$IconLocation")).parameter(1)
     }
 
     @Test
