@@ -1,11 +1,19 @@
 CLASS bgq net/minecraft/block/AbstractBannerBlock
+	COMMENT LE BEST MAPPINGS
+	COMMENT OF THE WORLDdddd xd
 	FIELD a color Lawa;
+		COMMENT field comment
 	METHOD b getColor ()Lawa;
+		COMMENT method comment
 	METHOD obf ()V
 	CLASS testObf testDeobf
+		COMMENT inner class comment
 		FIELD a b B
 		METHOD d e ()V
 			ARG 1 g
+				COMMENT arg comment
+				COMMENT line 2
+				COMMENT and line 3
 	CLASS a b
 		METHOD a b ()V
 	CLASS testMissing

@@ -76,7 +76,7 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
         return ForkResult.Canceled
     }
 
-    override fun getAuthenticatedUsername(): String? {
+    override suspend fun getAuthenticatedUsername(): String? {
         return TestAuthor.name
     }
 
@@ -87,11 +87,10 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
 }
 
 class TestRepository(override val git: JGit, override val path: File) : CloakRepository() {
-    override fun deleteBranch(branchName: String) {
-
+    override fun deleteBranch(remoteUrl: String, branchName: String) {
     }
 
-    override fun push(remoteUrl: String, branch: String) {
-
+    override fun push(remoteUrl: String, branch: String, refSpec: String) {
     }
+
 }

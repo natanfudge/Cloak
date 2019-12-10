@@ -165,15 +165,13 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
 
     private fun getAccount(): GithubAccount? {
         val auth = GithubAuthenticationManager.getInstance()
-        return auth.getDefaultAccount(project) ?: auth.requestNewAccount(project)
+        return auth.getSingleOrDefaultAccount(project) ?: auth.requestNewAccount(project)
     }
 
     private fun getGitExecutor(): GithubApiRequestExecutor? {
         val account = getAccount() ?: return null
         return GithubApiRequestExecutorManager.getInstance().getExecutor(account, project)
     }
-
-    //TODO: test comment parsing
 
     override fun createPullRequest(
         repositoryName: String,
@@ -192,7 +190,7 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
                 base = targetBranch,
                 head = "$requestingUser:$requestingBranch",
                 description = body,
-                repoName = "$targetUser/$repositoryName"
+                repoName = repositoryName
             )
         )
 
@@ -204,17 +202,16 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
         when (getGitExecutor()?.execute(
             GithubApiRequests.Repos.Forks.create(
                 GithubServerPath.DEFAULT_SERVER,
-                username = forkingUser,
-                repoName = "$repositoryName/$forkedUser"
+                username = forkedUser,
+                repoName = repositoryName
             )
         )) {
             null -> ForkResult.Canceled
-            //TODO: somehow figure out if it was forked already
             else -> ForkResult.Success
         }
 
-    override fun getAuthenticatedUsername(): String? {
-        return getAccount()?.name
+    override suspend fun getAuthenticatedUsername(): String? {
+        return getFromUiThread { getAccount()?.name }
     }
 
     override fun createGit(git: JGit, path: File): CloakRepository {

@@ -12,7 +12,7 @@ fun useFile(path: String) {
     val file = getTestResource(path)
     if (file.exists()) {
         file.copyTo(yarn.getMappingsFile(path), overwrite = true)
-        yarn.stageMappingsFile(path)
+      runBlocking {  yarn.stageMappingsFile(path) }
     }
 
 }

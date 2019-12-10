@@ -6,7 +6,9 @@ import org.eclipse.jgit.dircache.DirCache
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.transport.FetchResult
+import org.eclipse.jgit.transport.URIish
 import java.io.File
+
 typealias JGit = org.eclipse.jgit.api.Git
 
 abstract class CloakRepository {
@@ -60,12 +62,16 @@ abstract class CloakRepository {
 //        git.push().setRefSpecs(refspec).setRemote("origin").setCredentialsProvider(credentialsProvider).call()
 //    }
 
-    abstract fun deleteBranch(branchName: String)
+    abstract fun deleteBranch(remoteUrl: String, branchName: String)
 
     fun getBranches(): List<Ref> = git.branchList().call()
 
     open fun commit(author: PersonIdent, commitMessage: String) {
         git.commit().setAuthor(author).setCommitter(author).setMessage(commitMessage).call()
+    }
+
+    fun resetOrigin(newRemoteUrl: String) {
+        git.remoteSetUrl().setRemoteName("origin").setRemoteUri(URIish(newRemoteUrl)).call()
     }
 
 //    open fun push(remoteUrl: String, credentialsProvider: CredentialsProvider) {
@@ -74,7 +80,7 @@ abstract class CloakRepository {
 //    }
 
 
-    abstract fun push(remoteUrl: String, branch: String)
+    abstract fun push(remoteUrl: String, branch: String,refSpec : String = "+refs/heads/$branch:refs/heads/$branch")
 
     fun updateRemote(remote: String): FetchResult = git.fetch().setRemote(remote).call()
 

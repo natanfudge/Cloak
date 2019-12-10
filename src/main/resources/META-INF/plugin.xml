@@ -7,7 +7,7 @@
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
-    <change-notes>Official Release! Mappings will now be submitted to the main yarn repository.</change-notes>
+    <change-notes>Cloak Bot and TP are dead! Cloak will now use your account (provided by the IDEA credentials manager) to submit pull requests.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
     <depends>org.jetbrains.plugins.github</depends>

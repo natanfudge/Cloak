@@ -27,6 +27,7 @@ object Renamer {
     // Note: there's no need for the ability to rename top level classes just by their short name anymore.
     suspend fun ExtendedPlatform.rename(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
         val user = getGitUser() ?: return fail("User didn't provide git info")
+
         getAuthenticatedUsername() ?: return fail("User did not provide auth info")
         setCurrentBranchToDefaultIfNeeded(user)
 
@@ -212,6 +213,8 @@ object Renamer {
     private suspend fun ExtendedPlatform.findMatchingMapping(name: Name, repoPromise: Deferred<Unit>): Mapping? {
         return asyncWithText("Preparing rename...") {
             repoPromise.await()
+            //TODO: remove
+            yarnRepo.fixOriginUrl()
             switchToCorrectBranch()
             val namedToIntermediaryClasses = getNamedToIntermediary()
 

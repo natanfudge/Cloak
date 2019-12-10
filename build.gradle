@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'com.fudge.lettuce'
-version '1.0.0'
+version '1.1.0'
 
 repositories {
     maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
@@ -27,9 +27,6 @@ dependencies {
     shadow(group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.5.1.201910021850-r') {
         exclude group: "org.slf4j"
     }
-
-//    implementation name :"tp"
-//    shadow name :"tp"
 
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
     shadow "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency

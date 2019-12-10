@@ -12,6 +12,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.eclipse.jgit.lib.Repository
 
+private const val useDebugRepo = false
+
 object SubmitAction {
     fun submit(platform: ExtendedPlatform) = with(platform) {
 
@@ -30,19 +32,19 @@ object SubmitAction {
                 validator = PlatformInputValidator(allowEmptyString = false)
             ) ?: return@launch
 
-            val upstreamOwner = YarnRepo.UpstreamUsername
+            val upstreamOwner = if (useDebugRepo) "natanfudge" else YarnRepo.UpstreamUsername
             val newBranchName = Repository.normalizeBranchName(prName)
             val pr = createPr(prName, newBranchName, gitUser, upstreamOwner) ?: return@launch
 
 //            assert(pr.prUrl != null) { "Could not get PR url of PR: $pr" }
 
             //TODO: modify asyncWithText to allow running concurrently
-            resetWorkspace(gitUser)
             showMessageDialog(
                 title = "Success",
                 message = "<html><p>Your mappings have been submitted! Track them <a href=\"${pr.prUrl}\">here</a>.</p>\n" +
                         "<p>You can go back and modify your submitted mappings with <b>Tools -> Fabric -> Switch Yarn Branch -> $newBranchName</b></html></p>"
             )
+            resetWorkspace(gitUser)
 
         }
     }
@@ -80,17 +82,17 @@ private suspend fun ExtendedPlatform.createPr(
             requestingBranch = newBranchName,
             requestingUser = it,
             title = prName,
-            body = constructPrBody(newBranchName)
+            body = constructPrBody(gitUser.branchName)
         )
     }
     if (response == null) {
         yarnRepo.switchToBranch(gitUser.branchName)
 
         //TODO: test this, might be wrong
-        showMessageDialog(
-            title = "Could Not Submit",
-            message = "Pull request title '$prName' already exists, please choose a different one."
-        )
+//        showMessageDialog(
+//            title = "Could Not Submit",
+//            message = "Pull request title '$prName' already exists, please choose a different one."
+//        )
 
     }
 //    catch (e: GithubApi.PullRequestAlreadyExistsException) {
