@@ -29,7 +29,7 @@ import java.nio.file.Paths
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class IdeaPlatform(private val project: Project, private val editor: Editor? = null) : ExtendedPlatform {
+class IdeaPlatform( val project: Project,  val editor: Editor? = null) : ExtendedPlatform {
 
     companion object {
         private const val StorageDirectory = "cloak"

@@ -1,12 +1,9 @@
 package cloak.idea.util
 
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.*
-import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -18,7 +15,10 @@ abstract class CloakAction(text: String? = null) : AnAction(text) {
     override fun update(event: AnActionEvent) {
         event.presentation.isEnabledAndVisible = isEnabledAndVisible(event)
         event.presentation.isEnabled = isEnabled(event)
+        getText(event)?.let { event.presentation.text = it }
     }
+
+    open fun getText(event : AnActionEvent): String? = null
 }
 
 val AnActionEvent.editor: Editor? get() = getData(CommonDataKeys.EDITOR)

@@ -18,19 +18,20 @@ class DumpStateDebugAction : CloakAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         with(IdeaPlatform(e.project ?: return, e.editor ?: return)) {
-            println(
-                """
-____________DUMP:_______________________________________________
-            
-            CURRENT BRANCH: $currentBranch
-            RENAMED NAMES: ${debug.renamedNamesDump()}
-            GIT USER: ${debug.gitUserDump()}
-            YARN CHANGES: ${debug.yarnChangesDump()}
-            SHOWED NOTE ABOUT LICENSE: $showedNoteAboutLicense
-            
-________________________________________________________________
-        """
-            )
+            //TODO
+//            println(
+//                """
+//____________DUMP:_______________________________________________
+//
+//            CURRENT BRANCH: $currentBranch
+//            RENAMED NAMES: ${debug.renamedNamesDump()}
+//            GIT USER: ${debug.gitUserDump()}
+//            YARN CHANGES: ${debug.yarnChangesDump()}
+//            SHOWED NOTE ABOUT LICENSE: $showedNoteAboutLicense
+//
+//________________________________________________________________
+//        """
+//            )
         }
 
     }

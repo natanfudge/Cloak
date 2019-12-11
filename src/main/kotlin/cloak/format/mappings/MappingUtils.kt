@@ -29,3 +29,5 @@ fun List<Mapping>.anythingElseHasTheSameObfNameAs(mapping: Mapping) = any {
 }
 
 fun Mapping.getFilePath() = (root.deobfuscatedName ?: root.obfuscatedName) + ".mapping"
+
+val Mapping.multilineComment get() = comment.joinToString("\n")

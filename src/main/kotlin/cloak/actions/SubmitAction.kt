@@ -88,25 +88,13 @@ private suspend fun ExtendedPlatform.createPr(
     if (response == null) {
         yarnRepo.switchToBranch(gitUser.branchName)
 
-        //TODO: test this, might be wrong
-//        showMessageDialog(
-//            title = "Could Not Submit",
-//            message = "Pull request title '$prName' already exists, please choose a different one."
-//        )
-
     }
-//    catch (e: GithubApi.PullRequestAlreadyExistsException) {
-//        showMessageDialog(
-//            title = "Could Not Submit",
-//            message = "Pull request title '$prName' already exists, please choose a different one."
-//        )
-//
-//        null
-//    }
+
 
 
     if (response != null) {
-        migrateYarnChangeList(oldBranch = gitUser.branchName, newBranch = newBranchName)
+        //TODO
+//        migrateYarnChangeList(oldBranch = gitUser.branchName, newBranch = newBranchName)
         migrateRenamedNamesBranch(oldBranch = gitUser.branchName, newBranch = newBranchName)
     }
 
@@ -114,11 +102,13 @@ private suspend fun ExtendedPlatform.createPr(
 }
 
 
+//TODO
 private fun ExtendedPlatform.constructPrBody(branchName: String): String {
-    val changes = allChangesOfBranch(branchName)
-    return changes.filter { it.explanation != null }.joinToString("  \n") { change ->
-        """- ${change.oldName} -> ${change.newName}  
-  - ${change.explanation}"""
-
-    }
+//    val changes = allChangesOfBranch(branchName)
+//    return changes.filter { it.explanation != null }.joinToString("  \n") { change ->
+//        """- ${change.oldName} -> ${change.newName}
+//  - ${change.explanation}"""
+//
+//    }
+    return ""
 }

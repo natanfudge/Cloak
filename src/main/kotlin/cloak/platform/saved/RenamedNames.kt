@@ -11,10 +11,7 @@ import cloak.util.mutableMap
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.internal.StringSerializer
 
-@Serializable
-data class NewName(val newName: String, val newPackageName: String?) {
-    override fun toString() = if (newPackageName != null) "$newPackageName/$newName" else newName
-}
+
 
 private val serializer = (StringSerializer to (Name.serializer() to NewName.serializer()).mutableMap).mutableMap
 // Mapped per branch

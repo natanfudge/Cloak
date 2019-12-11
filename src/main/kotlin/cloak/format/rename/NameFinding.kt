@@ -32,7 +32,6 @@ fun Name.getMatchingMappingIn(platform: ExtendedPlatform, namedToInt: Map<String
         namedToInt
     )
 
-
 }
 
 private fun ClassName.createDummyTopLevelClass(

@@ -1,6 +1,5 @@
 package cloak.idea.folding
 
-import cloak.format.rename.Name
 import cloak.format.rename.shortName
 import cloak.idea.actions.isMinecraftPackageName
 import cloak.idea.platformImpl.IdeaPlatform
@@ -35,8 +34,6 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
 
     private fun PsiElement.isCollapsed(platform: ExtendedPlatform) =
         asNameOrNull()?.let { platform.getRenamedTo(it) } != null
-
-
 
 
     override fun isRegionCollapsedByDefault(node: ASTNode): Boolean {
@@ -87,7 +84,11 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
         override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
             reference.resolve()
                 .let {
-                    if (it is PsiNameIdentifierOwner) fold(it, reference.textRange ?: return, astNode = reference.node)
+                    if (it is PsiNameIdentifierOwner) foldElement(
+                        it,
+                        reference.textRange ?: return,
+                        astNode = reference.node
+                    )
                 }
             super.visitReferenceElement(reference)
         }
@@ -114,28 +115,33 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
 
 
         override fun visitPackageStatement(statement: PsiPackageStatement) {
-
             statement.getTopLevelClass()?.let { element ->
                 val oldName = element.asNameOrNull() ?: return
                 val newName = platform.getRenamedTo(oldName) ?: return
-                if (newName.newPackageName?.replace('/','.') == statement.packageName) return
+                if (newName.newPackageName?.replace('/', '.') == statement.packageName) return
 
                 foldRegions.add(FoldingDescriptor(statement.node ?: return, statement.packageReference.textRange))
             }
         }
 
         private fun fold(element: PsiNameIdentifierOwner) {
-            fold(element, element.nameIdentifier?.textRange ?: return)
+            foldElement(element, element.nameIdentifier?.textRange ?: return)
         }
 
-        private fun fold(element: PsiElement, range: TextRange,astNode : ASTNode? = element.node) {
+        private fun foldElement(element: PsiElement, range: TextRange, astNode: ASTNode? = element.node) {
             val oldName = element.asNameOrNull() ?: return
             platform.getRenamedTo(oldName) ?: return
 
             // Sometimes the element captures too much so we only take the part that contains the name itself
             val actualRange = TextRange(range.endOffset - oldName.shortName.length, range.endOffset)
 
-            foldRegions.add(FoldingDescriptor(astNode ?: return, actualRange,null, mutableSetOf(),true))
+            foldRegions.add(FoldingDescriptor(astNode ?: return, actualRange, null, mutableSetOf(), true))
+
+        }
+
+        private fun foldJavadoc(element: PsiNameIdentifierOwner) {
+            platform.getRenamedTo(element.asNameOrNull() ?: return) ?: return
+
 
         }
 

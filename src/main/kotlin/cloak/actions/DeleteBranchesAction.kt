@@ -4,7 +4,7 @@ import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.allBranches
 import cloak.platform.saved.deleteRenamesNamesOfBranch
-import cloak.platform.saved.deleteYarnChangesOfBranch
+//import cloak.platform.saved.deleteYarnChangesOfBranch
 import cloak.platform.saved.getDefaultUserBranch
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -19,7 +19,8 @@ object DeleteBranchesAction {
                 asyncWithText("Deleting $branch...") {
                     yarnRepo.deleteBranch(branch)
                     deleteRenamesNamesOfBranch(branch)
-                    deleteYarnChangesOfBranch(branch)
+                    //TODO
+//                    deleteYarnChangesOfBranch(branch)
                 }
             }
         }

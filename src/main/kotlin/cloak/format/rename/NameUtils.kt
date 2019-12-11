@@ -1,5 +1,6 @@
 package cloak.format.rename
 
+import cloak.format.mappings.Mapping
 import cloak.util.splitOn
 
 private fun <T> flatten(seed: T, getNext: T.() -> T?): List<T> {
@@ -59,3 +60,4 @@ val Name.shortName
         is MethodName -> methodName
         is ParamName -> paramName
     }
+
