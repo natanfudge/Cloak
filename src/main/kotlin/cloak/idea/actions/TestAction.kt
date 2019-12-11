@@ -7,7 +7,7 @@ import com.intellij.refactoring.RefactoringFactory
 
 class TestAction  : CloakAction(){
     override fun actionPerformed(e: AnActionEvent) {
-        PsiKotl
+//        PsiKotl
 //        e.psiElement?.name
 //        JavaPsiFacade.getInstance(project).findClass(qName, GlobalSearchScope.allScope(project));
 //        RefactoringFactory.getInstance(e.project ?: return)

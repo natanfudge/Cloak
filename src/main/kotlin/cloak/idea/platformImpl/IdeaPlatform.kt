@@ -29,7 +29,7 @@ import java.nio.file.Paths
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class IdeaPlatform( val project: Project,  val editor: Editor? = null) : ExtendedPlatform {
+class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedPlatform {
 
     companion object {
         private const val StorageDirectory = "cloak"
@@ -182,17 +182,25 @@ class IdeaPlatform( val project: Project,  val editor: Editor? = null) : Extende
         title: String,
         body: String
     ): PullRequestResponse? {
-        val response = getGitExecutor()?.execute(
-            GithubApiRequests.Repos.PullRequests.create(
-                GithubServerPath.DEFAULT_SERVER,
-                username = requestingUser,
-                title = title,
-                base = targetBranch,
-                head = "$requestingUser:$requestingBranch",
-                description = body,
-                repoName = repositoryName
+        val response = try {
+            getGitExecutor()?.execute(
+                GithubApiRequests.Repos.PullRequests.create(
+                    GithubServerPath.DEFAULT_SERVER,
+                    username = targetUser,
+                    title = title,
+                    base = targetBranch,
+                    head = "$requestingUser:$requestingBranch",
+                    description = body,
+                    repoName = repositoryName
+                )
             )
-        )
+        } catch (e: Exception) {
+            throw RuntimeException(
+                "Could not send pull request with repositoryName = $repositoryName, requestingUser = $requestingUser, " +
+                        "requestingBranch = $requestingBranch, targetBranch = $targetBranch, targetUser = $targetUser," +
+                        "title = $title, body = $body", e
+            )
+        }
 
         return response?.htmlUrl?.let { PullRequestResponse(it) }
     }

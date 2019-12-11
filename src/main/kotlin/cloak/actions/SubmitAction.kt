@@ -12,7 +12,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.eclipse.jgit.lib.Repository
 
-private const val useDebugRepo = false
+private const val useDebugRepo = true
 
 object SubmitAction {
     fun submit(platform: ExtendedPlatform) = with(platform) {
@@ -32,7 +32,7 @@ object SubmitAction {
                 validator = PlatformInputValidator(allowEmptyString = false)
             ) ?: return@launch
 
-            val upstreamOwner = if (useDebugRepo) "natanfudge" else YarnRepo.UpstreamUsername
+            val upstreamOwner = if (useDebugRepo) "shedaniel" else YarnRepo.UpstreamUsername
             val newBranchName = Repository.normalizeBranchName(prName)
             val pr = createPr(prName, newBranchName, gitUser, upstreamOwner) ?: return@launch
 
