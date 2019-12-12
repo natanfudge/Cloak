@@ -2,9 +2,8 @@ package cloak.git
 
 import cloak.format.mappings.MappingsExtension
 import cloak.platform.ExtendedPlatform
+import cloak.platform.GitUser
 import cloak.platform.SavedState
-import cloak.platform.saved.GitUser
-import cloak.platform.saved.getGitUser
 import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.internal.nullable
 import org.eclipse.jgit.api.Git
@@ -31,7 +30,7 @@ val ExtendedPlatform.currentBranch
 
 val ExtendedPlatform.currentBranchOrNull get() = currentBranchStore
 
-suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean = currentBranch != getGitUser()?.branchName
+suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean = currentBranch != getAuthenticatedUser()?.branchName
 
 fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
     if (currentBranchStore == null) currentBranchStore = gitUser.branchName
@@ -70,7 +69,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
     }
 
     private suspend fun originUrl(): String? =
-        platform.getAuthenticatedUsername()?.let { "https://github.com/$it/$RepoName" }
+        platform.getAuthenticatedUser()?.let { "https://github.com/${it.name}/$RepoName" }
 
 
     fun clean() = localPath.deleteRecursively()
@@ -111,7 +110,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         force = force
     ).also { mcVersion = null }.also {
         platform.currentBranchStore = branchName
-        platform.getGitUser()?.branchName
+        platform.getAuthenticatedUser()?.branchName
     }
 
     suspend fun removeMappingsFile(path: String) {
@@ -136,8 +135,8 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         return mcVersion!!
     }
 
-    suspend fun commitChanges(author: GitUser, commitMessage: String) {
-        getGit()?.commit(author.jgit, commitMessage)
+    suspend fun commitChanges(commitMessage: String) {
+        getGit()?.commit(commitMessage)
     }
 
 
@@ -149,8 +148,8 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         return if (localPath.exists()) platform.createGit(Git.open(localPath), localPath)
         else {
             val origin = originUrl() ?: return null
-            val userName = platform.getAuthenticatedUsername() ?: return null
-            platform.forkRepository(repositoryName = RepoName, forkedUser = UpstreamUsername, forkingUser = userName)
+            val user = platform.getAuthenticatedUser() ?: return null
+            platform.forkRepository(repositoryName = RepoName, forkedUser = UpstreamUsername, forkingUser = user.name)
             println("Cloning yarn repo to $localPath")
             val jgit = Git.cloneRepository()
                 .setURI(origin)

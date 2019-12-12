@@ -58,7 +58,7 @@ interface ExtendedPlatform {
 
     fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult
 
-    suspend fun getAuthenticatedUsername(): String?
+    suspend fun getAuthenticatedUser(): GitUser?
 
     fun createGit(git: JGit, path : File): CloakRepository
 

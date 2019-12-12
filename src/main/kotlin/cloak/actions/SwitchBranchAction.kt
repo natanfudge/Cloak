@@ -4,14 +4,13 @@ import cloak.git.currentBranch
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.allBranches
-import cloak.platform.saved.getGitUser
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 object SwitchBranchAction {
     fun switch(platform: ExtendedPlatform) = with(platform) {
         GlobalScope.launch {
-            val user = getGitUser() ?: return@launch
+            val user = getAuthenticatedUser() ?: return@launch
 
             val mainBranchLabel = "${user.branchName} (Main)"
             val options = mutableListOf(mainBranchLabel)

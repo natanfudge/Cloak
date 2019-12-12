@@ -1,7 +1,8 @@
 import RenameErrorTests.Companion.TestAuthor
 import cloak.actions.RenameAction
 import cloak.format.descriptor.ObjectType
-import cloak.platform.saved.GitUser
+import cloak.format.rename.Renamer
+import cloak.platform.GitUser
 import cloak.platform.saved.`This is a test method to not linger renamed names between tests don't use it thanks`
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
@@ -11,7 +12,7 @@ import org.junit.Test
 fun prepareRenames() {
     with(TestYarnRepo) {
         runBlocking {
-            commitChanges(TestAuthor, "preparation")
+            commitChanges("preparation")
             switchToBranch(TestAuthor.branchName)
             TestYarnRepo.getMappingsFilesLocations()
         }
@@ -22,7 +23,7 @@ fun prepareRenames() {
 class RenameErrorTests {
 
     companion object {
-        val TestAuthor = GitUser("natanfudge", "natandestroyer100@gmail.com")
+        val TestAuthor = GitUser("natanfudge"/*, "natandestroyer100@gmail.com"*/)
         @JvmStatic
         @BeforeClass
         fun prepare() {

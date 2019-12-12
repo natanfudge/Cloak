@@ -7,10 +7,7 @@
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
-    <change-notes>Cloak Bot and TP are dead!
-        Cloak will now use your account (provided by the IDEA credentials manager) to submit pull requests.
-        Also fabric.mod.json files will now how the fabric symbol, provided by Draylarr.
-    </change-notes>
+    <change-notes>Fixed an authentication issue with commits. As a nice side effect, you no longer need to type your username and email.</change-notes>
 
     <depends>com.intellij.modules.java</depends>
     <depends>org.jetbrains.plugins.github</depends>

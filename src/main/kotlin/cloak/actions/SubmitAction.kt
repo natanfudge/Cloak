@@ -5,6 +5,7 @@ import cloak.git.YarnRepo
 import cloak.git.inSubmittedBranch
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
+import cloak.platform.GitUser
 import cloak.platform.PlatformInputValidator
 import cloak.platform.PullRequestResponse
 import cloak.platform.saved.*
@@ -18,7 +19,7 @@ object SubmitAction {
     fun submit(platform: ExtendedPlatform) = with(platform) {
 
         GlobalScope.launch {
-            val gitUser = getGitUser() ?: return@launch
+            val gitUser = getAuthenticatedUser() ?: return@launch
             if (inSubmittedBranch()) {
                 asyncWithText("Submitting") {
                     yarnRepo.push()
@@ -74,13 +75,13 @@ private suspend fun ExtendedPlatform.createPr(
 
     yarnRepo.switchToBranch(newBranchName, startFromBranch = gitUser.branchName)
     yarnRepo.push()
-    val response = getAuthenticatedUsername()?.let {
+    val response = getAuthenticatedUser()?.let {
         createPullRequest(
             repositoryName = "yarn",
             targetUser = upstreamOwner,
             targetBranch = GithubApi.getDefaultBranch("yarn", upstreamOwner),
             requestingBranch = newBranchName,
-            requestingUser = it,
+            requestingUser = it.name,
             title = prName,
             body = constructPrBody(gitUser.branchName)
         )

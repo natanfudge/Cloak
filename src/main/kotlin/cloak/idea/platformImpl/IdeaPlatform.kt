@@ -201,7 +201,6 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
                         "title = $title, body = $body", e
             )
         }
-
         return response?.htmlUrl?.let { PullRequestResponse(it) }
     }
 
@@ -218,8 +217,8 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
             else -> ForkResult.Success
         }
 
-    override suspend fun getAuthenticatedUsername(): String? {
-        return getFromUiThread { getAccount()?.name }
+    override suspend fun getAuthenticatedUser(): GitUser? {
+        return getFromUiThread { getAccount()?.name?.let { GitUser(it) } }
     }
 
     override fun createGit(git: JGit, path: File): CloakRepository {
