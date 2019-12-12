@@ -217,8 +217,8 @@ class IdeaPlatform(private val project: Project, private val editor: Editor? = n
             else -> ForkResult.Success
         }
 
-    override suspend fun getAuthenticatedUsername(): String? {
-        return getFromUiThread { getAccount()?.name }
+    override suspend fun getAuthenticatedUser(): GitUser? {
+        return getFromUiThread { getAccount()?.name?.let { GitUser(it) } }
     }
 
     override fun createGit(git: JGit, path: File): CloakRepository {

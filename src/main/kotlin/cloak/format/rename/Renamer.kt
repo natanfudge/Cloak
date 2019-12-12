@@ -26,9 +26,7 @@ object Renamer {
      */
     // Note: there's no need for the ability to rename top level classes just by their short name anymore.
     suspend fun ExtendedPlatform.rename(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
-        val user = getGitUser() ?: return fail("User didn't provide git info")
-
-        getAuthenticatedUsername() ?: return fail("User did not provide auth info")
+        val user = getAuthenticatedUser() ?: return fail("User did not provide auth info")
         setCurrentBranchToDefaultIfNeeded(user)
 
         return coroutineScope {
@@ -135,7 +133,7 @@ object Renamer {
     ) {
         if (oldPath != newPath) yarnRepo.removeMappingsFile(oldPath)
 
-        val user = getGitUser()!!
+        val user = getAuthenticatedUser()!!
         renameTarget.root.writeTo(newMappingLocation)
         yarnRepo.stageMappingsFile(newPath)
         yarnRepo.commitChanges(author = user, commitMessage = "$presentableOldName -> $presentableNewName")

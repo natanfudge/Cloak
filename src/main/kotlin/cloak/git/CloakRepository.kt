@@ -1,5 +1,6 @@
 package cloak.git
 
+import cloak.platform.GitUser
 import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.dircache.DirCache
@@ -66,9 +67,10 @@ abstract class CloakRepository {
 
     fun getBranches(): List<Ref> = git.branchList().call()
 
-    open fun commit(author: PersonIdent, commitMessage: String) {
-        git.commit().setAuthor(author).setCommitter(author).setMessage(commitMessage).call()
-    }
+    abstract fun commit(commitMessage: String)
+//    {
+//        git.commit().setAuthor(author).setCommitter(author).setMessage(commitMessage).call()
+//    }
 
     fun resetOrigin(newRemoteUrl: String) {
         git.remoteSetUrl().setRemoteName("origin").setRemoteUri(URIish(newRemoteUrl)).call()
