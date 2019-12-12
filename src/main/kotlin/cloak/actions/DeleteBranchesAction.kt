@@ -5,14 +5,13 @@ import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.allBranches
 import cloak.platform.saved.deleteRenamesNamesOfBranch
 import cloak.platform.saved.deleteYarnChangesOfBranch
-import cloak.platform.saved.getDefaultUserBranch
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 object DeleteBranchesAction {
     fun delete(platform: ExtendedPlatform) = with(platform) {
         GlobalScope.launch {
-            val default = getDefaultUserBranch()
+            val default = getAuthenticatedUser()?.branchName ?: return@launch
             val branches = allBranches.filter { it != default }.toList()
             val chosen = getMultipleChoicesBetweenOptions("Choose Branches to delete", branches)
             for (branch in chosen) {

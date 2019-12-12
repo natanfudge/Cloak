@@ -24,7 +24,6 @@ ____________DUMP:_______________________________________________
             
             CURRENT BRANCH: $currentBranch
             RENAMED NAMES: ${debug.renamedNamesDump()}
-            GIT USER: ${debug.gitUserDump()}
             YARN CHANGES: ${debug.yarnChangesDump()}
             SHOWED NOTE ABOUT LICENSE: $showedNoteAboutLicense
             

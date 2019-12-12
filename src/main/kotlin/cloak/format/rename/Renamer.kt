@@ -136,7 +136,7 @@ object Renamer {
         val user = getAuthenticatedUser()!!
         renameTarget.root.writeTo(newMappingLocation)
         yarnRepo.stageMappingsFile(newPath)
-        yarnRepo.commitChanges(author = user, commitMessage = "$presentableOldName -> $presentableNewName")
+        yarnRepo.commitChanges(commitMessage = "$presentableOldName -> $presentableNewName")
 
         //TODO: remap the parameter of methods to named
         appendYarnChange(

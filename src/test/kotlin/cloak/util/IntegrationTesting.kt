@@ -35,7 +35,7 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
         validatorB: PlatformInputValidator?
     ): Pair<String, String?>? = when (request) {
         UserInputRequest.NewName -> renameInput
-        UserInputRequest.GitUserAuthor -> Pair(TestAuthor.name, TestAuthor.email)
+//        UserInputRequest.GitUserAuthor -> Pair(TestAuthor.name, TestAuthor.email)
     }
 
 
@@ -76,9 +76,10 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
         return ForkResult.Canceled
     }
 
-    override suspend fun getAuthenticatedUsername(): String? {
-        return TestAuthor.name
+    override suspend fun getAuthenticatedUser(): GitUser {
+        return TestAuthor
     }
+
 
     override fun createGit(git: JGit, path: File): CloakRepository {
         return TestRepository(git, path)
@@ -88,6 +89,10 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
 
 class TestRepository(override val git: JGit, override val path: File) : CloakRepository() {
     override fun deleteBranch(remoteUrl: String, branchName: String) {
+    }
+
+    override fun commit(commitMessage: String) {
+
     }
 
     override fun push(remoteUrl: String, branch: String, refSpec: String) {
