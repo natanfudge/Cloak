@@ -38,8 +38,9 @@ fun canBeRenamed(psiduck: PsiElement): Boolean {
     }
 }
 
-fun IdeaPlatform.foldElement(element: PsiElement) {
+fun IdeaPlatform.foldElement(event: AnActionEvent) {
     inUiThread {
+        val element = event.elementAtCaret ?: return@inUiThread
         val identifier = when (element) {
             is PsiNameIdentifierOwner -> element
             is PsiIdentifier -> element
@@ -79,7 +80,7 @@ class RenameIdeaAction : CloakAction() {
             val rename = RenameAction.rename(platform, nameBeforeRenames, isTopLevelClass)
 
             if (rename is StringSuccess) {
-                platform.foldElement(event.elementAtCaret ?: return@launch)
+                platform.foldElement(event)
             }
         }
 
