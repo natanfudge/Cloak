@@ -39,23 +39,26 @@ fun canBeRenamed(psiduck: PsiElement): Boolean {
 }
 
 fun IdeaPlatform.foldElement(element: PsiElement) {
-    val identifier = when (element) {
-        is PsiNameIdentifierOwner -> element
-        is PsiIdentifier -> element
-        else -> return
+    inUiThread {
+        val identifier = when (element) {
+            is PsiNameIdentifierOwner -> element
+            is PsiIdentifier -> element
+            else -> return@inUiThread
+        }
+
+        CodeFoldingManager.getInstance(project)
+            .updateFoldRegionsAsync(editor ?: return@inUiThread, true)?.run()
+
+        val range = identifier.textRange
+
+        // Manually fold because idea is a pos (this took like 3+ hours to figure out this code)
+        editor.foldingModel.runBatchFoldingOperation {
+            val foldRegion = editor.foldingModel.getFoldRegion(range.startOffset, range.endOffset)
+                ?: return@runBatchFoldingOperation
+            foldRegion.isExpanded = false
+        }
     }
 
-    CodeFoldingManager.getInstance(project)
-        .updateFoldRegionsAsync(editor ?: return, true)?.run()
-
-    val range = identifier.textRange
-
-    // Manually fold because idea is a pos (this took like 3+ hours to figure out this code)
-    editor.foldingModel.runBatchFoldingOperation {
-        val foldRegion = editor.foldingModel.getFoldRegion(range.startOffset, range.endOffset)
-            ?: return@runBatchFoldingOperation
-        foldRegion.isExpanded = false
-    }
 }
 
 //TODO: validation:

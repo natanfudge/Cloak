@@ -1,6 +1,6 @@
 import RenameErrorTests.Companion.TestAuthor
+import cloak.actions.RenameAction
 import cloak.format.descriptor.ObjectType
-import cloak.format.rename.Renamer
 import cloak.platform.saved.GitUser
 import cloak.platform.saved.`This is a test method to not linger renamed names between tests don't use it thanks`
 import cloak.util.*
@@ -47,7 +47,7 @@ class RenameErrorTests {
         val platform = TestPlatform(Pair(newName, explanation))
         platform.`This is a test method to not linger renamed names between tests don't use it thanks`()
         val targetName = className(oldFullPath, nameInit)
-        val result = with(Renamer) { platform.rename(targetName, isTopLevelClass) }
+        val result = RenameAction.rename(platform,targetName, isTopLevelClass)
         assert(result is StringError)
     }
 

@@ -3,7 +3,7 @@
     <name>Cloak</name>
     <version>${version}</version>
     <vendor>Fudge</vendor>
-    <idea-version since-build="190" until-build="1000.*"/>
+    <idea-version since-build="192.2840" until-build="1000.*"/>
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
@@ -24,10 +24,10 @@
             <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
         </action>
 
-        <action id="Cloak.Test" class="cloak.idea.actions.TestAction" text="Test"
-                description="Test">
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
+<!--        <action id="Cloak.Test" class="cloak.idea.actions.TestAction" text="Test"-->
+<!--                description="Test">-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
+<!--        </action>-->
 
         <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true" icon="/assets/fabric_logo_16.png">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
@@ -45,7 +45,7 @@
             </action>
             <action class = "cloak.idea.actions.ModifyJavadocIdeaAction" id = "Cloak.ModifyJavadoc" text="Modify Javadoc"
                     description="Adds or modifies a javadoc of an element">
-                <keyboard-shortcut first-keystroke="alt f3" keymap="$default"/>
+                <keyboard-shortcut first-keystroke="alt F3" keymap="$default"/>
             </action>
 
             <action class = "cloak.idea.actions.DumpStateDebugAction" id ="Cloak.DebugDump" text = "(Debug) Dump State"

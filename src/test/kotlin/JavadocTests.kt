@@ -1,5 +1,6 @@
 import cloak.actions.ModifyJavadocAction
 import cloak.util.*
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class JavadocTests {
@@ -8,7 +9,7 @@ class JavadocTests {
         testName: String,
         javadoc: String,
         targetBuilder: (ClassBuilder.() -> NameBuilder<*>)? = null
-    ) {
+    ) =runBlocking{
         val path = "net/minecraft/block/Block"
 
         val target = className(path, targetBuilder)
