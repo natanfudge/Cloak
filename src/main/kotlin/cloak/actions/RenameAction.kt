@@ -132,10 +132,10 @@ object RenameAction {
     ) {
         if (oldPath != newPath) yarnRepo.removeMappingsFile(oldPath)
 
-        val user = getGitUser()!!
+        val user = getAuthenticatedUser()!!
         renameTarget.root.writeTo(newMappingLocation)
         yarnRepo.stageMappingsFile(newPath)
-        yarnRepo.commitChanges(author = user, commitMessage = "$presentableOldName -> $presentableNewName")
+        yarnRepo.commitChanges(commitMessage = "$presentableOldName -> $presentableNewName")
 
         //TODO
 //        appendYarnChange(

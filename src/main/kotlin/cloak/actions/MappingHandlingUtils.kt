@@ -13,9 +13,8 @@ import cloak.util.*
 import kotlinx.coroutines.*
 
 suspend fun ExtendedPlatform.warmupAuthAndYarn() = coroutineScope<Errorable<Deferred<Unit>>> {
-    val user = getGitUser() ?: return@coroutineScope fail("User didn't provide git info")
+    val user = getAuthenticatedUser() ?: return@coroutineScope fail("User did not provide auth info")
 
-    getAuthenticatedUsername() ?: return@coroutineScope fail("User did not provide auth info")
     setCurrentBranchToDefaultIfNeeded(user)
 
     val promise = async { yarnRepo.warmup() }

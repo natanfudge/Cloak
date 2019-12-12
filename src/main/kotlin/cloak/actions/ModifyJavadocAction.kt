@@ -9,7 +9,6 @@ import cloak.format.rename.Name
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
-import cloak.platform.saved.getGitUser
 import kotlinx.coroutines.coroutineScope
 
 object ModifyJavadocAction {
@@ -31,13 +30,13 @@ object ModifyJavadocAction {
             val path = matchingMapping.getFilePath()
             val presentableName = matchingMapping.readableName()
 
-            val user = getGitUser()!!
+            val user = getAuthenticatedUser()!!
             matchingMapping.root.writeTo(yarnRepo.getMappingsFile(path))
             yarnRepo.stageMappingsFile(path)
             val charChange = newJavadoc.length - oldJavadoc.length
             val changeSymbol = if (charChange >= 0) "+" else ""
 
-            yarnRepo.commitChanges(author = user, commitMessage = "$changeSymbol$charChange doc in $presentableName")
+            yarnRepo.commitChanges(commitMessage = "$changeSymbol$charChange doc in $presentableName")
 
             true
         }

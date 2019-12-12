@@ -4,7 +4,6 @@ import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.allBranches
 import cloak.platform.saved.deleteRenamesNamesOfBranch
-import cloak.platform.saved.deleteYarnChangesOfBranch
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
