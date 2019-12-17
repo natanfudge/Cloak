@@ -3,7 +3,7 @@ package cloak.format.rename
 import cloak.format.mappings.Mapping
 import cloak.util.splitOn
 
-private fun <T> flatten(seed: T, getNext: T.() -> T?): List<T> {
+private inline fun <T> flatten(seed: T, getNext: T.() -> T?): List<T> {
     val result = mutableListOf<T>()
     var next: T? = seed.getNext()
     while (next != null) {
@@ -13,7 +13,7 @@ private fun <T> flatten(seed: T, getNext: T.() -> T?): List<T> {
     return result
 }
 
-private fun <T> flattenWithSelf(seed: T, getNext: T.() -> T?): List<T> {
+inline fun <T> flattenWithSelf(seed: T, getNext: T.() -> T?): List<T> {
     val result = mutableListOf<T>()
     var next: T? = seed
     while (next != null) {

@@ -2,33 +2,33 @@ package cloak.actions
 
 
 import cloak.format.descriptor.remap
-import cloak.format.mappings.Mapping
+import cloak.format.mappings.*
 import cloak.format.rename.*
-import cloak.git.currentBranch
-import cloak.git.setCurrentBranchToDefaultIfNeeded
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
-import cloak.platform.saved.*
-import cloak.util.*
-import kotlinx.coroutines.*
+import cloak.platform.saved.DualResult
+import cloak.platform.saved.ExplainedResult
+import cloak.platform.saved.showedNoteAboutLicense
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
-suspend fun ExtendedPlatform.warmupAuthAndYarn() = coroutineScope<Errorable<Deferred<Unit>>> {
-    val user = getAuthenticatedUser() ?: return@coroutineScope fail("User did not provide auth info")
+suspend fun ExtendedPlatform.warmupAuthAndYarnAsync(): Deferred<Unit> = coroutineScope {
+    getAuthenticatedUser()
 
-    setCurrentBranchToDefaultIfNeeded(user)
 
     val promise = async { yarnRepo.warmup() }
     if (!showedNoteAboutLicense) {
         showMessageDialog(
             message = """Yarn mappings are licensed under a permissive license and should stay so.
-| If you know the name of something from another, less permissive mappings 
+| If you know the name of something from another, less permissive mappings
 | set (such as MCP(Forge) or Mojang Proguard output), DO NOT use that name.""".trimMargin(),
             title = "Warning"
         )
         showedNoteAboutLicense = true
     }
 
-    promise.success
+    promise
 }
 
 /**
@@ -36,29 +36,30 @@ suspend fun ExtendedPlatform.warmupAuthAndYarn() = coroutineScope<Errorable<Defe
  * This updates the information in the editor to be up to date to the repo.
  * */
 fun Name.updateAccordingToRenames(platform: ExtendedPlatform): Name {
+    val branch = platform.branch
     fun ClassName.updateAccordingToRenames(): ClassName =
-        platform.getRenamedTo(this)?.let {
-            var newName = copy(className = it.newName)
-            if (it.newPackageName != null) newName = newName.copy(packageName = it.newPackageName)
+        branch.getRenamedTo(this)?.let {
+            var newName = copy(className = it.name)
+            if (it.packageName != null) newName = newName.copy(packageName = it.packageName)
             newName
         } ?: this
 
     fun FieldName.updateAccordingToRenames(): FieldName {
         val newClassName = classIn.updateAccordingToRenames()
-        return platform.getRenamedTo(this)?.let { copy(fieldName = it.newName, classIn = newClassName) }
+        return branch.getRenamedTo(this)?.let { copy(fieldName = it.name, classIn = newClassName) }
             ?: copy(classIn = newClassName)
     }
 
     fun MethodName.updateAccordingToRenames(): MethodName {
         val newClassName = classIn.updateAccordingToRenames()
-        return platform.getRenamedTo(this)?.let { copy(methodName = it.newName, classIn = newClassName) }
+        return branch.getRenamedTo(this)?.let { copy(methodName = it.name, classIn = newClassName) }
             ?: copy(classIn = newClassName)
     }
 
     fun ParamName.updateAccordingToRenames(): ParamName {
         val newMethodName = methodIn.updateAccordingToRenames()
-        return platform.getRenamedTo(this)?.let {
-            copy(paramName = it.newName, methodIn = newMethodName)
+        return branch.getRenamedTo(this)?.let {
+            copy(paramName = it.name, methodIn = newMethodName)
         } ?: copy(methodIn = newMethodName)
     }
 
@@ -70,23 +71,16 @@ fun Name.updateAccordingToRenames(platform: ExtendedPlatform): Name {
     }
 }
 
-suspend fun ExtendedPlatform.findMatchingMapping(name: Name): Mapping? {
-    // Start cloning the repo early while the user is reading
-    val repoPromise = when (val repoResult = warmupAuthAndYarn()) {
-        is StringSuccess -> repoResult.value
-        is StringError -> return null
-    }
+suspend fun ExtendedPlatform.findMatchingMapping(name: Name): ExplainedResult<Mapping> {
+
+    val repoPromise = warmupAuthAndYarnAsync()
 
     return asyncWithText("Preparing rename...") {
         repoPromise.await()
-        //TODO: remove
-        yarnRepo.fixOriginUrl()
-        switchToCorrectBranch()
-        val namedToIntermediaryClasses = getNamedToIntermediary()
 
-        val oldName = name.remapParameterDescriptors(namedToIntermediaryClasses)
+        val oldName = name.remapParameterDescriptorsToInt(this)
 
-        oldName.getMatchingMappingIn(platform = this, namedToInt = namedToIntermediaryClasses)
+        oldName.getMatchingMappingIn(platform = this)
 
     }
 
@@ -96,16 +90,32 @@ suspend fun ExtendedPlatform.findMatchingMapping(name: Name): Mapping? {
  * Call this while the user is busy (typing the new name) to prevent lag later on.
  * This method will be executed asynchronously so it will return immediately and do the work in the background.
  */
-private suspend fun ExtendedPlatform.switchToCorrectBranch() = withContext(Dispatchers.IO) {
-    yarnRepo.switchToBranch(currentBranch)
+//private suspend fun ExtendedPlatform.switchToCorrectBranch() = withContext(Dispatchers.IO) {
+//    //TODO: this is very wrong
+//    yarnRepo.switchToBranch(currentBranch)
+//}
+
+ fun ExtendedPlatform.getClassIntermediaryName(namedName: String): String? {
+    val parts = namedName.split("$")
+    var index = 0
+    val file = yarnRepo.getMappingsFile(parts[0] + ".mapping")
+    if (!file.exists()) return null
+
+    val mappings: List<ClassMapping> = flattenWithSelf(MappingsFile.read(file)) {
+        index++
+        val part = parts.getOrNull(index) ?: return@flattenWithSelf null
+        // If the inner class name doesn't exist then we don't have an int name to give
+        this.innerClasses.find { it.displayedName == part } ?: return@getClassIntermediaryName null
+    }
+    return mappings.joinToString("$") { it.obfuscatedName }
 }
 
 /** User input is in named but the repo is in intermediary */
-private fun <T : Name> T.remapParameterDescriptors(namedToIntermediary: Map<String, String>): T = when (this) {
+private fun <T : Name> T.remapParameterDescriptorsToInt(platform: ExtendedPlatform): T = when (this) {
     is MethodName -> copy(
-        parameterTypes = parameterTypes.map { it.remap(namedToIntermediary) }
+        parameterTypes = parameterTypes.map { type -> type.remap { platform.getClassIntermediaryName(it) } }
     ) as T
-    is ParamName -> copy(methodIn = methodIn.remapParameterDescriptors(namedToIntermediary)) as T
+    is ParamName -> copy(methodIn = methodIn.remapParameterDescriptorsToInt(platform)) as T
     else -> this
 }
 

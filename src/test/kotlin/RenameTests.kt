@@ -1,7 +1,6 @@
 import cloak.actions.RenameAction
 import cloak.format.descriptor.ObjectType
 import cloak.format.descriptor.PrimitiveType
-import cloak.platform.saved.`This is a test method to not linger renamed names between tests don't use it thanks`
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -52,10 +51,9 @@ class RenameTests {
 
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.`This is a test method to not linger renamed names between tests don't use it thanks`()
+        platform.branch.delete()
         val targetName = className(oldFullPath, nameInit)
-        val result = RenameAction.rename(platform,targetName, isTopLevelClass)
-        assert(result is StringSuccess) { result.toString() }
+        RenameAction.rename(platform,targetName, isTopLevelClass).assertSucceeds()
 
         if (isTopLevelClass) {
             assert(!TestYarnRepo.getMappingsFile("$oldFullPath.mapping").exists())

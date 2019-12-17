@@ -5,6 +5,7 @@ import cloak.git.JGit
 import cloak.idea.git.IdeaGitRepository
 import cloak.idea.util.*
 import cloak.platform.*
+import cloak.platform.saved.BranchInfoApi
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.editor.Editor
@@ -29,7 +30,10 @@ import java.nio.file.Paths
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+
 class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedPlatform {
+
+    override val branch = BranchInfoApi(this)
 
     companion object {
         private const val StorageDirectory = "cloak"
@@ -163,15 +167,18 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
         }
 
 
-    private fun getAccount(): GithubAccount? {
+    private fun getAccount(): GithubAccount {
         val auth = GithubAuthenticationManager.getInstance()
         return auth.getSingleOrDefaultAccount(project) ?: auth.requestNewAccount(project)
+        ?: throw UserNotAuthenticatedException()
     }
 
-    private fun getGitExecutor(): GithubApiRequestExecutor? {
-        val account = getAccount() ?: return null
+    private fun getGitExecutor(): GithubApiRequestExecutor {
+        val account = getAccount()
         return GithubApiRequestExecutorManager.getInstance().getExecutor(account, project)
+            ?: throw UserNotAuthenticatedException()
     }
+
 
     override fun createPullRequest(
         repositoryName: String,
@@ -183,7 +190,7 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
         body: String
     ): PullRequestResponse? {
         val response = try {
-            getGitExecutor()?.execute(
+            getGitExecutor().execute(
                 GithubApiRequests.Repos.PullRequests.create(
                     GithubServerPath.DEFAULT_SERVER,
                     username = targetUser,
@@ -194,6 +201,8 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
                     repoName = repositoryName
                 )
             )
+        } catch (e: UserNotAuthenticatedException) {
+            throw e
         } catch (e: Exception) {
             throw RuntimeException(
                 "Could not send pull request with repositoryName = $repositoryName, requestingUser = $requestingUser, " +
@@ -201,24 +210,24 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
                         "title = $title, body = $body", e
             )
         }
-        return response?.htmlUrl?.let { PullRequestResponse(it) }
+        return PullRequestResponse(response.htmlUrl)
     }
 
 
-    override fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult =
-        when (getGitExecutor()?.execute(
+    override fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult {
+        getGitExecutor().execute(
             GithubApiRequests.Repos.Forks.create(
                 GithubServerPath.DEFAULT_SERVER,
                 username = forkedUser,
                 repoName = repositoryName
             )
-        )) {
-            null -> ForkResult.Canceled
-            else -> ForkResult.Success
-        }
+        )
+        return ForkResult.Success
+    }
 
-    override suspend fun getAuthenticatedUser(): GitUser? {
-        return getFromUiThread { getAccount()?.name?.let { GitUser(it) } }
+
+    override suspend fun getAuthenticatedUser(): GitUser {
+        return getFromUiThread { GitUser(getAccount().name) }
     }
 
     override fun createGit(git: JGit, path: File): CloakRepository {

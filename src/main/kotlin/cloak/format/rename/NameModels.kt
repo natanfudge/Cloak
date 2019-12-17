@@ -1,6 +1,6 @@
 package cloak.format.rename
 
-import cloak.util.Errorable
+//import cloak.util.Errorable
 import cloak.format.descriptor.ParameterDescriptor
 import cloak.format.descriptor.ParameterDescriptorSerializer
 import cloak.format.mappings.ClassMapping
@@ -9,25 +9,26 @@ import cloak.format.mappings.Mapping
 import cloak.util.success
 import kotlinx.serialization.Serializable
 
-data class RenameInstance(
-    val originalName: Name,
-    private val newName: String,
-    private val newPackageName: String?,
-    val explanation: String?
-) {
-
-    fun rename(mappings: Mapping): Errorable<Unit> {
-        return if (newPackageName != null) {
-            // Changing the package can only be done on top-level classes
-            assert(originalName is ClassName) { "It should be verified that package rename can only be done on classes" }
-            mappings as ClassMapping
-
-            mappings.deobfuscatedName = "$newPackageName/$newName"
-            success()
-        } else rename(mappings, newName)
-    }
-
-}
+//data class RenameInstance(
+//    val originalName: Name,
+//     val newName: String,
+//     val newPackageName: String?,
+//    val explanation: String?
+//) {
+//
+////    //TODO: move out
+////    fun rename(mappings: Mapping): Errorable<Unit> {
+////        return if (newPackageName != null) {
+////            // Changing the package can only be done on top-level classes
+////            assert(originalName is ClassName) { "It should be verified that package rename can only be done on classes" }
+////            mappings as ClassMapping
+////
+////            mappings.deobfuscatedName = "$newPackageName/$newName"
+////            success()
+////        } else rename(mappings, newName)
+////    }
+//
+//}
 
 @Serializable
 sealed class Name {

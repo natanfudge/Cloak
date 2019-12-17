@@ -2,10 +2,7 @@ package cloak.git
 
 import cloak.format.mappings.MappingsExtension
 import cloak.platform.ExtendedPlatform
-import cloak.platform.GitUser
-import cloak.platform.SavedState
-import kotlinx.serialization.internal.StringSerializer
-import kotlinx.serialization.internal.nullable
+import kotlinx.coroutines.runBlocking
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.URIish
 import java.io.File
@@ -23,61 +20,50 @@ val ExtendedPlatform.yarnRepo: YarnRepo
         return YarnRepo.at(yarnRepoDir, this)
     }
 
-private var ExtendedPlatform.currentBranchStore: String? by SavedState(null, "CurrentBranch", StringSerializer.nullable)
 
-val ExtendedPlatform.currentBranch
-    get() = currentBranchStore ?: error("The branch wasn't switched to something usable yet")
-
-val ExtendedPlatform.currentBranchOrNull get() = currentBranchStore
-
-suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean = currentBranch != getAuthenticatedUser()?.branchName
-
-fun ExtendedPlatform.setCurrentBranchToDefaultIfNeeded(gitUser: GitUser) {
-    if (currentBranchStore == null) currentBranchStore = gitUser.branchName
-}
+suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean = yarnRepo.currentBranch != getAuthenticatedUser()?.branchName
 
 
 class YarnRepo private constructor(private val localPath: File, val platform: ExtendedPlatform) {
 
     private var _git: CloakRepository? = null
 
-    private suspend fun getGit(): CloakRepository? {
+    private suspend fun getOrCreateGit(): CloakRepository {
         if (_git == null) _git = getOrCloneGit()
-        return _git
+        return _git!!
     }
 
+     val defaultBranch: String by lazy {
+        GithubApi.getDefaultBranch(RepoName, UpstreamUsername)
+    }
 
     companion object {
-        // Might want to cache YarnRepo instances at some point
-        fun at(location: File, platform: ExtendedPlatform) = YarnRepo(location, platform)
+        private var repo: YarnRepo? = null
 
-        //        const val GithubUsername = "Cloak-Bot"
+        fun at(location: File, platform: ExtendedPlatform): YarnRepo {
+            if (repo == null) repo = YarnRepo(location, platform)
+            return repo!!
+        }
+
         const val UpstreamUsername = "fabricmc"
-        //        const val UpstreamUsername = "natanfudge"
         private const val RepoName = "yarn"
-        //        private const val OriginUrl = "https://github.com/$GithubUsername/$RepoName"
         private const val UpstreamUrl = "https://github.com/$UpstreamUsername/$RepoName"
         private const val MappingsDirName = "mappings"
-        private const val McVersionFile = "mcversion.txt"
 
     }
 
-    val mappingsDirectory: File = getFile(MappingsDirName)
+    val currentBranch: String get() = runBlocking { getOrCreateGit().currentBranch }
+
+    private val mappingsDirectory: File = getFile(MappingsDirName)
 
     suspend fun warmup() {
-        getGit()
+        getOrCreateGit()
     }
 
-    private suspend fun originUrl(): String? =
-        platform.getAuthenticatedUser()?.let { "https://github.com/${it.name}/$RepoName" }
+    private suspend fun originUrl(): String = "https://github.com/${platform.getAuthenticatedUser().name}/$RepoName"
 
 
     fun clean() = localPath.deleteRecursively()
-
-    //TODO: remove this, this is to move over to the user's own repository instead of cloak bot's repository.
-    suspend fun fixOriginUrl() {
-        originUrl()?.let { getGit()?.resetOrigin(it) }
-    }
 
 
     /**
@@ -91,64 +77,58 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
     fun getMappingsFile(path: String): File = mappingsDirectory.toPath().resolve(path).toFile()
 
-    suspend fun push() =
-        originUrl()?.let { originUrl -> getGit()?.currentBranch()?.let { getGit()?.push(originUrl, it) } }
+    suspend fun push() {
+        val git = getOrCreateGit()
+        git.push(originUrl(), git.currentBranch)
+    }
 
-    suspend fun deleteBranch(branchName: String) = originUrl()
-        ?.let { getGit()?.deleteBranch(remoteUrl = it, branchName = branchName) }
+    suspend fun deleteBranch(branchName: String) {
+        getOrCreateGit().deleteBranch(remoteUrl = originUrl(), branchName = branchName)
+    }
 
-//    fun close() = _git?.close()
 
     suspend fun switchToBranch(
         branchName: String,
         startFromBranch: String? = null,
         force: Boolean = false
-    ) = getGit()?.switchToBranch(
-        branchName = branchName,
-        defaultBaseBranch = { "upstream/${getTargetMinecraftVersion()}" },
-        startFromBranch = startFromBranch,
-        force = force
-    ).also { mcVersion = null }.also {
-        platform.currentBranchStore = branchName
-        platform.getAuthenticatedUser()?.branchName
+    ) {
+        val git = getOrCreateGit()
+
+        platform.branch.createBranch(
+            branchName = branchName,
+            minecraftVersion = if (startFromBranch != null) platform.branch.minecraftVersion ?: return
+            else defaultBranch
+        )
+
+        git.switchToBranch(
+            branchName = branchName,
+            defaultBaseBranch = { "upstream/$defaultBranch" },
+            startFromBranch = startFromBranch,
+            force = force
+        )
     }
 
     suspend fun removeMappingsFile(path: String) {
-        getGit()?.remove(pathOfMappingFromGitRoot(path))
+        getOrCreateGit().remove(pathOfMappingFromGitRoot(path))
     }
 
     suspend fun stageMappingsFile(path: String) {
-        getGit()?.stageChanges(pathOfMappingFromGitRoot(path))
-    }
-
-    private var mcVersion: String? = null
-
-    fun getTargetMinecraftVersion(): String {
-        if (mcVersion == null) {
-            val file = getFile(McVersionFile)
-            if (!file.exists()) {
-                getFile(McVersionFile).writeText(GithubApi.getDefaultBranch(RepoName, UpstreamUsername))
-            }
-            mcVersion = file.readText()
-        }
-
-        return mcVersion!!
+        getOrCreateGit().stageChanges(pathOfMappingFromGitRoot(path))
     }
 
     suspend fun commitChanges(commitMessage: String) {
-        getGit()?.commit(commitMessage)
+        getOrCreateGit().commit(commitMessage)
     }
-
 
     private fun pathOfMappingFromGitRoot(relativeMappingPath: String): String {
         return Paths.get(MappingsDirName, relativeMappingPath).toString().replace("\\", "/")
     }
 
-    private suspend fun getOrCloneGit(): CloakRepository? {
+    private suspend fun getOrCloneGit(): CloakRepository {
         return if (localPath.exists()) platform.createGit(Git.open(localPath), localPath)
         else {
-            val origin = originUrl() ?: return null
-            val user = platform.getAuthenticatedUser() ?: return null
+            val origin = originUrl()
+            val user = platform.getAuthenticatedUser()
             platform.forkRepository(repositoryName = RepoName, forkedUser = UpstreamUsername, forkingUser = user.name)
             println("Cloning yarn repo to $localPath")
             val jgit = Git.cloneRepository()

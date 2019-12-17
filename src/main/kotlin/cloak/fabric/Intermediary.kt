@@ -54,9 +54,9 @@ private class Visitor : TinyVisitor {
 
     fun getNames(): LatestIntermediaryNames {
         val remappedMethodNames = methodNames
-            .mapValues { MethodDescriptor.read(it.value).remap(classNames).classFileName }
+            .mapValues { method -> MethodDescriptor.read(method.value).remap { classNames[it] }.classFileName }
         val remappedFieldNames = fieldNames
-            .mapValues { FieldDescriptor.read(it.value).remap(classNames).classFileName }
+            .mapValues { field -> FieldDescriptor.read(field.value).remap { classNames[it] }.classFileName }
         return LatestIntermediaryNames(
             classNames.values.toSet(),
             remappedMethodNames,

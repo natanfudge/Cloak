@@ -32,11 +32,11 @@ private val primitiveStringsToObjects = mapOf(
 )
 
 
-fun <T : Descriptor> T.remap(map: Map<String, String>): T = when (this) {
+fun <T : Descriptor> T.remap(mapper : (String) -> String?): T = when (this) {
     is PrimitiveType, ReturnDescriptor.Void -> this
-    is ObjectType -> this.copy(map.getOrKey(className))
-    is ArrayType -> this.copy(componentType.remap(map))
-    is MethodDescriptor -> this.copy(parameterDescriptors.map { it.remap(map) }, returnDescriptor.remap(map))
+    is ObjectType -> this.copy(mapper(className) ?: className)
+    is ArrayType -> this.copy(componentType.remap(mapper))
+    is MethodDescriptor -> this.copy(parameterDescriptors.map { it.remap(mapper) }, returnDescriptor.remap(mapper))
     else -> error("Impossible")
 } as T
 

@@ -2,7 +2,6 @@ import RenameErrorTests.Companion.TestAuthor
 import cloak.actions.RenameAction
 import cloak.format.descriptor.ObjectType
 import cloak.platform.GitUser
-import cloak.platform.saved.`This is a test method to not linger renamed names between tests don't use it thanks`
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -15,7 +14,6 @@ fun prepareRenames() {
             switchToBranch(TestAuthor.branchName)
             TestYarnRepo.getMappingsFilesLocations()
         }
-
     }
 }
 
@@ -38,17 +36,17 @@ class RenameErrorTests {
         newFileName: String = oldFileName,
         explanation: String? = null,
         nameInit: (ClassBuilder.() -> NameBuilder<*>)? = null
-    ) = runBlocking {
+    ): Unit = runBlocking {
 
         val oldFullPath = "$oldPath/$oldFileName"
 
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.`This is a test method to not linger renamed names between tests don't use it thanks`()
+        platform.branch.delete()
         val targetName = className(oldFullPath, nameInit)
-        val result = RenameAction.rename(platform,targetName, isTopLevelClass)
-        assert(result is StringError)
+        RenameAction.rename(platform, targetName, isTopLevelClass).assertFails()
+        Unit
     }
 
     @Test

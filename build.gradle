@@ -13,9 +13,8 @@ repositories {
     maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     maven { url = 'http://maven.modmuss50.me/' }
     jcenter()
-    flatDir {
-        dirs 'libs'
-    }
+    maven { url = 'https://dl.bintray.com/michaelbull/maven' }
+
 }
 
 dependencies {
@@ -32,6 +31,12 @@ dependencies {
     shadow "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
     implementation "net.fabricmc:tiny-mappings-parser:0.2.0.11"
     shadow "net.fabricmc:tiny-mappings-parser:0.2.0.11"
+
+    implementation 'com.michael-bull.kotlin-result:kotlin-result:1.1.3'
+    shadow 'com.michael-bull.kotlin-result:kotlin-result:1.1.3'
+//
+//    implementation project(":Mappings")
+//    shadow project(":Mappings")
 
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.3.50'
 

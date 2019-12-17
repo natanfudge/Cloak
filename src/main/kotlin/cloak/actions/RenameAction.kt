@@ -1,17 +1,18 @@
 package cloak.actions
 
-import cloak.format.descriptor.remap
 import cloak.format.mappings.*
 import cloak.format.rename.*
-import cloak.git.currentBranch
-import cloak.git.setCurrentBranchToDefaultIfNeeded
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
-import cloak.platform.saved.*
-import cloak.util.*
-import kotlinx.coroutines.*
+import cloak.platform.UserNotAuthenticatedException
+import cloak.platform.saved.NewName
+import cloak.platform.saved.RenameResult
+import cloak.util.fail
+import cloak.util.success
+import com.github.michaelbull.result.*
+import kotlinx.coroutines.coroutineScope
 import java.io.File
 import javax.lang.model.SourceVersion
 
@@ -20,19 +21,22 @@ object RenameAction {
         platform: ExtendedPlatform,
         nameBeforeRenames: Name,
         isTopLevelClass: Boolean
-    ): Errorable<NewName> {
-        val result = platform.renameInner(nameBeforeRenames, isTopLevelClass)
-
-        if (result is StringSuccess) {
-            println("$nameBeforeRenames was renamed to ${result.value}")
-        } else {
-            println("Could not rename: $result")
+    ): RenameResult {
+        val result : RenameResult = try {
+            platform.renameInner(nameBeforeRenames, isTopLevelClass)
+        } catch (e: UserNotAuthenticatedException) {
+            Err("User not authenticated")
         }
+
+        if (result is Ok<NewName>) {
+            println("$nameBeforeRenames was renamed to ${result.value}")
+            platform.branch.acceptRenamedName(nameBeforeRenames, result.value)
+        } else println("Could not rename: $result")
 
         return result
     }
 
-    private suspend fun ExtendedPlatform.failWithErrorMessage(message: String) = fail<NewName>(message)
+    private suspend fun ExtendedPlatform.failWithErrorMessage(message: String) = Err(message)
         .also { showErrorPopup(message, title = "Cannot rename") }
 
 
@@ -40,15 +44,15 @@ object RenameAction {
      * Returns the new name
      */
     // Note: there's no need for the ability to rename top level classes just by their short name anymore.
-    private suspend fun ExtendedPlatform.renameInner(nameBeforeRenames: Name, isTopLevelClass: Boolean): Errorable<NewName> {
+    private suspend fun ExtendedPlatform.renameInner(
+        nameBeforeRenames: Name,
+        isTopLevelClass: Boolean
+    ): RenameResult {
 
         return coroutineScope {
-
             val oldName = nameBeforeRenames.updateAccordingToRenames(this@renameInner)
 
-            val matchingMapping = findMatchingMapping(oldName)
-                ?: return@coroutineScope  failWithErrorMessage("Cannot rename this")
-
+            val matchingMapping = findMatchingMapping(oldName).getOrElse { return@coroutineScope Err(it) }
 
             val (newFullName, explanation) = requestRenameInput(oldName) {
                 validateUserInput(
@@ -56,7 +60,7 @@ object RenameAction {
                     isTopLevelClass,
                     matchingMapping.typeName()
                 )
-            } ?: return@coroutineScope fail<NewName>("User didn't input a new name")
+            } ?: return@coroutineScope Err("User didn't input a new name")
 
             val (packageName, newShortName) = splitPackageAndName(newFullName)
 
@@ -65,20 +69,10 @@ object RenameAction {
             }
 
             asyncWithText("Renaming...") {
-                val renameInstance = RenameInstance(oldName, newShortName, packageName, explanation)
+                val newName = NewName(name = newShortName, packageName = packageName, explanation = explanation)
 
-                when (val result = applyRename(renameInstance, matchingMapping)) {
-                    is StringSuccess -> {
-                        val newName = NewName(newShortName, packageName)
-
-                        setRenamedTo(nameBeforeRenames, newName)
-                        newName.success
-                    }
-                    is StringError -> {
-                        showErrorPopup(message = result.value, title = "Rename Error")
-                        result.map { NewName("", null) }
-                    }
-                }
+                applyRename(matchingMapping, oldName, newName).map { newName }
+                    .onFailure { showErrorPopup(message = it, title = "Rename Error") }
 
             }
         }
@@ -87,38 +81,38 @@ object RenameAction {
 
 
     private suspend fun ExtendedPlatform.applyRename(
-        rename: RenameInstance,
-        renameTarget: Mapping
-    ): Errorable<Unit> {
+        renameTarget: Mapping, oldName: Name, newName: NewName
+    ): Result<Unit, String> {
         val oldPath = renameTarget.getFilePath()
         val presentableOldName = renameTarget.readableName()
-        val result = rename.rename(renameTarget)
-        if (result is StringError) return result.map { Unit }
+        val result = renameMappings(renameTarget, oldName, newName)
+        result.onFailure { return result }
 
         val newPath = renameTarget.getFilePath()
         val newMappingLocation = yarnRepo.getMappingsFile(newPath)
 
         if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
-            return fail("There's another ${renameTarget.typeName()} named that way already.")
+            return fail("There's another ${renameTarget.typeName()} named '${renameTarget.displayedName}' already.")
         }
 
-        updateNamedIntermediaryMap(renameTarget)
+        val presentableNewName = renameTarget.displayedName
 
-        val presentableNewName = renameTarget.nonNullName
-
-        commitChanges(
-            oldPath,
-            newPath,
-            renameTarget,
-            newMappingLocation,
-            presentableOldName,
-            presentableNewName,
-            rename
-        )
+        commitChanges(oldPath, newPath, renameTarget, newMappingLocation, presentableOldName, presentableNewName)
 
         println("Changes commited successfully!")
 
         return success()
+    }
+
+    fun renameMappings(mappings: Mapping, oldName: Name, newName: NewName): Result<Unit, String> {
+        return if (newName.packageName != null) {
+            // Changing the package can only be done on top-level classes
+            assert(oldName is ClassName) { "It should be verified that package rename can only be done on classes" }
+            mappings as ClassMapping
+
+            mappings.deobfuscatedName = "${newName.packageName}/${newName.name}"
+            success()
+        } else rename(mappings, newName.name)
     }
 
     private suspend fun ExtendedPlatform.commitChanges(
@@ -127,43 +121,15 @@ object RenameAction {
         renameTarget: Mapping,
         newMappingLocation: File,
         presentableOldName: String,
-        presentableNewName: String,
-        rename: RenameInstance
+        presentableNewName: String
     ) {
         if (oldPath != newPath) yarnRepo.removeMappingsFile(oldPath)
 
-        val user = getAuthenticatedUser()!!
         renameTarget.root.writeTo(newMappingLocation)
         yarnRepo.stageMappingsFile(newPath)
         yarnRepo.commitChanges(commitMessage = "$presentableOldName -> $presentableNewName")
 
-        //TODO
-//        appendYarnChange(
-//            branch = currentBranch,
-//            change = Change(
-//                oldName = presentableOldName,
-//                newName = presentableNewName,
-//                explanation = rename.explanation
-//            )
-//        )
     }
-
-
-
-
-
-
-
-    private fun ExtendedPlatform.updateNamedIntermediaryMap(renameTarget: Mapping) {
-        if (renameTarget is ClassMapping) {
-            setIntermediaryName(
-                renameTarget.deobfuscatedName ?: error("A name was unexpectedly not given to $renameTarget"),
-                renameTarget.obfuscatedName
-            )
-        }
-    }
-
-
 
     private suspend fun ExtendedPlatform.requestRenameInput(
         oldName: Name,
@@ -186,9 +152,6 @@ object RenameAction {
     }
 
 
-
-
-
     /**
      * Returns a string if [userInputForNewName] invalid, null if valid.
      * @param isTopLevelClass whether the element to rename is a top level class
@@ -208,9 +171,9 @@ object RenameAction {
     }
 
     private fun Mapping.duplicatesAnotherMapping(newMappingLocation: File): Boolean = when (this) {
-        is ClassMapping -> if (parent == null) newMappingLocation.exists() else parent.innerClasses.anythingElseHasTheSameObfNameAs(
+        is ClassMapping -> parent?.innerClasses?.anythingElseHasTheSameObfNameAs(
             this
-        )
+        ) ?: newMappingLocation.exists()
         // With methods you can overload the same name as long as the descriptor is different
         is MethodMapping -> parent.methods.any { it !== this && it.deobfuscatedName == deobfuscatedName && it.descriptor == descriptor }
         is FieldMapping -> parent.fields.anythingElseHasTheSameObfNameAs(this)

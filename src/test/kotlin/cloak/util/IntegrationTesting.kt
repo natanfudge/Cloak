@@ -87,7 +87,7 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
 
 }
 
-class TestRepository(override val git: JGit, override val path: File) : CloakRepository() {
+class TestRepository(git: JGit, path: File) : CloakRepository(git, path) {
     override fun deleteBranch(remoteUrl: String, branchName: String) {
     }
 

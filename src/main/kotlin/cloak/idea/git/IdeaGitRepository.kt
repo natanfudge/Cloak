@@ -12,15 +12,13 @@ import git4idea.commands.GitLineHandlerListener
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryCreator
 import org.apache.log4j.LogManager
-import org.eclipse.jgit.lib.PersonIdent
 import java.io.File
 
 typealias IdeaGit = git4idea.commands.Git
 
 private val LOGGER = LogManager.getLogger("IdeaGit")
 
-class IdeaGitRepository(private val project: Project, override val git: JGit, override val path: File) :
-    CloakRepository() {
+class IdeaGitRepository(private val project: Project, git: JGit, path: File) : CloakRepository(git, path) {
     private val ideaRepo: GitRepository = GitRepositoryCreator(project).createRepositoryIfValid(
         LocalFileSystem.getInstance().findFileByIoFile(path)!!, VcsRepositoryManager.getInstance(project)
     ) as GitRepository

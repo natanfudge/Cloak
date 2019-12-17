@@ -5,6 +5,7 @@ import cloak.format.mappings.read
 import cloak.format.mappings.writeTo
 import org.junit.Test
 import cloak.util.assertEqualsIgnoreLineBreaks
+import cloak.util.comment
 import cloak.util.getTestResource
 import cloak.util.mappingsFile
 import kotlin.test.assertEquals
@@ -12,18 +13,29 @@ import kotlin.test.assertEquals
 class MappingsTests {
 
     private val testMappings = mappingsFile("bgq", "net/minecraft/block/AbstractBannerBlock") {
+        comment("LE BEST MAPPINGS")
+        comment("OF THE WORLDdddd xd")
         innerClass("testObf", "testDeobf") {
+            comment("inner class comment")
             field("a", "b", PrimitiveType.Byte)
             method("d", "e") {
-                param(1, "g")
+                param(1, "g"){
+                    comment("arg comment")
+                    comment("line 2")
+                    comment("and line 3")
+                }
             }
         }
         innerClass("a", "b") {
             method("a", "b")
         }
         innerClass("testMissing")
-        field("a", "color", ObjectType("awa"))
-        method("b", "getColor", returnType = ObjectType("awa"))
+        field("a", "color", ObjectType("awa")){
+            comment("field comment")
+        }
+        method("b", "getColor", returnType = ObjectType("awa")){
+            comment("method comment")
+        }
         method("obf")
 
     }
@@ -43,7 +55,7 @@ class MappingsTests {
             it.readText()
         }
 
-        assertEquals(expected, actual)
+        assertEqualsIgnoreLineBreaks(expected, actual)
     }
 
     @Test

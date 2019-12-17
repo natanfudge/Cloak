@@ -16,7 +16,7 @@
     <actions>
 
         <action id="Cloak.Rename" class="cloak.idea.actions.RenameIdeaAction" text="Rename"
-                description="Provides a yarn mapping to the target identifier">
+                description="Provides a yarn mapping to the target identifier" icon="/assets/fabric_logo_16.png" >
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <keyboard-shortcut first-keystroke="alt F2" keymap="$default"/>
         </action>

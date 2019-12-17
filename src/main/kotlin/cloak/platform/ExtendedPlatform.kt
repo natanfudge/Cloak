@@ -2,6 +2,7 @@ package cloak.platform
 
 import cloak.git.CloakRepository
 import cloak.git.JGit
+import cloak.platform.saved.BranchInfoApi
 import java.io.File
 import java.nio.file.Path
 
@@ -9,6 +10,8 @@ interface ExtendedPlatform {
     val storageDirectory: Path
 
     val persistentSaver: PersistentSaver
+
+    val branch : BranchInfoApi get() = BranchInfoApi(this)
 
     suspend fun getTwoInputs(
         message: String?,
@@ -58,7 +61,10 @@ interface ExtendedPlatform {
 
     fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult
 
-    suspend fun getAuthenticatedUser(): GitUser?
+    /**
+     * @throws UserNotAuthenticatedException
+     */
+    suspend fun getAuthenticatedUser(): GitUser
 
     fun createGit(git: JGit, path : File): CloakRepository
 
