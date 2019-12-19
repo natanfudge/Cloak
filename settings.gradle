@@ -9,4 +9,4 @@ pluginManagement {
 }
 rootProject.name = 'Cloak'
 
-include "Mappings"
+//include "Mappings"
