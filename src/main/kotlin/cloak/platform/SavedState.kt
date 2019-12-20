@@ -54,7 +54,7 @@ class SavedState<T : Any?>(defaultValue: T, private val key : String, internal v
 
     operator fun getValue(platform: ExtendedPlatform, property: KProperty<*>): T {
         if (!::storagePath.isInitialized) {
-            storagePath = Paths.get(platform.storageDirectory.toString(), SavedDirectory, "$key.cbor")
+            storagePath = Paths.get(platform.getStorageDirectory().toString(), SavedDirectory, "$key.cbor")
             platform.persistentSaver.markDirty(this)
 
             if (!storagePath.exists()) {

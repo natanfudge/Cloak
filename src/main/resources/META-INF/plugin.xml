@@ -40,10 +40,10 @@
                     description="Allows selecting a list of branches to delete on git and from cache">
                 <keyboard-shortcut first-keystroke="ctrl alt d" keymap="$default"/>
             </action>
-            <action class = "cloak.idea.actions.ModifyJavadocIdeaAction" id = "Cloak.ModifyJavadoc" text="Modify Javadoc"
-                    description="Adds or modifies a javadoc of an element">
-                <keyboard-shortcut first-keystroke="alt F3" keymap="$default"/>
-            </action>
+<!--            <action class = "cloak.idea.actions.ModifyJavadocIdeaAction" id = "Cloak.ModifyJavadoc" text="Modify Javadoc"-->
+<!--                    description="Adds or modifies a javadoc of an element">-->
+<!--                <keyboard-shortcut first-keystroke="alt F3" keymap="$default"/>-->
+<!--            </action>-->
 
             <action class = "cloak.idea.actions.DumpStateDebugAction" id ="Cloak.DebugDump" text = "(Debug) Dump State"
                     description="Dumps state"/>

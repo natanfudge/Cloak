@@ -1,6 +1,7 @@
 import cloak.actions.RenameAction
 import cloak.format.descriptor.ObjectType
 import cloak.format.descriptor.PrimitiveType
+import cloak.git.yarnRepo
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
@@ -51,7 +52,7 @@ class RenameTests {
 
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.branch.delete()
+        platform.branch.deleteBranch(platform.yarnRepo.currentBranch)
         val targetName = className(oldFullPath, nameInit)
         RenameAction.rename(platform,targetName, isTopLevelClass).assertSucceeds()
 

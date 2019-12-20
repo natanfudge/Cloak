@@ -32,20 +32,28 @@ class BranchInfoApi(private val platform: ExtendedPlatform) {
             BranchInfo(platform.yarnRepo.defaultBranch)
         }
 
-
     fun getRenamedTo(name: Name): NewName? = branch.renames[name]
+
+
     fun acceptRenamedName(oldName: Name, newName: NewName) {
         branch.renames[oldName] = newName
     }
 
     fun createBranch(branchName: String, minecraftVersion: String) {
-        platform.branchInfo[branchName] = BranchInfo(minecraftVersion)
+        if (platform.branchInfo[branchName] == null) platform.branchInfo[branchName] = BranchInfo(minecraftVersion)
     }
 
     val minecraftVersion: String get() = branch.minecraftVersion
+    val all: Set<String> get() = platform.branchInfo.keys
+    val renames get() = branch.renames
 
-    fun delete() {
-        platform.branchInfo.remove(platform.yarnRepo.currentBranch)
+    fun deleteBranch(branchName: String) {
+        platform.branchInfo.remove(branchName)
+    }
+
+    fun migrateInfo(oldBranch: String, newBranch: String) {
+        platform.branchInfo[oldBranch]?.let { platform.branchInfo[newBranch] = it }
+        platform.branchInfo.remove(oldBranch)
     }
 
 
@@ -59,8 +67,8 @@ private val ExtendedPlatform.branchInfo: MutableMap<Branch, BranchInfo> by Saved
 )
 
 typealias RenameResult = DualResult<NewName, String>
-typealias DualResult<V,E> = com.github.michaelbull.result.Result<V,E>
-typealias ExplainedResult<V> = DualResult<V,String>
+typealias DualResult<V, E> = com.github.michaelbull.result.Result<V, E>
+typealias ExplainedResult<V> = DualResult<V, String>
 
 //data class RenameSuccess(val name: Name, val newName: NewName)
 

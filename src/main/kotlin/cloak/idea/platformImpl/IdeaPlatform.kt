@@ -36,7 +36,7 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
     override val branch = BranchInfoApi(this)
 
     companion object {
-        private const val StorageDirectory = "cloak"
+        private val StorageDirectory = "cloak"
     }
 
     fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
@@ -47,7 +47,7 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
     }
 
 
-    override val storageDirectory: Path = Paths.get(PathManager.getSystemPath(), StorageDirectory)
+    override fun getStorageDirectory(): Path = Paths.get(PathManager.getSystemPath(), StorageDirectory)
 
     private class InputValidatorWrapper(private val validator: PlatformInputValidator) : InputValidatorEx {
         override fun checkInput(inputString: String): Boolean {

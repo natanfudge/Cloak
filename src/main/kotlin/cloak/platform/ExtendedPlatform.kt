@@ -7,7 +7,7 @@ import java.io.File
 import java.nio.file.Path
 
 interface ExtendedPlatform {
-    val storageDirectory: Path
+    fun getStorageDirectory(): Path
 
     val persistentSaver: PersistentSaver
 

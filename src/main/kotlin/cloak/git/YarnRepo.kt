@@ -10,7 +10,7 @@ import java.nio.file.Paths
 
 private const val YarnRepositoryDirectory = "yarn"
 
-private val ExtendedPlatform.yarnRepoDir get() = storageDirectory.resolve(YarnRepositoryDirectory).toFile()
+private val ExtendedPlatform.yarnRepoDir get() = getStorageDirectory().resolve(YarnRepositoryDirectory).toFile()
 
 /**
  * Don't access this too early

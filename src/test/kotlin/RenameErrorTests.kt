@@ -1,6 +1,7 @@
 import RenameErrorTests.Companion.TestAuthor
 import cloak.actions.RenameAction
 import cloak.format.descriptor.ObjectType
+import cloak.git.yarnRepo
 import cloak.platform.GitUser
 import cloak.util.*
 import kotlinx.coroutines.runBlocking
@@ -43,7 +44,7 @@ class RenameErrorTests {
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.branch.delete()
+        platform.branch.deleteBranch(platform.yarnRepo.currentBranch)
         val targetName = className(oldFullPath, nameInit)
         RenameAction.rename(platform, targetName, isTopLevelClass).assertFails()
         Unit

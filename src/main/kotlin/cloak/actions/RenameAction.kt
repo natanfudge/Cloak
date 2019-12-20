@@ -52,7 +52,7 @@ object RenameAction {
         return coroutineScope {
             val oldName = nameBeforeRenames.updateAccordingToRenames(this@renameInner)
 
-            val matchingMapping = findMatchingMapping(oldName).getOrElse { return@coroutineScope Err(it) }
+            val matchingMapping = findMatchingMapping(oldName).getOrElse { return@coroutineScope failWithErrorMessage(it) }
 
             val (newFullName, explanation) = requestRenameInput(oldName) {
                 validateUserInput(
