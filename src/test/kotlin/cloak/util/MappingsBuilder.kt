@@ -44,7 +44,7 @@ class ClassMappingsBuilder(obfuscatedName: String, deobfuscatedName: String?, pa
             .apply(init).build()
     )
 
-    fun field(obfName: String, deobfName: String, type: FieldDescriptor,init: FieldMappingsBuilder.() -> Unit = {}) = mapping.fields.add(
+    fun field(obfName: String, deobfName: String?, type: FieldDescriptor,init: FieldMappingsBuilder.() -> Unit = {}) = mapping.fields.add(
         FieldMappingsBuilder(obfName, deobfName, type, mapping).apply(init).build()
     )
 
@@ -69,6 +69,6 @@ class ParameterMappingsBuilder(index: Int, name: String, parent: MethodMapping) 
     override val mapping = ParameterMapping(index, name, parent)
 }
 @MappingsBuilderDsl
-class FieldMappingsBuilder(obfName: String, deobfName: String, type: FieldDescriptor,parent: ClassMapping) : MappingsBuilder<FieldMapping> {
+class FieldMappingsBuilder(obfName: String, deobfName: String?, type: FieldDescriptor,parent: ClassMapping) : MappingsBuilder<FieldMapping> {
     override val mapping = FieldMapping(obfName, deobfName, type.classFileName, parent)
 }

@@ -33,6 +33,7 @@ class MappingsTests {
         field("a", "color", ObjectType("awa")){
             comment("field comment")
         }
+        field("testMissing",null, PrimitiveType.Boolean)
         method("b", "getColor", returnType = ObjectType("awa")){
             comment("method comment")
         }

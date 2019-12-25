@@ -3,6 +3,7 @@ CLASS bgq net/minecraft/block/AbstractBannerBlock
 	COMMENT OF THE WORLDdddd xd
 	FIELD a color Lawa;
 		COMMENT field comment
+	FIELD testMissing Z
 	METHOD b getColor ()Lawa;
 		COMMENT method comment
 	METHOD obf ()V

@@ -14,3 +14,4 @@ object FabricIcons {
     val Fabric = IconLoader.getIcon("/assets/fabric_logo_16.png")
     val Mixin = IconLoader.getIcon("/assets/mixin_config.svg")
 }
+

@@ -82,26 +82,28 @@ fun parseClass(tokens: List<String>, parent: ClassMapping?) =
         parent = parent
     )
 
-fun parseField(tokens: List<String>, parent: ClassMapping) =
-    FieldMapping(
+fun parseField(tokens: List<String>, parent: ClassMapping): FieldMapping {
+    val (deobfName, descriptor) = when (val tokenAmount = tokens.size) {
+        3 -> null to tokens[2]
+        4 -> tokens[2] to tokens[3]
+        else -> error("Invalid field declaration, got $tokenAmount tokens.")
+    }
+    return FieldMapping(
         obfuscatedName = tokens[1],
-        deobfuscatedName = tokens[2],
-        descriptor = tokens[3],
+        deobfuscatedName = deobfName,
+        descriptor = descriptor,
         parent = parent
     )
+}
+
 
 fun parseMethod(
     tokens: List<String>,
     parent: ClassMapping
 ): MethodMapping {
-    var deobfName: String? = null
-    val descriptor: String
-    when (val tokenAmount = tokens.size) {
-        3 -> descriptor = tokens[2]
-        4 -> {
-            deobfName = tokens[2]
-            descriptor = tokens[3]
-        }
+    val (deobfName, descriptor) = when (val tokenAmount = tokens.size) {
+        3 -> null to tokens[2]
+        4 -> tokens[2] to tokens[3]
         else -> error("Invalid method declaration, got $tokenAmount tokens.")
     }
 

@@ -48,7 +48,6 @@ fun MappingsFile.visitClasses(visitor: (ClassMapping) -> Unit) {
     for (innerClass in innerClasses) innerClass.visitClasses(visitor)
 }
 
-typealias MappingsFileCompanion = ClassMapping.Companion
 
 data class ClassMapping(
     override val obfuscatedName: String,
@@ -112,7 +111,7 @@ data class MethodMapping(
 }
 
 data class FieldMapping(
-    override val obfuscatedName: String, override var deobfuscatedName: String,
+    override val obfuscatedName: String, override var deobfuscatedName: String?,
     val descriptor: String, override val parent: ClassMapping, override var comment: MutableList<String> = mutableListOf()
 ) : Mapping() {
 
@@ -135,7 +134,7 @@ data class FieldMapping(
 }
 
 data class ParameterMapping(
-    val index: Int, override var deobfuscatedName: String,
+    val index: Int, override var deobfuscatedName: String?,
     override val parent: MethodMapping, override var comment: MutableList<String> = mutableListOf()
 ) : Mapping() {
     override val obfuscatedName = ""

@@ -15,9 +15,12 @@ fun rename(mapping: Mapping, newName: String): Result<Unit, String> = when (mapp
 
 private fun Mapping.clashesWith(name: String) = displayedName == name
 
+private fun nameTaken(name: String, mapping: Mapping) =
+    fail("In the latest yarn version there's already a ${mapping.typeName()} named $name inside ${mapping.parent!!.displayedName}")
+
 private fun renameClass(mapping: ClassMapping, newName: String): Result<Unit, String> {
-    if (mapping.parent != null && mapping.parent!!.innerClasses.any { it.clashesWith(newName) }) {
-        return fail("There already a class named $newName inside ${mapping.parent!!.displayedName}")
+    if (mapping.parent != null && mapping.parent.innerClasses.any { it.clashesWith(newName) }) {
+        return nameTaken(newName, mapping)
     }
     val packageName = (mapping.deobfuscatedName ?: mapping.obfuscatedName).split("/")
         .let { it.subList(0, it.size - 1).joinToString("/") }
@@ -29,7 +32,7 @@ private fun renameClass(mapping: ClassMapping, newName: String): Result<Unit, St
 
 private fun renameField(mapping: FieldMapping, newName: String): Result<Unit, String> {
     if (mapping.parent.methods.any { it.deobfuscatedName == newName }) {
-        return fail("There's already a field named $newName inside ${mapping.parent.displayedName}")
+        return nameTaken(newName, mapping)
     }
     mapping.deobfuscatedName = newName
     return success()
@@ -38,7 +41,7 @@ private fun renameField(mapping: FieldMapping, newName: String): Result<Unit, St
 
 private fun renameMethod(mapping: MethodMapping, newName: String): Result<Unit, String> {
     if (mapping.parent.methods.any { it.deobfuscatedName == newName && it.descriptor == mapping.descriptor }) {
-        return fail("There's already a method named $newName(${mapping.descriptor.parameterDescriptors.joinToString(", ")}) inside ${mapping.parent.displayedName}")
+        return nameTaken(newName, mapping)
     }
     mapping.deobfuscatedName = newName
     return success()
@@ -47,10 +50,10 @@ private fun renameMethod(mapping: MethodMapping, newName: String): Result<Unit, 
 
 private fun renameParameter(mapping: ParameterMapping, newName: String): Result<Unit, String> {
     if (mapping.parent.parameters.any { it.deobfuscatedName == newName }) {
-        return fail("There's already a parameter named $newName inside ${mapping.parent.displayedName}")
+        return nameTaken(newName, mapping)
     }
     mapping.deobfuscatedName = newName
     return success()
 }
 
-
+private val MethodMapping.readableDisplayedName: String get() = if (isConstructor) "the constructor" else displayedName

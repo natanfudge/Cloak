@@ -2,6 +2,7 @@ package cloak.format.rename
 
 import cloak.actions.getClassIntermediaryName
 import cloak.format.descriptor.MethodDescriptor
+import cloak.format.descriptor.ReturnDescriptor
 import cloak.format.descriptor.read
 import cloak.format.mappings.*
 import cloak.git.yarnRepo
@@ -10,6 +11,7 @@ import cloak.platform.saved.ExplainedResult
 import cloak.platform.saved.LatestIntermediaryNames
 import cloak.platform.saved.getIntermediaryNamesOfVersion
 import cloak.util.doesNotExist
+import cloak.util.getOrElseError
 import cloak.util.success
 import com.github.michaelbull.result.Err
 import kotlin.test.assertNotNull
@@ -30,7 +32,7 @@ fun Name.getMatchingMappingIn(platform: ExtendedPlatform): ExplainedResult<Mappi
     // This is the result most of the time.
     // We do the expensive fetching/caching of intermediaries only after we do this check.
     if (matchingExistingMapping != null) return matchingExistingMapping.success
-    return addDummyMappingTo(
+    return addEmptyMappingTo(
         platform,
         mappingsFile,
         platform.getIntermediaryNamesOfVersion(platform.branch.minecraftVersion)
@@ -62,18 +64,21 @@ private fun ClassName.getIntermediaryName(platform: ExtendedPlatform): String {
 
 /**
  * In cases where a method/field/inner class does exist, but there is no mappings line for it yet, we need to add it ourselves.
- * This is only a "dummy" mapping because it's gonna get immediately renamed afterwards.
  * Will return null if it can't find a parent to attach to.
+ * @return the added empty mapping
  */
 
-private fun Name.addDummyMappingTo(
+private fun Name.addEmptyMappingTo(
     platform: ExtendedPlatform,
     mappingsFile: MappingsFile,
     intermediaries: LatestIntermediaryNames
 ): ExplainedResult<Mapping> {
     val parent = this.parent
     assertNotNull(parent) { "Top level class are handled in createDummyTopLevelClass, so the parent should not be null" }
-    val parentMapping = parent.getMatchingMappingIn(mappingsFile) ?: return Err("$this could not be found in ${mappingsFile.displayedName}")
+    val parentMapping = parent.getMatchingMappingIn(mappingsFile)
+        ?: if (this.isTopLevelClass) return Err("$this could not be found in ${mappingsFile.displayedName}")
+        else parent.addEmptyMappingTo(platform, mappingsFile, intermediaries).getOrElseError { return it }
+
     return when (this) {
 
         // If the class/field/method/parameter name is in intermediary, then the checks against `intermediaries` will check if they exist.
@@ -86,25 +91,34 @@ private fun Name.addDummyMappingTo(
             ClassMapping(
                 // These will be intermediary names
                 className,
-                className,
+                null,
                 parent = classParent
             ).also { classParent.innerClasses.add(it) }.success
         }
         is FieldName -> {
-            val descriptor = intermediaries.fieldNames[this.fieldName] ?: return Err("$fieldName does not exist in the newest version, and thus cannot be renamed")
+            val descriptor = intermediaries.fieldNames[this.fieldName]
+                ?: return Err("$fieldName does not exist in the newest version, and thus cannot be renamed")
             val classParent = parentMapping.cast<ClassMapping>()
-            FieldMapping(fieldName, fieldName, descriptor, classParent).also { classParent.fields.add(it) }.success
+            FieldMapping(fieldName, null, descriptor, classParent).also { classParent.fields.add(it) }.success
         }
         is MethodName -> {
-            val descriptor = intermediaries.methodNames[this.methodName] ?: return Err("$methodName does not exist in the newest version, and thus cannot be renamed")
+            // Constructors are assumed to exist and are given a void return type.
+            // This is not perfect as it could allow inserting constructors that don't exist, but there's no easy way to get if a constructor exists.
+            val descriptor = if (this.isConstructor) this.toDescriptor(ReturnDescriptor.Void)
+            else {
+                MethodDescriptor.read(
+                    intermediaries.methodNames[this.methodName]
+                        ?: return Err("$methodName does not exist in the newest version, and thus cannot be renamed")
+                )
+            }
             val classParent = parentMapping.cast<ClassMapping>()
-            MethodMapping(methodName, methodName, MethodDescriptor.read(descriptor), mutableListOf(), classParent)
+
+            MethodMapping(methodName, null, descriptor, mutableListOf(), classParent)
                 .also { classParent.methods.add(it) }.success
         }
         is ParamName -> {
             val methodParent = parentMapping.cast<MethodMapping>()
-            // <unnamed> will be replaced
-            ParameterMapping(index, "<unnamed>", methodParent).also { methodParent.parameters.add(it) }.success
+            ParameterMapping(index, null, methodParent).also { methodParent.parameters.add(it) }.success
         }
     }
 }

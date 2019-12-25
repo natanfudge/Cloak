@@ -12,13 +12,13 @@ fun useFile(path: String) {
     val file = getTestResource(path)
     if (file.exists()) {
         file.copyTo(yarn.getMappingsFile(path), overwrite = true)
-      runBlocking {  yarn.stageMappingsFile(path) }
+        runBlocking { yarn.stageMappingsFile(path) }
     }
 
 }
 
 fun getExpected(testName: String) = getTestResource("expected").listFiles()!!
-    .find { it.name.startsWith(testName) } ?: error("Could not find tes resource: $testName")
+    .find { it.name.startsWith(testName) } ?: error("Could not find test resource: $testName")
 
 class RenameTests {
 
@@ -54,7 +54,7 @@ class RenameTests {
         val platform = TestPlatform(Pair(newName, explanation))
         platform.branch.deleteBranch(platform.yarnRepo.currentBranch)
         val targetName = className(oldFullPath, nameInit)
-        RenameAction.rename(platform,targetName, isTopLevelClass).assertSucceeds()
+        RenameAction.rename(platform, targetName, isTopLevelClass).assertSucceeds()
 
         if (isTopLevelClass) {
             assert(!TestYarnRepo.getMappingsFile("$oldFullPath.mapping").exists())
@@ -176,6 +176,41 @@ class RenameTests {
             ObjectType("net/minecraft/world/BlockView"),
             ObjectType("net/minecraft/util/math/BlockPos")
         ).parameter(2)
+    }
+
+    @Test
+    fun `Add parameter in unnamed constructor`() = testRename("UnnamedConstructor", "foo") {
+        method("<init>", PrimitiveType.Int).parameter(1)
+    }
+
+    @Test
+    fun `Add parameter in unnamed method`() = testRename("UnnamedMethod", "foo") {
+        method(
+            "method_9567",
+            ObjectType("net/minecraft/world/World"),
+            ObjectType("net/minecraft/util/math/BlockPos"),
+            ObjectType("net/minecraft/block/BlockState"),
+            ObjectType("net/minecraft/entity/LivingEntity"),
+            ObjectType("net/minecraft/item/ItemStack")
+        ).parameter(1)
+    }
+
+    @Test
+    fun `Add parameter in unnamed class`() = testRename("UnnamedClassParameter", "bar") {
+        innerClass("class_2251")
+            .method("method_9637", ObjectType("net/minecraft/block/Material")).parameter(1)
+
+    }
+
+    @Test
+    fun `Add field in unnamed class`() =testRename("UnnamedClassField","far"){
+        innerClass("class_2251").field("field_10668")
+    }
+
+    @Test
+    fun `Add method in unnamed class`() =testRename("UnnamedClassMethod","maz"){
+        innerClass("class_2251")
+            .method("method_9637", ObjectType("net/minecraft/block/Material"))
     }
 
 }

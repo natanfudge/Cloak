@@ -55,11 +55,7 @@ object RenameAction {
             val matchingMapping = findMatchingMapping(oldName).getOrElse { return@coroutineScope failWithErrorMessage(it) }
 
             val (newFullName, explanation) = requestRenameInput(oldName) {
-                validateUserInput(
-                    it,
-                    isTopLevelClass,
-                    matchingMapping.typeName()
-                )
+                validateUserInput(it, isTopLevelClass, matchingMapping)
             } ?: return@coroutineScope Err("User didn't input a new name")
 
             val (packageName, newShortName) = splitPackageAndName(newFullName)
@@ -156,8 +152,10 @@ object RenameAction {
      * Returns a string if [userInputForNewName] invalid, null if valid.
      * @param isTopLevelClass whether the element to rename is a top level class
      */
-    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean, mappingType: String): String? {
+    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean, targetMapping: Mapping): String? {
         val (packageName, shortName) = splitPackageAndName(userInputForNewName)
+
+        if(userInputForNewName == targetMapping.displayedName) return "The ${targetMapping.typeName()} is already called '$userInputForNewName' in the latest yarn version"
 
         if (!isTopLevelClass && packageName != null) return "Package rename can only be done on top-level classes"
 
@@ -165,7 +163,7 @@ object RenameAction {
             if (!SourceVersion.isIdentifier(part)) return "'$part' is not a valid package name"
         }
 
-        if (!SourceVersion.isName(shortName)) return "'$shortName' is not a valid $mappingType name"
+        if (!SourceVersion.isName(shortName)) return "'$shortName' is not a valid ${targetMapping.typeName()} name"
 
         return null
     }

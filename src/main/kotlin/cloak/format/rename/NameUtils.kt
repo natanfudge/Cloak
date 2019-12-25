@@ -1,6 +1,8 @@
 package cloak.format.rename
 
-import cloak.format.mappings.Mapping
+import cloak.format.descriptor.MethodDescriptor
+import cloak.format.descriptor.ReturnDescriptor
+import cloak.format.mappings.ConstructorName
 import cloak.util.splitOn
 
 private inline fun <T> flatten(seed: T, getNext: T.() -> T?): List<T> {
@@ -61,3 +63,7 @@ val Name.shortName
         is ParamName -> paramName
     }
 
+fun MethodName.toDescriptor(returnType: ReturnDescriptor): MethodDescriptor =
+    MethodDescriptor(parameterTypes, returnType)
+
+val Name.isConstructor get() = this is MethodName &&  this.methodName == ConstructorName

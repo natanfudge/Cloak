@@ -33,17 +33,22 @@ private class MappingsWriter(val writer: BufferedWriter) {
 
     private fun ClassMapping.write(indent: Int = 0) {
         val classIndent = indent + NaturalIndent.Class
-        if (deobfuscatedName != null) writeLine(classIndent,
-            Prefix.Class, obfuscatedName, deobfuscatedName!!)
-        else writeLine(classIndent,
-            Prefix.Class, obfuscatedName)
+        if (deobfuscatedName != null) writeLine(
+            classIndent,
+            Prefix.Class, obfuscatedName, deobfuscatedName!!
+        )
+        else writeLine(classIndent, Prefix.Class, obfuscatedName)
 
         writeComments(indent)
 
         for (field in fields) {
             val fieldIndent = indent + NaturalIndent.Field
-            writeLine(fieldIndent,
-                Prefix.Field, field.obfuscatedName, field.deobfuscatedName, field.descriptor)
+            if (field.deobfuscatedName != null) {
+                writeLine(
+                    fieldIndent,
+                    Prefix.Field, field.obfuscatedName, field.deobfuscatedName!!, field.descriptor
+                )
+            } else writeLine(fieldIndent, Prefix.Field, field.obfuscatedName, field.descriptor)
             field.writeComments(fieldIndent)
         }
 
@@ -57,15 +62,24 @@ private class MappingsWriter(val writer: BufferedWriter) {
                     method.deobfuscatedName!!,
                     method.descriptor.classFileName
                 )
-            } else writeLine(methodIndent,
-                Prefix.Method, method.obfuscatedName, method.descriptor.classFileName)
+            } else writeLine(
+                methodIndent,
+                Prefix.Method, method.obfuscatedName, method.descriptor.classFileName
+            )
 
             method.writeComments(methodIndent)
 
             for (parameter in method.parameters.sortedBy { it.index }) {
                 val paramIndent = indent + NaturalIndent.Parameter
-                writeLine(paramIndent,
-                    Prefix.Parameter, parameter.index.toString(), parameter.deobfuscatedName)
+                if (parameter.deobfuscatedName != null) {
+                    writeLine(
+                        paramIndent,
+                        Prefix.Parameter, parameter.index.toString(), parameter.deobfuscatedName!!
+                    )
+                } else {
+                    writeLine(paramIndent, Prefix.Parameter, parameter.index.toString())
+                }
+
                 parameter.writeComments(paramIndent)
             }
         }
@@ -76,8 +90,10 @@ private class MappingsWriter(val writer: BufferedWriter) {
 
     private fun Mapping.writeComments(indent: Int) {
         for (commentLine in comment) {
-            writeLine(indent + 1,
-                Prefix.Comment, commentLine)
+            writeLine(
+                indent + 1,
+                Prefix.Comment, commentLine
+            )
         }
     }
 

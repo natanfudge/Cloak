@@ -36,14 +36,20 @@ fun canBeRenamed(psiduck: PsiElement): Boolean {
     }
 }
 
+fun tryGetIdentifierElement(element: PsiElement?) : PsiElement?{
+    if (element == null) return null
+    return when (element) {
+        is PsiNameIdentifierOwner -> element
+        is PsiIdentifier -> element
+        else -> null
+    }
+}
+
 fun IdeaPlatform.foldElement(event: AnActionEvent) {
     inUiThread {
-        val element = event.elementAtCaret ?: return@inUiThread
-        val identifier = when (element) {
-            is PsiNameIdentifierOwner -> element
-            is PsiIdentifier -> element
-            else -> return@inUiThread
-        }
+        val identifier = tryGetIdentifierElement(event.elementAtCaret)
+            // In some cases the caret element misses the mark so we need to use the event element
+            ?: tryGetIdentifierElement(event.psiElement) ?: return@inUiThread
 
         CodeFoldingManager.getInstance(project)
             .updateFoldRegionsAsync(editor ?: return@inUiThread, true)?.run()
@@ -79,6 +85,8 @@ class RenameIdeaAction : CloakAction() {
 
             if (rename is Ok<*>) {
                 platform.foldElement(event)
+            } else {
+                println("Problem renaming: $rename")
             }
         }
 
