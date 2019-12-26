@@ -1,7 +1,6 @@
 package cloak.idea.folding
 
 import cloak.format.rename.shortName
-import cloak.idea.actions.anythingWasRenamed
 import cloak.idea.actions.isMinecraftPackageName
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
@@ -40,7 +39,7 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
         if (!isMinecraftPackageName(psi.containingFile.packageName)) return false
         val platform = IdeaPlatform(psi.project)
 
-        if (!platform.anythingWasRenamed()) return false
+        if (!platform.branch.anythingWasAdded()) return false
         return if (node is PsiPackageStatement) {
             node.getTopLevelClass()?.asNameOrNull()?.let { platform.branch.getRenamedTo(it) }?.packageName != null
         } else psi.getDefinitionElement()?.isCollapsed(platform) == true
@@ -67,7 +66,7 @@ class RenameFoldingBuilder : CustomFoldingBuilder() {
         if (!isMinecraftPackageName(file.packageName)) return
         val platform = IdeaPlatform(file.project)
 
-        if (!platform.anythingWasRenamed()) return
+        if (!platform.branch.anythingWasAdded()) return
 
         root.accept(WalkingVisitor(descriptors, platform))
     }

@@ -16,6 +16,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.psi.PsiElement
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.plugins.github.api.GithubApiRequestExecutor
@@ -154,6 +155,10 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
             dialog.show()
             dialog.getChosenOptions()
         }
+
+    override suspend fun getJavadocInput(title: String, oldJavadoc: String): String? {
+        return getFromUiThread { getIdeaJavadocInput(project, title, oldJavadoc) }
+    }
 
 
     override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T =

@@ -9,11 +9,10 @@ import cloak.platform.ExtendedPlatform
 import com.intellij.codeInsight.folding.CodeFoldingManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 
-fun ExtendedPlatform.anythingWasRenamed() = branch.renames.isNotEmpty()
 
 class SubmitIdeaAction : CloakAction() {
     override fun isEnabled(event: AnActionEvent): Boolean {
-        return IdeaPlatform(event.project ?: return false, event.editor).anythingWasRenamed()
+        return IdeaPlatform(event.project ?: return false, event.editor).branch.anythingWasAdded()
     }
 
     override fun actionPerformed(event: AnActionEvent) {

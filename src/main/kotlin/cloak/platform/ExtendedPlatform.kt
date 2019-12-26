@@ -43,6 +43,8 @@ interface ExtendedPlatform {
 
     suspend fun getMultipleChoicesBetweenOptions(title: String, options: List<String>): List<String>
 
+    suspend fun getJavadocInput(title: String, oldJavadoc : String) : String?
+
     suspend fun showMessageDialog(message: String, title: String)
 
     suspend fun showErrorPopup(message: String, title: String)

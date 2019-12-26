@@ -56,6 +56,13 @@ class BranchInfoApi(private val platform: ExtendedPlatform) {
         platform.branchInfo.remove(oldBranch)
     }
 
+    fun javadocOf(name: Name): String? = branch.javadocs[name]
+
+    fun acceptJavadoc(forName: Name, javadoc : String){
+        branch.javadocs[forName] = javadoc
+    }
+
+    fun anythingWasAdded() = branch.let { it.renames.isNotEmpty() || it.javadocs.isNotEmpty() }
 
 }
 

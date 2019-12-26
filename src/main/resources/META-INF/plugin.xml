@@ -27,8 +27,8 @@
         </action>
 
         <action class = "cloak.idea.actions.ModifyJavadocIdeaAction" id = "Cloak.ModifyJavadoc" text="Modify Javadoc"
-                description="Adds or modifies a javadoc of an element">
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+                description="Adds or modifies a javadoc of an element" icon="/assets/fabric_logo_16.png">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="Cloak.Rename"/>
             <keyboard-shortcut first-keystroke="alt F3" keymap="$default"/>
         </action>
 

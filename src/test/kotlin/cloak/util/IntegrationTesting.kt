@@ -59,6 +59,10 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
         return listOf()
     }
 
+    override suspend fun getJavadocInput(title: String, oldJavadoc: String): String? {
+        return javaDocInput
+    }
+
     override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T = action()
     override fun createPullRequest(
         repositoryName: String,
