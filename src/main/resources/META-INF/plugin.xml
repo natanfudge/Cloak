@@ -7,7 +7,10 @@
 
     <description>A companion for fabric development. Currently allows easily submitting mappings.</description>
 
-    <change-notes>Fixed a debug flag being left on</change-notes>
+    <change-notes>
+        - Fixed a debug flag being left on
+        - Increased the length of the change notes
+    </change-notes>
 
     <depends>com.intellij.modules.java</depends>
     <depends>org.jetbrains.plugins.github</depends>
