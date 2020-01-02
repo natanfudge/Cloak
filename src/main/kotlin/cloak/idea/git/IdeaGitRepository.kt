@@ -18,19 +18,19 @@ typealias IdeaGit = git4idea.commands.Git
 
 private val LOGGER = LogManager.getLogger("IdeaGit")
 
-class IdeaGitRepository(private val project: Project, git: JGit, path: File) : CloakRepository(git, path) {
+class IdeaGitRepository(project: Project, git: JGit, path: File) : CloakRepository(git, path) {
     private val ideaRepo: GitRepository = GitRepositoryCreator(project).createRepositoryIfValid(
         LocalFileSystem.getInstance().findFileByIoFile(path)!!, VcsRepositoryManager.getInstance(project)
     ) as GitRepository
 
     override fun push(remoteUrl: String, branch: String, refSpec: String) {
         val result = IdeaGit.getInstance().push(ideaRepo, "origin", remoteUrl, refSpec, false,
-            GitLineHandlerListener { line, outputType -> })
+            GitLineHandlerListener { _, _ -> })
         if (!result.success()) LOGGER.warn("Could not push $branch to $remoteUrl: $result")
     }
 
     override fun commit(commitMessage: String) {
-        val handler = GitLineHandler(project, ideaRepo.root, GitCommand.COMMIT)
+        val handler = GitLineHandler(ideaRepo.project, ideaRepo.root, GitCommand.COMMIT)
         handler.addParameters("-m", commitMessage)
         handler.endOptions()
         Git.getInstance().runCommand(handler).throwOnError()
