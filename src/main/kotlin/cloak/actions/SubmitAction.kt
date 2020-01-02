@@ -11,7 +11,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.eclipse.jgit.lib.Repository
 
-private const val useDebugRepo = true
+private const val useDebugRepo = false
 
 object SubmitAction {
     fun submit(platform: ExtendedPlatform) = with(platform) {
@@ -60,8 +60,8 @@ private suspend fun ExtendedPlatform.resetWorkspace(gitUser: GitUser) {
         repo.switchToBranch("master")
         repo.deleteBranch(gitUser.branchName)
         repo.switchToBranch(gitUser.branchName)
-        // This will update the mc version because the 'McVersion' file will be deleted
         updateIntermediaryNamesToVersion(repo.defaultBranch)
+        ActiveMappings.deactivate()
     }
 
 }

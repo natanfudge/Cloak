@@ -1,5 +1,6 @@
 package cloak.platform.saved
 
+import cloak.format.mappings.MappingsFile
 import cloak.format.rename.Name
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
@@ -22,6 +23,7 @@ data class NewName(val name: String, val packageName: String?, val explanation: 
 private data class BranchInfo(
     val minecraftVersion: String,
     val renames: MutableMap<Name, NewName> = mutableMapOf(),
+    // Note: the actual content is not used right now
     val javadocs: MutableMap<Name, String> = mutableMapOf()
 )
 
@@ -56,9 +58,8 @@ class BranchInfoApi(private val platform: ExtendedPlatform) {
         platform.branchInfo.remove(oldBranch)
     }
 
-    fun javadocOf(name: Name): String? = branch.javadocs[name]
 
-    fun acceptJavadoc(forName: Name, javadoc : String){
+    fun acceptJavadoc(forName: Name, javadoc: String) {
         branch.javadocs[forName] = javadoc
     }
 
@@ -77,5 +78,4 @@ typealias RenameResult = DualResult<NewName, String>
 typealias DualResult<V, E> = com.github.michaelbull.result.Result<V, E>
 typealias ExplainedResult<V> = DualResult<V, String>
 
-//data class RenameSuccess(val name: Name, val newName: NewName)
 

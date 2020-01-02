@@ -55,8 +55,7 @@ private fun PsiField.getFieldName() = (parent as PsiClass).getClassName()?.let {
 
 
 private fun PsiMethod.getMethodName(): MethodName? {
-    val superMethods = findSuperMethods()
-    val methodOwner = (superMethods.firstOrNull()?.parent ?: this.parent ?: return null) as PsiClass
+    val methodOwner = (this.getMethodDeclaration().parent ?: return null) as PsiClass
     return methodOwner.getClassName()?.let { className ->
         MethodName(
             methodName = if (this.isConstructor) ConstructorName else name,
@@ -80,11 +79,23 @@ private fun PsiClassReferenceType.resolveName(): String? {
     return className
 }
 
-private fun PsiParameter.getIndex() = (parent as PsiParameterList).getParameterIndex(this)
+private val doubleSizedTypes = setOf("long", "double")
+private fun PsiParameter.getIndex(isInInstanceMethod: Boolean): Int {
+    val parameterList = (parent as PsiParameterList)
+    val parameters = parameterList.parameters
+    val indexInList = parameterList.getParameterIndex(this)
+    var currentIndex = if (isInInstanceMethod) 1 else 0
+    for (i in 0 until indexInList) {
+        currentIndex++
+        if (parameters[i].type.canonicalText in doubleSizedTypes) currentIndex++
+    }
+    return currentIndex
+}
+
 private fun PsiParameter.getParameterName(isInInstanceMethod: Boolean): ParamName? {
     return (this.parent.parent as PsiMethod).getMethodName()?.let { method ->
         ParamName(
-            index = this.getIndex().let { if (isInInstanceMethod) it + 1 else it },
+            index = this.getIndex(isInInstanceMethod),
             methodIn = method,
             paramName = this.name
         )

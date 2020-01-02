@@ -75,3 +75,5 @@ operator fun <T> T.plus(list: List<T>): List<T> {
     result.addAll(list)
     return result
 }
+
+fun String.isInScreamingSnakeCase() = all { it.isUpperCase() || it == '_' }

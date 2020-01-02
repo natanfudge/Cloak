@@ -3,6 +3,7 @@ package cloak.actions
 import cloak.format.mappings.*
 import cloak.format.rename.*
 import cloak.git.yarnRepo
+import cloak.idea.NamingProgressHighlighter
 import cloak.platform.ExtendedPlatform
 import cloak.platform.PlatformInputValidator
 import cloak.platform.UserInputRequest
@@ -22,7 +23,7 @@ object RenameAction {
         nameBeforeRenames: Name,
         isTopLevelClass: Boolean
     ): RenameResult {
-        val result : RenameResult = try {
+        val result: RenameResult = try {
             platform.renameInner(nameBeforeRenames, isTopLevelClass)
         } catch (e: UserNotAuthenticatedException) {
             Err("User not authenticated")
@@ -52,7 +53,8 @@ object RenameAction {
         return coroutineScope {
             val oldName = nameBeforeRenames.updateAccordingToRenames(this@renameInner)
 
-            val matchingMapping = findMatchingMapping(oldName).getOrElse { return@coroutineScope failWithErrorMessage(it) }
+            val matchingMapping =
+                findMatchingMapping(oldName).getOrElse { return@coroutineScope failWithErrorMessage(it) }
 
             val (newFullName, explanation) = requestRenameInput(oldName) {
                 validateUserInput(it, isTopLevelClass, matchingMapping)
@@ -85,15 +87,20 @@ object RenameAction {
         result.onFailure { return result }
 
         val newPath = renameTarget.getFilePath()
-        val newMappingLocation = yarnRepo.getMappingsFile(newPath)
 
-        if (renameTarget.duplicatesAnotherMapping(newMappingLocation)) {
+        if (renameTarget.duplicatesAnotherMapping(yarnRepo.getMappingsFile(newPath))) {
             return fail("There's another ${renameTarget.typeName()} named '${renameTarget.displayedName}' already.")
         }
 
         val presentableNewName = renameTarget.displayedName
 
-        commitChanges(oldPath, newPath, renameTarget, newMappingLocation, presentableOldName, presentableNewName)
+        if (oldPath != newPath) yarnRepo.removeMappingsFile(oldPath)
+
+        commitChanges(
+            path = newPath,
+            mappings = renameTarget,
+            commitMessage = "$presentableOldName -> $presentableNewName"
+        )
 
         println("Changes commited successfully!")
 
@@ -111,21 +118,6 @@ object RenameAction {
         } else rename(mappings, newName.name)
     }
 
-    private suspend fun ExtendedPlatform.commitChanges(
-        oldPath: String,
-        newPath: String,
-        renameTarget: Mapping,
-        newMappingLocation: File,
-        presentableOldName: String,
-        presentableNewName: String
-    ) {
-        if (oldPath != newPath) yarnRepo.removeMappingsFile(oldPath)
-
-        renameTarget.root.writeTo(newMappingLocation)
-        yarnRepo.stageMappingsFile(newPath)
-        yarnRepo.commitChanges(commitMessage = "$presentableOldName -> $presentableNewName")
-
-    }
 
     private suspend fun ExtendedPlatform.requestRenameInput(
         oldName: Name,
@@ -152,10 +144,14 @@ object RenameAction {
      * Returns a string if [userInputForNewName] invalid, null if valid.
      * @param isTopLevelClass whether the element to rename is a top level class
      */
-    private fun validateUserInput(userInputForNewName: String, isTopLevelClass: Boolean, targetMapping: Mapping): String? {
+    private fun validateUserInput(
+        userInputForNewName: String,
+        isTopLevelClass: Boolean,
+        targetMapping: Mapping
+    ): String? {
         val (packageName, shortName) = splitPackageAndName(userInputForNewName)
 
-        if(userInputForNewName == targetMapping.displayedName) return "The ${targetMapping.typeName()} is already called '$userInputForNewName' in the latest yarn version"
+        if (userInputForNewName == targetMapping.displayedName) return "The ${targetMapping.typeName()} is already called '$userInputForNewName' in the latest yarn version"
 
         if (!isTopLevelClass && packageName != null) return "Package rename can only be done on top-level classes"
 

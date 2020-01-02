@@ -1,6 +1,7 @@
 package cloak.actions
 
 import cloak.git.yarnRepo
+import cloak.platform.ActiveMappings
 import cloak.platform.ExtendedPlatform
 import cloak.platform.UserNotAuthenticatedException
 //import cloak.platform.saved.allBranches
@@ -22,6 +23,7 @@ object SwitchBranchAction {
                     .let { if (it == mainBranchLabel) user.branchName else it }
                 asyncWithText("Switching...") {
                     yarnRepo.switchToBranch(branchName = branch)
+                    ActiveMappings.deactivate()
                 }
             } catch (e: UserNotAuthenticatedException) {
                 Logger.warn("User not authenticated", e)

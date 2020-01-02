@@ -7,8 +7,10 @@ import cloak.format.mappings.readableName
 import cloak.format.mappings.writeTo
 import cloak.format.rename.Name
 import cloak.git.yarnRepo
+import cloak.idea.NamingProgressHighlighter
 import cloak.platform.ExtendedPlatform
 import com.github.michaelbull.result.getOrElse
+import com.intellij.ide.plugins.newui.PluginUpdatesService
 import kotlinx.coroutines.coroutineScope
 
 object ModifyJavadocAction {
@@ -22,22 +24,26 @@ object ModifyJavadocAction {
             val oldJavadoc = matchingMapping.multilineComment
             val newJavadoc = getJavadocInput("Modify Javadoc", oldJavadoc) ?: return@coroutineScope false
 
+
             asyncWithText("Applying Javadoc...") {
                 matchingMapping.comment = newJavadoc.split("\n").toMutableList()
 
                 val path = matchingMapping.getFilePath()
                 val presentableName = matchingMapping.readableName()
 
-                matchingMapping.root.writeTo(yarnRepo.getMappingsFile(path))
-                branch.acceptJavadoc(nameBeforeRenames, newJavadoc)
-                yarnRepo.stageMappingsFile(path)
                 val charChange = newJavadoc.length - oldJavadoc.length
                 val changeSymbol = if (charChange >= 0) "+" else ""
+                commitChanges(
+                    path = path,
+                    commitMessage = "$changeSymbol$charChange doc in $presentableName",
+                    mappings = matchingMapping
+                )
 
-                yarnRepo.commitChanges(commitMessage = "$changeSymbol$charChange doc in $presentableName")
+                branch.acceptJavadoc(nameBeforeRenames, newJavadoc)
             }
 
-            true
+
+                true
         }
     }
 

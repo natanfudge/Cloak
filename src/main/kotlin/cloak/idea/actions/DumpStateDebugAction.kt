@@ -13,7 +13,6 @@ class DumpStateDebugAction : CloakAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         with(IdeaPlatform(e.project ?: return, e.editor ?: return)) {
-            //TODO
 //            println(
 //                """
 //____________DUMP:_______________________________________________

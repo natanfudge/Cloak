@@ -2,10 +2,7 @@ package cloak.idea.actions
 
 import cloak.actions.ModifyJavadocAction
 import cloak.idea.platformImpl.IdeaPlatform
-import cloak.idea.util.CloakAction
-import cloak.idea.util.asName
-import cloak.idea.util.editor
-import cloak.idea.util.psiElement
+import cloak.idea.util.*
 import com.intellij.openapi.actionSystem.AnActionEvent
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

@@ -1,6 +1,7 @@
 package cloak.idea.actions
 
 import cloak.actions.SwitchBranchAction
+import cloak.idea.NamingProgressHighlighter
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.CloakAction
 import cloak.idea.util.editor
@@ -17,6 +18,7 @@ class SwitchBranchIdeaAction : CloakAction() {
         val platform = IdeaPlatform(e.project ?: return, e.editor ?: return)
 
         SwitchBranchAction.switch(platform).invokeOnCompletion {
+
             platform.inUiThread {
                 CodeFoldingManager.getInstance(e.project)
                     .updateFoldRegionsAsync(e.editor ?: return@inUiThread, true)?.run()

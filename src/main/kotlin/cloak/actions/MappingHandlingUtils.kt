@@ -5,19 +5,21 @@ import cloak.format.descriptor.remap
 import cloak.format.mappings.*
 import cloak.format.rename.*
 import cloak.git.yarnRepo
+import cloak.platform.ActiveMappings
 import cloak.platform.ExtendedPlatform
-import cloak.platform.saved.DualResult
 import cloak.platform.saved.ExplainedResult
 import cloak.platform.saved.showedNoteAboutLicense
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlin.system.measureTimeMillis
 
-suspend fun ExtendedPlatform.warmupAuthAndYarnAsync(): Deferred<Unit> = coroutineScope {
+suspend fun ExtendedPlatform.warmupAsync(): Deferred<Unit> = coroutineScope {
     getAuthenticatedUser()
 
-
-    val promise = async { yarnRepo.warmup() }
+    val promise = async {
+        yarnRepo.warmup()
+    }
     if (!showedNoteAboutLicense) {
         showMessageDialog(
             message = """Yarn mappings are licensed under a permissive license and should stay so.
@@ -73,10 +75,12 @@ fun Name.updateAccordingToRenames(platform: ExtendedPlatform): Name {
 
 suspend fun ExtendedPlatform.findMatchingMapping(name: Name): ExplainedResult<Mapping> {
 
-    val repoPromise = warmupAuthAndYarnAsync()
+    val repoPromise = warmupAsync()
 
     return asyncWithText("Preparing rename...") {
         repoPromise.await()
+
+        if (!ActiveMappings.areActive()) ActiveMappings.refresh(this@findMatchingMapping)
 
         val oldName = name.remapParameterDescriptorsToInt(this)
 
@@ -86,19 +90,11 @@ suspend fun ExtendedPlatform.findMatchingMapping(name: Name): ExplainedResult<Ma
 
 }
 
-/**
- * Call this while the user is busy (typing the new name) to prevent lag later on.
- * This method will be executed asynchronously so it will return immediately and do the work in the background.
- */
-//private suspend fun ExtendedPlatform.switchToCorrectBranch() = withContext(Dispatchers.IO) {
-//    //TODO: this is very wrong
-//    yarnRepo.switchToBranch(currentBranch)
-//}
 
- fun ExtendedPlatform.getClassIntermediaryName(namedName: String): String? {
+fun ExtendedPlatform.getClassIntermediaryName(namedName: String): String? {
     val parts = namedName.split("$")
     var index = 0
-    val file = yarnRepo.getMappingsFile(parts[0] + ".mapping")
+    val file = yarnRepo.getMappingsFile(parts[0] + MappingsExtension)
     if (!file.exists()) return null
 
     val mappings: List<ClassMapping> = flattenWithSelf(MappingsFile.read(file)) {
@@ -119,3 +115,11 @@ private fun <T : Name> T.remapParameterDescriptorsToInt(platform: ExtendedPlatfo
     else -> this
 }
 
+suspend fun ExtendedPlatform.commitChanges(path: String, mappings: Mapping, commitMessage: String) {
+    val mappingsFile = mappings.root
+    mappingsFile.writeTo(yarnRepo.getMappingsFile(path))
+    yarnRepo.stageMappingsFile(path)
+    yarnRepo.commitChanges(commitMessage)
+
+    ActiveMappings.update(mappingsFile)
+}

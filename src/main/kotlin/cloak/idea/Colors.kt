@@ -4,8 +4,12 @@ import com.intellij.ui.JBColor
 import java.awt.Color
 
 object JbColors {
-    val Green = staticColor(0, 200, 0)
+    val Green = staticColor(0, 255, 0)
+    val Orange = staticColor(255, 165, 0)
+    val Yellow = staticColor(255, 255, 0)
+    val Red = staticColor(255, 0, 0)
+    val HalfRed = staticColor(128, 0, 0)
 }
 
-private fun staticColor(red : Int, green : Int, blue : Int) = JBColor(Color(red,green,blue),Color(red,green,blue))
+ fun staticColor(red : Int, green : Int, blue : Int) = JBColor(Color(red,green,blue),Color(red,green,blue))
 

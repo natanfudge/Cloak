@@ -9,9 +9,10 @@ import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.ExplainedResult
 import cloak.platform.saved.LatestIntermediaryNames
-import cloak.platform.saved.getIntermediaryNamesOfVersion
+import cloak.platform.saved.getIntermediaryNamesOfYarnVersion
 import cloak.util.doesNotExist
 import cloak.util.getOrElseError
+import cloak.util.isInScreamingSnakeCase
 import cloak.util.success
 import com.github.michaelbull.result.Err
 import kotlin.test.assertNotNull
@@ -23,7 +24,7 @@ fun Name.getMatchingMappingIn(platform: ExtendedPlatform): ExplainedResult<Mappi
     // Add a new top level class in case this one doesn't exist
     if (mappingsFilePath.doesNotExist) {
         return if (this is ClassName && this.isTopLevelClass) {
-            createDummyTopLevelClass(platform.getIntermediaryNamesOfVersion(platform.branch.minecraftVersion))
+            createDummyTopLevelClass(platform.getIntermediaryNamesOfYarnVersion())
         } else Err("Packages can only be changed by renaming the top level class")
     }
 
@@ -35,7 +36,7 @@ fun Name.getMatchingMappingIn(platform: ExtendedPlatform): ExplainedResult<Mappi
     return addEmptyMappingTo(
         platform,
         mappingsFile,
-        platform.getIntermediaryNamesOfVersion(platform.branch.minecraftVersion)
+        platform.getIntermediaryNamesOfYarnVersion()
     )
 
 }
@@ -97,7 +98,7 @@ private fun Name.addEmptyMappingTo(
         }
         is FieldName -> {
             val descriptor = intermediaries.fieldNames[this.fieldName]
-                ?: return Err("$fieldName does not exist in the newest version, and thus cannot be renamed")
+                ?: return doesntExist(fieldName)
             val classParent = parentMapping.cast<ClassMapping>()
             FieldMapping(fieldName, null, descriptor, classParent).also { classParent.fields.add(it) }.success
         }
@@ -108,7 +109,7 @@ private fun Name.addEmptyMappingTo(
             else {
                 MethodDescriptor.read(
                     intermediaries.methodNames[this.methodName]
-                        ?: return Err("$methodName does not exist in the newest version, and thus cannot be renamed")
+                        ?: return doesntExist(methodName)
                 )
             }
             val classParent = parentMapping.cast<ClassMapping>()
@@ -122,6 +123,11 @@ private fun Name.addEmptyMappingTo(
         }
     }
 }
+
+private fun doesntExist(identifier: String) = Err(
+    if (identifier.isInScreamingSnakeCase()) "$identifier is mapped automatically by the fabric toolchain"
+    else "$identifier does not exist in the newest version, and thus cannot be renamed"
+)
 
 private fun Name.getMatchingMappingIn(mappingsFile: MappingsFile): Mapping? = when (this) {
     is ClassName -> getMatchingMappingIn(mappingsFile)

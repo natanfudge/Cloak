@@ -13,6 +13,8 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElementFactory
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.impl.source.PsiCodeFragmentImpl
 import com.intellij.psi.impl.source.tree.JavaElementType
 import com.intellij.ui.EditorTextField
@@ -22,13 +24,19 @@ import org.apache.log4j.Level
 import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.border.CompoundBorder
+import kotlin.math.round
 
 fun getIdeaJavadocInput(
     project: Project,
     title: String,
     existingJavadoc: String
 ): String? {
-    val dialog = JavadocInputDialog(project, title, existingJavadoc).apply { show() }
+    val dialog = JavadocInputDialog(project, title, existingJavadoc)
+    try {
+        dialog.show()
+    } catch (ignored: ClassCastException) {
+    }
+
     if (!dialog.isOK) return null
     val text = dialog.getText()
     // Remove the /** * */ stuff that is needed for autocompletion
@@ -89,11 +97,12 @@ class JavadocInputDialog(
                     editor.settings.isUseSoftWraps = true
                     editor.settings.lineCursorWidth = EditorUtil.getDefaultCaretWidth()
                     editor.colorsScheme.editorFontName = font.fontName
-                    editor.colorsScheme.editorFontSize = font.size
+                    editor.colorsScheme.editorFontSize = round(font.size * 1.5).toInt()
                     editor.contentComponent.border = CompoundBorder(
                         editor.contentComponent.border,
                         JBUI.Borders.emptyLeft(2)
                     )
+
                     editor.contextMenuGroupId = "XDebugger.Evaluate.Code.Fragment.Editor.Popup"
 
                     return editor
