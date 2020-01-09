@@ -28,7 +28,7 @@ fun isPartOfMinecraft(psiduck: PsiElement): Boolean {
         psiduck.getMethodIn()?.let { return isPartOfMinecraft(it) }
     }
     val actual = if (psiduck is PsiMethod) psiduck.getMethodDeclaration() else psiduck
-    return actual.packageName.startsWith("net.minecraft")
+    return actual.packageName?.startsWith("net.minecraft") == true
 }
 
 fun canBeRenamed(psiduck: PsiElement): Boolean {

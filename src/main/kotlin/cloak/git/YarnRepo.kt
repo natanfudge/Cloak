@@ -107,7 +107,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
         platform.branch.createBranch(
             branchName = branchName,
-            minecraftVersion = if (startFromBranch != null) platform.branch.getMinecraftVersion() ?: return
+            minecraftVersion = if (startFromBranch != null) platform.branch.getMinecraftVersion()
             else defaultBranch
         )
 
