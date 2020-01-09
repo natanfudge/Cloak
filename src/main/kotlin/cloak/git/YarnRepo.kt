@@ -21,7 +21,7 @@ val ExtendedPlatform.yarnRepo: YarnRepo
 
 
 suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean =
-    yarnRepo.getCurrentBranch() != getAuthenticatedUser()?.branchName
+    yarnRepo.getCurrentBranch() != getAuthenticatedUser().branchName
 
 
 class YarnRepo private constructor(private val localPath: File, val platform: ExtendedPlatform) {
@@ -53,7 +53,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
         const val UpstreamUsername = "fabricmc"
         private const val RepoName = "yarn"
-        private const val UpstreamUrl = "https://github.com/$UpstreamUsername/$RepoName"
+        const val UpstreamUrl = "https://github.com/$UpstreamUsername/$RepoName"
         private const val MappingsDirName = "mappings"
 
     }
@@ -80,7 +80,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
      * Returns all the paths in the mappings folder relative to the mappings folder, NOT including extensions.
      */
     fun getMappingsFilesLocations(): Set<String> {
-        return mappingsDirectory.walk().filter { !it.isDirectory && it.extension == MappingsExtension }
+        return mappingsDirectory.walk().filter { !it.isDirectory && "." + it.extension == MappingsExtension }
             .map { it.relativeTo(mappingsDirectory).path.removeSuffix(MappingsExtension).replace("\\", "/") }
             .toHashSet()
     }
@@ -100,9 +100,10 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
     suspend fun switchToBranch(
         branchName: String,
         startFromBranch: String? = null,
-        force: Boolean = false
+        force: Boolean = false,
+        git: CloakRepository? = null
     ) {
-        val git = getOrCreateGit()
+        val usedGit = git ?: getOrCreateGit()
 
         platform.branch.createBranch(
             branchName = branchName,
@@ -110,7 +111,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
             else defaultBranch
         )
 
-        git.switchToBranch(
+        usedGit.switchToBranch(
             branchName = branchName,
             defaultBaseBranch = { "upstream/$defaultBranch" },
             startFromBranch = startFromBranch,
@@ -143,6 +144,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         else {
             val origin = originUrl()
             val user = platform.getAuthenticatedUser()
+            onFork()
             platform.forkRepository(repositoryName = RepoName, forkedUser = UpstreamUsername, forkingUser = user.name)
             println("Cloning yarn repo to $localPath")
             onClone()
@@ -153,8 +155,11 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
             platform.createGit(jgit, localPath).also {
                 jgit.remoteAdd().setName("upstream").setUri(URIish(UpstreamUrl)).call()
-                it.updateRemote("upstream")
+                it.updateRemote("upstream", UpstreamUrl)
+
+                switchToBranch(platform.getAuthenticatedUser().branchName, git = it)
             }
+
         }
     }
 

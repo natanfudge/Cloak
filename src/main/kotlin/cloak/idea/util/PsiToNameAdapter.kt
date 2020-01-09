@@ -25,12 +25,12 @@ fun PsiElement.asNameOrNull(): Name? = when (this) {
 fun PsiElement.asName(): Name =
     asNameOrNull() ?: error("This is only possible on named classes, fields, params in normal methods and methods.")
 
-val PsiElement.packageName: String
-    get() = (this.containingFile as PsiJavaFile).packageName
+val PsiElement.packageName: String?
+    get() = (this.containingFile as? PsiJavaFile)?.packageName
 
 
 private fun PsiClass.getClassName(): ClassName? {
-    val packageName = packageName.replace(".", "/")
+    val packageName = packageName?.replace(".", "/") ?: return null
 
     val parents = this.parents().filterIsInstance<PsiClass>().toList().reversed()
     var nextName: ClassName? = null

@@ -10,9 +10,13 @@
 
     <change-notes><![CDATA[
       <div>
-        <p> - Overriden methods that are not part of Minecraft (such as equals()) will now have a special highlighting
-        <p> - Added action to delete Cloak caches
-        <p> - Added more messages about what cloak is doing while waiting
+        <p> - Overriden methods that are not part of Minecraft (such as equals()) will now have a special highlighting.
+        <p> - Added action to delete Cloak caches.
+        <p> - Added more messages about what cloak is doing while waiting.
+        <p> - Fixed the plugin getting triggered (and consequently locking the IDE) when the Tools window was opened.
+        <p> - Fixed using the wrong branch as a starting point when first cloning Yarn.
+        <p> - If the upstream remote was not created for whatever reason then it would get automatically created when needed.
+        <p> - Fixed an exception being thrown in non-Java files.
       </div>
     ]]>
     </change-notes>

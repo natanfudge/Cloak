@@ -2,6 +2,7 @@ package cloak.git
 
 import org.eclipse.jgit.api.CreateBranchCommand
 import org.eclipse.jgit.api.ListBranchCommand
+import org.eclipse.jgit.api.errors.InvalidRemoteException
 import org.eclipse.jgit.dircache.DirCache
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.transport.FetchResult
@@ -37,7 +38,7 @@ abstract class CloakRepository(protected val git: JGit, protected val path: File
             else -> defaultBaseBranch()
         }
 
-        updateRemote("upstream")
+        updateRemote("upstream", YarnRepo.UpstreamUrl)
 
         git.checkout()
             .setCreateBranch(!localBranchAlreadyExists)
@@ -70,7 +71,15 @@ abstract class CloakRepository(protected val git: JGit, protected val path: File
 
     abstract fun push(remoteUrl: String, branch: String, refSpec: String = "+refs/heads/$branch:refs/heads/$branch")
 
-    fun updateRemote(remote: String): FetchResult = git.fetch().setRemote(remote).call()
+    fun updateRemote(remote: String, remoteUrl: String, calledBefore: Boolean = false): FetchResult = try {
+        git.fetch().setRemote(remote).call()
+    } catch (e: InvalidRemoteException) {
+        println("Remote $remote was not found, recreating it")
+        git.remoteAdd().setName(remote).setUri(URIish(remoteUrl)).call()
+        if (!calledBefore) updateRemote(remote, remoteUrl, calledBefore = true)
+        else error("Remote was somehow invalid even after adding it!")
+    }
+
 
     fun close() = git.close()
 }

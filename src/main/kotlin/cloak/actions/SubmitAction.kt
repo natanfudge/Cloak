@@ -32,9 +32,7 @@ object SubmitAction {
             val upstreamOwner = if (useDebugRepo) "shedaniel" else YarnRepo.UpstreamUsername
             val newBranchName = Repository.normalizeBranchName(prName)
             val pr = createPr(prName, newBranchName, gitUser, upstreamOwner) ?: return
-
-//            assert(pr.prUrl != null) { "Could not get PR url of PR: $pr" }
-
+            
             //TODO: modify asyncWithText to allow running concurrently
             showMessageDialog(
                 title = "Success",
