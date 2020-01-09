@@ -6,19 +6,23 @@ import cloak.format.mappings.*
 import cloak.format.rename.*
 import cloak.git.yarnRepo
 import cloak.platform.ActiveMappings
+import cloak.platform.AsyncContext
 import cloak.platform.ExtendedPlatform
 import cloak.platform.saved.ExplainedResult
 import cloak.platform.saved.showedNoteAboutLicense
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.launch
 
-suspend fun ExtendedPlatform.warmupAsync(): Deferred<Unit> = coroutineScope {
+suspend fun ExtendedPlatform.warmup(asyncContext: AsyncContext) = coroutineScope {
     getAuthenticatedUser()
 
-    val promise = async {
-        yarnRepo.warmup()
+    val oldAsyncText = asyncContext.text
+    val repoPromise = async {
+        yarnRepo.warmup(
+            onClone = { asyncContext.text = "Cloning Yarn..." },
+            onFork = { asyncContext.text = "Forking Yarn..." }
+        )
     }
     if (!showedNoteAboutLicense) {
         showMessageDialog(
@@ -30,7 +34,8 @@ suspend fun ExtendedPlatform.warmupAsync(): Deferred<Unit> = coroutineScope {
         showedNoteAboutLicense = true
     }
 
-    promise
+    repoPromise.await()
+    asyncContext.text = oldAsyncText
 }
 
 /**
@@ -75,10 +80,9 @@ fun Name.updateAccordingToRenames(platform: ExtendedPlatform): Name {
 
 suspend fun ExtendedPlatform.findMatchingMapping(name: Name): ExplainedResult<Mapping> {
 
-    val repoPromise = warmupAsync()
 
     return asyncWithText("Preparing rename...") {
-        repoPromise.await()
+        warmup(it)
 
         if (!ActiveMappings.areActive()) ActiveMappings.refresh(this@findMatchingMapping)
 

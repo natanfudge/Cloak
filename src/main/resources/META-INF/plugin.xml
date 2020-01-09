@@ -10,12 +10,9 @@
 
     <change-notes><![CDATA[
       <div>
-        <p> - The "Rename" action now has the fabric symbol. </p>
-        <p> - Improved error messages in cases you cannot rename in element; more work is planned in this area. </p>
-        <p> - Various backend improvements, that reflect mainly in faster cold renames. </p>
-        <p> - Fixed rename changes not displaying immediately when the cursor is placed at the edge of a parameter. </p>
-        <p> - You can now add and modify javadocs for classes, methods, fields, and parameters!
-        <p> - When renaming you will now get special highlighting for identifiers, telling you the renaming progress.
+        <p> - Overriden methods that are not part of Minecraft (such as equals()) will now have a special highlighting
+        <p> - Added action to delete Cloak caches
+        <p> - Added more messages about what cloak is doing while waiting
       </div>
     ]]>
     </change-notes>
@@ -61,6 +58,9 @@
                     description="Allows selecting a list of branches to delete on git and from cache">
                 <keyboard-shortcut first-keystroke="ctrl alt d" keymap="$default"/>
             </action>
+
+            <action class="cloak.idea.actions.DeleteCachesIdeaAction" id ="Cloak.DeleteCaches" text="Delete Caches"
+                    description="Cleans Cloak's internal state"/>
 
 
             <action class = "cloak.idea.actions.DumpStateDebugAction" id ="Cloak.DebugDump" text = "(Debug) Dump State"

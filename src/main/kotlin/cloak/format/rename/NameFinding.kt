@@ -17,7 +17,7 @@ import cloak.util.success
 import com.github.michaelbull.result.Err
 import kotlin.test.assertNotNull
 
-fun Name.getMatchingMappingIn(platform: ExtendedPlatform): ExplainedResult<Mapping> {
+suspend fun Name.getMatchingMappingIn(platform: ExtendedPlatform): ExplainedResult<Mapping> {
     val path = topLevelClass.let { "${it.packageName}/${it.className}$MappingsExtension" }
     val mappingsFilePath = platform.yarnRepo.getMappingsFile(path)
 

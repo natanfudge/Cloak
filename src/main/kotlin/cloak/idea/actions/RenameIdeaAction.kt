@@ -5,28 +5,10 @@ import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.*
 import com.github.michaelbull.result.Ok
 import com.intellij.codeInsight.folding.CodeFoldingManager
-import com.intellij.lang.Language
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Pair
-import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
-import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
-import com.intellij.refactoring.RefactoringActionHandler
-import com.intellij.refactoring.actions.BaseRefactoringAction
-import com.intellij.refactoring.rename.RenameHandlerRegistry
-import com.intellij.refactoring.rename.inplace.InplaceRefactoring
-import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler
-import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer
-import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler
-import com.intellij.refactoring.util.CommonRefactoringUtil
-import com.intellij.util.containers.NotNullList
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.util.*
 
 // inspections for fabric stuff?
 
@@ -41,11 +23,17 @@ import java.util.*
 // build.gradle line to clipboard.
 
 
-fun isMinecraftPackageName(packageName: String) = packageName.startsWith("net.minecraft")
+fun isPartOfMinecraft(psiduck: PsiElement): Boolean {
+    if (psiduck is PsiParameter) {
+        psiduck.getMethodIn()?.let { return isPartOfMinecraft(it) }
+    }
+    val actual = if (psiduck is PsiMethod) psiduck.getMethodDeclaration() else psiduck
+    return actual.packageName.startsWith("net.minecraft")
+}
 
 fun canBeRenamed(psiduck: PsiElement): Boolean {
     // Only allow minecraft classes
-    if (!isMinecraftPackageName(psiduck.packageName)) return false
+    if (!isPartOfMinecraft(psiduck)) return false
 
     return when (psiduck) {
         is PsiClass, is PsiField, is PsiParameter -> true

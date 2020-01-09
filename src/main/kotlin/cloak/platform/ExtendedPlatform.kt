@@ -49,7 +49,7 @@ interface ExtendedPlatform {
 
     suspend fun showErrorPopup(message: String, title: String)
 
-    suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T
+    suspend fun <T> asyncWithText(title: String, action: suspend (AsyncContext) -> T): T
 
     fun createPullRequest(
         repositoryName: String,

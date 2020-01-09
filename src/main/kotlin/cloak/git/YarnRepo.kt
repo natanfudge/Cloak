@@ -2,7 +2,6 @@ package cloak.git
 
 import cloak.format.mappings.MappingsExtension
 import cloak.platform.ExtendedPlatform
-import kotlinx.coroutines.runBlocking
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.URIish
 import java.io.File
@@ -21,19 +20,26 @@ val ExtendedPlatform.yarnRepo: YarnRepo
     }
 
 
-suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean = yarnRepo.currentBranch != getAuthenticatedUser()?.branchName
+suspend fun ExtendedPlatform.inSubmittedBranch(): Boolean =
+    yarnRepo.getCurrentBranch() != getAuthenticatedUser()?.branchName
 
 
 class YarnRepo private constructor(private val localPath: File, val platform: ExtendedPlatform) {
 
     private var _git: CloakRepository? = null
 
-    private suspend fun getOrCreateGit(): CloakRepository {
-        if (_git == null) _git = getOrCloneGit()
+    private fun getOrOpenGit(): CloakRepository? {
+        if (!isCloned()) return null
+        if (_git == null) _git = openGit()
         return _git!!
     }
 
-     val defaultBranch: String by lazy {
+    private suspend fun getOrCreateGit(onClone: () -> Unit = {}, onFork: () -> Unit = {}): CloakRepository {
+        if (_git == null) _git = getOrCloneGit(onClone, onFork)
+        return _git!!
+    }
+
+    val defaultBranch: String by lazy {
         GithubApi.getDefaultBranch(RepoName, UpstreamUsername)
     }
 
@@ -52,12 +58,16 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
     }
 
-    val currentBranch: String get() = runBlocking { getOrCreateGit().currentBranch }
+    suspend fun getCurrentBranch(): String = getOrCreateGit().currentBranch
+    fun getCurrentBranchOrNull(): String? = getOrOpenGit()?.currentBranch
 
     private val mappingsDirectory: File = getFile(MappingsDirName)
 
-    suspend fun warmup() {
-        getOrCreateGit()
+    /**
+     * @param onClone Called when the repo is cloned from scratch
+     */
+    suspend fun warmup(onClone: () -> Unit = {}, onFork: () -> Unit = {}) {
+        getOrCreateGit(onClone, onFork)
     }
 
     private suspend fun originUrl(): String = "https://github.com/${platform.getAuthenticatedUser().name}/$RepoName"
@@ -70,7 +80,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
      * Returns all the paths in the mappings folder relative to the mappings folder, NOT including extensions.
      */
     fun getMappingsFilesLocations(): Set<String> {
-        return mappingsDirectory.walk().filter { !it.isDirectory }
+        return mappingsDirectory.walk().filter { !it.isDirectory && it.extension == MappingsExtension }
             .map { it.relativeTo(mappingsDirectory).path.removeSuffix(MappingsExtension).replace("\\", "/") }
             .toHashSet()
     }
@@ -96,7 +106,7 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
 
         platform.branch.createBranch(
             branchName = branchName,
-            minecraftVersion = if (startFromBranch != null) platform.branch.minecraftVersion ?: return
+            minecraftVersion = if (startFromBranch != null) platform.branch.getMinecraftVersion() ?: return
             else defaultBranch
         )
 
@@ -124,13 +134,18 @@ class YarnRepo private constructor(private val localPath: File, val platform: Ex
         return Paths.get(MappingsDirName, relativeMappingPath).toString().replace("\\", "/")
     }
 
-    private suspend fun getOrCloneGit(): CloakRepository {
-        return if (localPath.exists()) platform.createGit(Git.open(localPath), localPath)
+    fun isCloned(): Boolean = localPath.exists()
+
+    private fun openGit(): CloakRepository = platform.createGit(Git.open(localPath), localPath)
+
+    private suspend fun getOrCloneGit(onClone: () -> Unit = {}, onFork: () -> Unit = {}): CloakRepository {
+        return if (isCloned()) openGit()
         else {
             val origin = originUrl()
             val user = platform.getAuthenticatedUser()
             platform.forkRepository(repositoryName = RepoName, forkedUser = UpstreamUsername, forkingUser = user.name)
             println("Cloning yarn repo to $localPath")
+            onClone()
             val jgit = Git.cloneRepository()
                 .setURI(origin)
                 .setDirectory(localPath)

@@ -1,7 +1,7 @@
 package cloak.idea.folding
 
 import cloak.format.rename.shortName
-import cloak.idea.actions.isMinecraftPackageName
+import cloak.idea.actions.isPartOfMinecraft
 import cloak.idea.platformImpl.IdeaPlatform
 import cloak.idea.util.asNameOrNull
 import cloak.idea.util.isInnerClass
@@ -99,7 +99,7 @@ private object RenameFolder : Folder {
     }
 
     override fun shouldFoldFile(file: PsiFile): Boolean {
-        if (!isMinecraftPackageName(file.packageName)) return false
+        if (!isPartOfMinecraft(file)) return false
         return IdeaPlatform(file.project).branch.anythingWasAdded()
     }
 

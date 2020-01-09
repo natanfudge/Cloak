@@ -1,6 +1,5 @@
 package cloak.platform.saved
 
-import cloak.format.mappings.MappingsFile
 import cloak.format.rename.Name
 import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
@@ -29,25 +28,31 @@ private data class BranchInfo(
 
 
 class BranchInfoApi(private val platform: ExtendedPlatform) {
-    private val branch: BranchInfo
-        get() = platform.branchInfo.computeIfAbsent(platform.yarnRepo.currentBranch) {
+    private suspend fun getBranch(): BranchInfo =
+        platform.branchInfo.computeIfAbsent(platform.yarnRepo.getCurrentBranch()) {
             BranchInfo(platform.yarnRepo.defaultBranch)
         }
 
-    fun getRenamedTo(name: Name): NewName? = branch.renames[name]
+    private fun getBranchOrNull(): BranchInfo? {
+        return platform.branchInfo.computeIfAbsent(platform.yarnRepo.getCurrentBranchOrNull() ?: return null) {
+            BranchInfo(platform.yarnRepo.defaultBranch)
+        }
+    }
+
+    fun getRenamedTo(name: Name): NewName? = getBranchOrNull()?.renames?.get(name)
 
 
-    fun acceptRenamedName(oldName: Name, newName: NewName) {
-        branch.renames[oldName] = newName
+    suspend fun acceptRenamedName(oldName: Name, newName: NewName) {
+        getBranch().renames[oldName] = newName
     }
 
     fun createBranch(branchName: String, minecraftVersion: String) {
         if (platform.branchInfo[branchName] == null) platform.branchInfo[branchName] = BranchInfo(minecraftVersion)
     }
 
-    val minecraftVersion: String get() = branch.minecraftVersion
+    suspend fun getMinecraftVersion(): String = getBranch().minecraftVersion
     val all: Set<String> get() = platform.branchInfo.keys
-    val renames get() = branch.renames
+    suspend fun getRenames() = getBranch().renames
 
     fun deleteBranch(branchName: String) {
         platform.branchInfo.remove(branchName)
@@ -59,11 +64,12 @@ class BranchInfoApi(private val platform: ExtendedPlatform) {
     }
 
 
-    fun acceptJavadoc(forName: Name, javadoc: String) {
-        branch.javadocs[forName] = javadoc
+    suspend fun acceptJavadoc(forName: Name, javadoc: String) {
+        getBranch().javadocs[forName] = javadoc
     }
 
-    fun anythingWasAdded() = branch.let { it.renames.isNotEmpty() || it.javadocs.isNotEmpty() }
+    fun anythingWasAdded() = platform.branchInfo.isNotEmpty()
+            && getBranchOrNull()?.let { it.renames.isNotEmpty() || it.javadocs.isNotEmpty() } == true
 
 }
 
@@ -73,6 +79,10 @@ private val ExtendedPlatform.branchInfo: MutableMap<Branch, BranchInfo> by Saved
     mutableMapOf(), "BranchInfo",
     (Branch.serializer() to BranchInfo.serializer()).mutableMap
 )
+
+fun ExtendedPlatform.cleanBranchInfo() {
+    branchInfo.clear()
+}
 
 typealias RenameResult = DualResult<NewName, String>
 typealias DualResult<V, E> = com.github.michaelbull.result.Result<V, E>

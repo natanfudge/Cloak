@@ -16,7 +16,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.psi.PsiElement
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.plugins.github.api.GithubApiRequestExecutor
@@ -42,7 +41,7 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
 
     fun inUiThread(action: () -> Unit) = ApplicationManager.getApplication().invokeAndWait(action)
     suspend fun <T> getFromUiThread(input: () -> T): T = suspendCoroutine { cont ->
-        ApplicationManager.getApplication().invokeAndWait {
+        ApplicationManager.getApplication().invokeLater {
             cont.resume(input())
         }
     }
@@ -161,12 +160,12 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
     }
 
 
-    override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T =
+    override suspend fun <T> asyncWithText(title: String, action: suspend (AsyncContext) -> T): T =
         suspendCoroutine { cont ->
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, title) {
                 override fun run(progressIndicator: ProgressIndicator) { // start your process
                     //TODO: it's bad to use runBlocking here, means we can't run it alongside other things.
-                    runBlocking { cont.resume(action()) }
+                    runBlocking { cont.resume(action(IdeaAsyncContext(progressIndicator))) }
                 }
             })
         }

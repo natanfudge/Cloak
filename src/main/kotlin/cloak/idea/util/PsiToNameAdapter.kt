@@ -18,11 +18,7 @@ fun PsiElement.asNameOrNull(): Name? = when (this) {
     is PsiClass -> getClassName()
     is PsiField -> getFieldName()
     is PsiMethod -> getMethodName()
-    // avoid getting parameter of lambdas
-    is PsiParameter -> {
-        val methodParent = parent.parent
-        if (methodParent is PsiMethod) getParameterName(isInInstanceMethod = !methodParent.isStatic) else null
-    }
+    is PsiParameter -> getParameterName()
     else -> null
 }
 
@@ -92,10 +88,12 @@ private fun PsiParameter.getIndex(isInInstanceMethod: Boolean): Int {
     return currentIndex
 }
 
-private fun PsiParameter.getParameterName(isInInstanceMethod: Boolean): ParamName? {
-    return (this.parent.parent as PsiMethod).getMethodName()?.let { method ->
+
+private fun PsiParameter.getParameterName(): ParamName? {
+    val parent = getMethodIn() ?: return null
+    return parent.getMethodName()?.let { method ->
         ParamName(
-            index = this.getIndex(isInInstanceMethod),
+            index = this.getIndex(isInInstanceMethod = !parent.isStatic),
             methodIn = method,
             paramName = this.name
         )

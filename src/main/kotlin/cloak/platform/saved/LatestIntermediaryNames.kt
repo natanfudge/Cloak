@@ -1,7 +1,6 @@
 package cloak.platform.saved
 
 import cloak.fabric.Intermediary
-import cloak.git.yarnRepo
 import cloak.platform.ExtendedPlatform
 import cloak.platform.SavedState
 import kotlinx.serialization.Serializable
@@ -21,12 +20,17 @@ private var ExtendedPlatform.latestIntermediaryNames: LatestIntermediaryNames by
     LatestIntermediaryNames.serializer()
 )
 
+fun ExtendedPlatform.cleanLatestIntermediaryNmames() {
+    latestIntermediaryNames = LatestIntermediaryNames()
+}
+
 private fun ExtendedPlatform.getIntermediaryNamesOfVersion(version: String): LatestIntermediaryNames {
     if (latestIntermediaryNames.currentVersion != version) updateIntermediaryNamesToVersion(version)
     return latestIntermediaryNames
 }
 
-fun ExtendedPlatform.getIntermediaryNamesOfYarnVersion(): LatestIntermediaryNames  = getIntermediaryNamesOfVersion(branch.minecraftVersion)
+suspend fun ExtendedPlatform.getIntermediaryNamesOfYarnVersion(): LatestIntermediaryNames =
+    getIntermediaryNamesOfVersion(branch.getMinecraftVersion())
 
 
 fun ExtendedPlatform.updateIntermediaryNamesToVersion(newVersion: String) {

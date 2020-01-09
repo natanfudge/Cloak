@@ -17,9 +17,11 @@ object SwitchBranchAction {
                 val mainBranchLabel = "${user.branchName} (Main)"
                 val options = mutableListOf(mainBranchLabel)
                 options.addAll(branch.all.filter { it != user.branchName })
-                options.removeIf { it == yarnRepo.currentBranch || it == "${yarnRepo.currentBranch} (Main)" }
+                // Removeall with a filtered list instead of just directly accepting a lambda because this way it's an inline function
+                // and can use suspend
+                options.removeAll(options.filter { it == yarnRepo.getCurrentBranch() || it == "${yarnRepo.getCurrentBranch()} (Main)" })
 
-                val branch = platform.getChoiceBetweenOptions("Switch from ${yarnRepo.currentBranch}", options)
+                val branch = platform.getChoiceBetweenOptions("Switch from ${yarnRepo.getCurrentBranch()}", options)
                     .let { if (it == mainBranchLabel) user.branchName else it }
                 asyncWithText("Switching...") {
                     yarnRepo.switchToBranch(branchName = branch)
