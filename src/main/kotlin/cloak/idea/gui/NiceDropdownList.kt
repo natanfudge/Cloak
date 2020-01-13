@@ -1,4 +1,4 @@
-package cloak.idea.util
+package cloak.idea.gui
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.diagnostic.Logger

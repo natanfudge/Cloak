@@ -1,5 +1,8 @@
-package cloak.idea.util
+package cloak.idea.gui
 
+import cloak.idea.util.CommonIcons
+import cloak.platform.InputFieldData
+import cloak.platform.PlatformInputValidator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.*
 import com.intellij.openapi.ui.messages.MessageDialog
@@ -23,20 +26,16 @@ fun showTwoInputsDialog(
     inputB: InputFieldData
 ): Pair<String, String>? {
 
+    val inputAWrapper = InputFieldDataWrapper(inputA)
+    val inputBWrapper = InputFieldDataWrapper(inputB)
+
     val dialog = TwoInputsDialog(
-        project,
-        message,
-        title,
-        icon,
-        arrayOf(
-            Messages.OK_BUTTON,
-            Messages.CANCEL_BUTTON
-        ),
-        0,
-        inputA, inputB
+        project, message, title, icon,
+        arrayOf(Messages.OK_BUTTON, Messages.CANCEL_BUTTON),
+        0, inputAWrapper, inputBWrapper
     )
-    inputA.applySelection()
-    inputB.applySelection()
+    inputAWrapper.applySelection()
+    inputBWrapper.applySelection()
 
     dialog.show()
 
@@ -49,12 +48,19 @@ fun showTwoInputsDialog(
 fun <T : JComponent> JPanel.add(component: T, position: String, init: T.() -> Unit = {}) =
     add(component.apply(init), position)
 
-data class InputFieldData(
-    val description: String? = null,
-    val initialValue: String? = null,
-    val defaultSelection: IntRange? = null,
-    val validator: InputValidator? = null
-) {
+class InputValidatorWrapper(private val validator: PlatformInputValidator) : InputValidatorEx {
+    override fun checkInput(inputString: String): Boolean {
+        return validator.allowEmptyString || inputString.any { !it.isWhitespace() }
+    }
+
+    override fun getErrorText(inputString: String): String? = validator.tester?.invoke(inputString)
+
+    override fun canClose(inputString: String?) = true
+}
+
+class InputFieldDataWrapper(private val data: InputFieldData) {
+    val validator: InputValidator? = data.validator?.let { InputValidatorWrapper(it) }
+
     lateinit var textField: JTextComponent
         private set
 
@@ -63,7 +69,7 @@ data class InputFieldData(
     } else null
 
     fun initText() {
-        textField.text = initialValue
+        textField.text = data.initialValue
     }
 
     fun textValid(): Boolean {
@@ -73,18 +79,20 @@ data class InputFieldData(
                 validator.canClose(inputString)
     }
 
+    private val textFieldCore: JTextComponent = if (data.multiline) JTextArea(7, 47) else JTextField(30)
+
     fun createTextFieldComponent() = JPanel(BorderLayout()).apply {
-        add(JLabel(description), BorderLayout.LINE_START) {
-            border = EmptyBorder(0, 0, 0, 5)
+        add(JLabel(data.description), BorderLayout.LINE_START) {
+            border = EmptyBorder(0, 0, 5, 5)
         }
-        add(JTextField(30), BorderLayout.LINE_END) {
+        add(textFieldCore, BorderLayout.LINE_END) {
             margin = JBInsets(0, 10, 0, 0)
             textField = this
         }
     }
 
     fun applySelection() {
-        if (defaultSelection != null) textField.select(defaultSelection.first, defaultSelection.last + 1)
+        if (data.defaultSelection != null) textField.select(data.defaultSelection.first, data.defaultSelection.last + 1)
         textField.putClientProperty(DialogWrapperPeer.HAVE_INITIAL_SELECTION, true)
     }
 }
@@ -96,11 +104,11 @@ class TwoInputsDialog(
     icon: Icon?,
     options: Array<String?>,
     defaultOption: Int,
-    private val inputA: InputFieldData,
-    private val inputB: InputFieldData
+    private val inputA: InputFieldDataWrapper,
+    private val inputB: InputFieldDataWrapper
 ) : MessageDialog(project, true) {
 
-    private inline fun bothInputs(code: InputFieldData.() -> Unit) {
+    private inline fun bothInputs(code: InputFieldDataWrapper.() -> Unit) {
         inputA.code()
         inputB.code()
     }

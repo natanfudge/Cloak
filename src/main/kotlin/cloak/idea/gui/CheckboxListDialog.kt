@@ -1,4 +1,4 @@
-package cloak.idea.util
+package cloak.idea.gui
 
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.layout.panel

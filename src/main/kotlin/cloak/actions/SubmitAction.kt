@@ -9,7 +9,7 @@ import cloak.platform.*
 import cloak.platform.saved.updateIntermediaryNamesToVersion
 import org.eclipse.jgit.lib.Repository
 
-private const val useDebugRepo = true
+private const val useDebugRepo = false
 
 object SubmitAction {
     suspend fun submit(platform: ExtendedPlatform) = with(platform) {
@@ -23,16 +23,21 @@ object SubmitAction {
                 return
             }
 
-            val prName = getUserInput(
-                title = "Pull Request",
-                message = "Enter name for mappings set",
-                validator = PlatformInputValidator(allowEmptyString = false)
+            val (prTitle, prBody) = getTwoInputs(
+                message = "Specify title and body for opened mappings PR",
+                request = UserInputRequest.PullRequest,
+                inputA = InputFieldData(
+                    description = "Title",
+                    multiline = false,
+                    validator = PlatformInputValidator(allowEmptyString = false)
+                ),
+                inputB = InputFieldData(description = "Body", multiline = true)
             ) ?: return
 
             val upstreamOwner = if (useDebugRepo) "shedaniel" else YarnRepo.UpstreamUsername
-            val newBranchName = Repository.normalizeBranchName(prName)
-            val pr = createPr(prName, newBranchName, gitUser, upstreamOwner) ?: return
-            
+            val newBranchName = Repository.normalizeBranchName(prTitle)
+            val pr = createPr(prTitle, prBody ?: "", newBranchName, gitUser, upstreamOwner) ?: return
+
             //TODO: modify asyncWithText to allow running concurrently
             showMessageDialog(
                 title = "Success",
@@ -67,13 +72,14 @@ private suspend fun ExtendedPlatform.resetWorkspace(gitUser: GitUser) {
 
 
 private suspend fun ExtendedPlatform.createPr(
-    prName: String,
+    prTitle: String,
+    prBody: String,
     newBranchName: String,
     gitUser: GitUser,
     upstreamOwner: String
 ): PullRequestResponse? = asyncWithText("Submitting...") { context ->
 
-    val body = constructPrBody()
+    val body = constructPrBody(prBody)
     yarnRepo.switchToBranch(newBranchName, startFromBranch = gitUser.branchName)
     push(context)
     val response = context.changeText("Opening pull request...") {
@@ -83,27 +89,28 @@ private suspend fun ExtendedPlatform.createPr(
             targetBranch = GithubApi.getDefaultBranch("yarn", upstreamOwner),
             requestingBranch = newBranchName,
             requestingUser = getAuthenticatedUser().name,
-            title = prName,
+            title = prTitle,
             body = body
         )
     }
 
-    if (response == null) {
-        context.changeText("Switching branch...") {
-            yarnRepo.switchToBranch(gitUser.branchName)
-        }
-    }
+//    if (response == null) {
+//        context.changeText("Switching branch...") {
+//            yarnRepo.switchToBranch(gitUser.branchName)
+//        }
+//    }
 
-    if (response != null) {
-        branch.migrateInfo(oldBranch = gitUser.branchName, newBranch = newBranchName)
-    }
+//    if (response != null) {
+    branch.migrateInfo(oldBranch = gitUser.branchName, newBranch = newBranchName)
+//    }
 
     response
 }
 
-private suspend fun ExtendedPlatform.constructPrBody(): String {
+private suspend fun ExtendedPlatform.constructPrBody(writtenBody: String): String {
     val changes = branch.getRenames()
-    return changes.filter { (_, new) -> new.explanation != null }.map { (old, new) ->
+    val introduction = if (writtenBody == "") "" else writtenBody + "\n"
+    return introduction + changes.filter { (_, new) -> new.explanation != null }.map { (old, new) ->
         """- ${old.shortName} -> ${if (new.packageName != null) new.packageName + "/" else "" + new.name}
   - ${new.explanation}"""
 

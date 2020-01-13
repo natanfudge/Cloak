@@ -16,14 +16,8 @@ interface ExtendedPlatform {
     suspend fun getTwoInputs(
         message: String?,
         request: UserInputRequest,
-        descriptionA: String?,
-        descriptionB: String?,
-        initialValueA: String? = null,
-        initialValueB: String? = null,
-        defaultSelectionA: IntRange? = null,
-        defaultSelectionB: IntRange? = null,
-        validatorA: PlatformInputValidator? = null,
-        validatorB: PlatformInputValidator? = null
+        inputA : InputFieldData,
+        inputB : InputFieldData
     ): Pair<String, String?>?
 
     suspend fun getUserInput(
@@ -59,7 +53,7 @@ interface ExtendedPlatform {
         targetUser: String,
         title: String,
         body: String
-    ): PullRequestResponse?
+    ): PullRequestResponse
 
     fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult
 

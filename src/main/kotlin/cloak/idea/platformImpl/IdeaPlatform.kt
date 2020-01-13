@@ -3,6 +3,7 @@ package cloak.idea.platformImpl
 import cloak.git.CloakRepository
 import cloak.git.JGit
 import cloak.idea.git.IdeaGitRepository
+import cloak.idea.gui.*
 import cloak.idea.util.*
 import cloak.platform.*
 import cloak.platform.saved.BranchInfoApi
@@ -49,45 +50,17 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
 
     override fun getStorageDirectory(): Path = Paths.get(PathManager.getSystemPath(), StorageDirectory)
 
-    private class InputValidatorWrapper(private val validator: PlatformInputValidator) : InputValidatorEx {
-        override fun checkInput(inputString: String): Boolean {
-            return validator.allowEmptyString || inputString.any { !it.isWhitespace() }
-        }
 
-        override fun getErrorText(inputString: String): String? = validator.tester?.invoke(inputString)
-
-        override fun canClose(inputString: String?) = true
-    }
 
     override val persistentSaver = IdeaPersistentSaver
     override suspend fun getTwoInputs(
         message: String?,
         request: UserInputRequest,
-        descriptionA: String?,
-        descriptionB: String?,
-        initialValueA: String?,
-        initialValueB: String?,
-        defaultSelectionA: IntRange?,
-        defaultSelectionB: IntRange?,
-        validatorA: PlatformInputValidator?,
-        validatorB: PlatformInputValidator?
+        inputA : InputFieldData,
+        inputB : InputFieldData
     ) = getFromUiThread {
-        showTwoInputsDialog(
-            project,
-            message,
-            request.title,
-            CommonIcons.Question,
-            InputFieldData(
-                descriptionA,
-                initialValueA,
-                defaultSelectionA,
-                validatorA?.let { InputValidatorWrapper(it) }),
-            InputFieldData(
-                descriptionB,
-                initialValueB,
-                defaultSelectionB,
-                validatorB?.let { InputValidatorWrapper(it) })
-        )?.run { Pair(first, if (second == "") null else second) }
+        showTwoInputsDialog(project, message, request.title, CommonIcons.Question, inputA, inputB)
+            ?.run { Pair(first, if (second == "") null else second) }
     }
 
     override suspend fun showMessageDialog(message: String, title: String) =
@@ -192,7 +165,7 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
         targetUser: String,
         title: String,
         body: String
-    ): PullRequestResponse? {
+    ): PullRequestResponse {
         val response = try {
             getGitExecutor().execute(
                 GithubApiRequests.Repos.PullRequests.create(

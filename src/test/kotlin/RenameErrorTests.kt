@@ -44,7 +44,7 @@ class RenameErrorTests {
         val isTopLevelClass = newFileName != oldFileName
         useFile("$oldFullPath.mapping")
         val platform = TestPlatform(Pair(newName, explanation))
-        platform.branch.deleteBranch(platform.yarnRepo.currentBranch)
+        platform.branch.deleteBranch(platform.yarnRepo.getCurrentBranch())
         val targetName = className(oldFullPath, nameInit)
         RenameAction.rename(platform, targetName, isTopLevelClass).assertFails()
         Unit

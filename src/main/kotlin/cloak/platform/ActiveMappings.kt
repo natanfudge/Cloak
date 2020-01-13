@@ -106,7 +106,6 @@ object ActiveMappings {
             }
         }.toMutableMap()
 
-        println("activeMappings = $activeMappings")
     }
 
     private fun intermediaryToNamedMapping(name: String): String? = intermediaryToNamed[name]

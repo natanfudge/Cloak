@@ -8,6 +8,12 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
+private object TestAsyncContext : AsyncContext{
+    override var text: String
+        get() = "Test async"
+        set(_) {}
+
+}
 
 class TestPlatform(private val renameInput: Pair<String, String?>? = null, private val javaDocInput: String? = null) :
     ExtendedPlatform {
@@ -25,18 +31,14 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
     override suspend fun getTwoInputs(
         message: String?,
         request: UserInputRequest,
-        descriptionA: String?,
-        descriptionB: String?,
-        initialValueA: String?,
-        initialValueB: String?,
-        defaultSelectionA: IntRange?,
-        defaultSelectionB: IntRange?,
-        validatorA: PlatformInputValidator?,
-        validatorB: PlatformInputValidator?
-    ): Pair<String, String?>? = when (request) {
+        inputA: InputFieldData,
+        inputB: InputFieldData
+    ): Pair<String, String?>?  = when (request) {
         UserInputRequest.NewName -> renameInput
 //        UserInputRequest.GitUserAuthor -> Pair(TestAuthor.name, TestAuthor.email)
+        else -> error("Unexpected")
     }
+
 
 
     override suspend fun showMessageDialog(message: String, title: String) {}
@@ -63,7 +65,9 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
         return javaDocInput
     }
 
-    override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T = action()
+    override suspend fun <T> asyncWithText(title: String, action: suspend (AsyncContext) -> T): T = action(TestAsyncContext)
+
+//    override suspend fun <T> asyncWithText(title: String, action: suspend () -> T): T = action()
     override fun createPullRequest(
         repositoryName: String,
         requestingUser: String,
@@ -72,8 +76,8 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
         targetUser: String,
         title: String,
         body: String
-    ): PullRequestResponse? {
-        return null
+    ): PullRequestResponse {
+        return PullRequestResponse("")
     }
 
     override fun forkRepository(repositoryName: String, forkedUser: String, forkingUser: String): ForkResult {

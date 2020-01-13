@@ -1,4 +1,4 @@
-package cloak.idea.util
+package cloak.idea.gui
 
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.lang.Language
@@ -13,8 +13,6 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElementFactory
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.impl.source.PsiCodeFragmentImpl
 import com.intellij.psi.impl.source.tree.JavaElementType
 import com.intellij.ui.EditorTextField

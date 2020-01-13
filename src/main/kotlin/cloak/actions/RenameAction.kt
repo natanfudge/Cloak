@@ -3,11 +3,7 @@ package cloak.actions
 import cloak.format.mappings.*
 import cloak.format.rename.*
 import cloak.git.yarnRepo
-import cloak.idea.NamingProgressHighlighter
-import cloak.platform.ExtendedPlatform
-import cloak.platform.PlatformInputValidator
-import cloak.platform.UserInputRequest
-import cloak.platform.UserNotAuthenticatedException
+import cloak.platform.*
 import cloak.platform.saved.NewName
 import cloak.platform.saved.RenameResult
 import cloak.util.fail
@@ -129,11 +125,18 @@ object RenameAction {
         } else initialValue.indices
 
         val (newName, explanation) = getTwoInputs(
-            message = null, request = UserInputRequest.NewName, descriptionA = "New Name", descriptionB = "Explanation",
-            validatorA = PlatformInputValidator(allowEmptyString = false, tester = newNameValidator),
-            validatorB = PlatformInputValidator(allowEmptyString = true),
-            initialValueA = initialValue,
-            defaultSelectionA = defaultSelectionRange
+            message = null, request = UserInputRequest.NewName,
+            inputA = InputFieldData(
+                description = "New Name",
+                validator = PlatformInputValidator(allowEmptyString = false, tester = newNameValidator),
+                initialValue = initialValue,
+                defaultSelection = defaultSelectionRange
+            ),
+            inputB = InputFieldData(
+                description = "Explanation",
+                validator = PlatformInputValidator(allowEmptyString = true)
+            )
+
         ) ?: return null
 
         return Pair(newName, if (explanation == "") null else explanation)
