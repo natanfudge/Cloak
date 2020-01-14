@@ -21,7 +21,6 @@ class JavadocTests {
         ModifyJavadocAction.modify(TestPlatform(javaDocInput = javadoc), target)
         val actual = TestYarnRepo.getMappingsFile("$path.mapping")
         assert(actual.exists())
-
         assertEqualsIgnoreLineBreaks(expected.readText(), actual.readText())
     }
 

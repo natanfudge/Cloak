@@ -33,7 +33,7 @@
             <keyboard-shortcut first-keystroke="alt F3" keymap="$default"/>
         </action>
 
-<!--        <action id="Cloak.Test" class="cloak.idea.migrate.TestAction" text="Test"-->
+<!--        <action id="Cloak.Test" class="cloak.idea.migrate.TestMigrateAction" text="Test"-->
 <!--                description="Test">-->
 <!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
 <!--        </action>-->

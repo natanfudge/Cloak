@@ -23,7 +23,20 @@ data class CloakMigrationMap(
     val entries: List<CloakMigrationMapEntry>,
     val fileName: String = FileUtil.sanitizeFileName(name, false)
 ) {
+
     override fun toString(): String {
         return name
     }
+}
+
+
+
+data class CloakMigrationMapEntry(val oldName: String, val newName: String, val type: MigrationEntryType, val recursive: Boolean) :
+    Cloneable {
+}
+
+enum class MigrationEntryType{
+    Class,
+    Method,
+    Field
 }

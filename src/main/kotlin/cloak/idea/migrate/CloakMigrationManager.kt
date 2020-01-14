@@ -23,13 +23,6 @@ class CloakMigrationManager(private val myProject: Project) {
 
     //    private val myMigrationMapSet = CloakMigrationMapSet()
     fun showMigrationDialog() {
-//        val migrationDialog = CloakMigrationDialog(myProject, myMigrationMapSet)
-//        if (!migrationDialog.showAndGet()) {
-//            return
-//        }
-
-        println("asdfsdf")
-
         val migrationMap = CloakMigrationMap(
             name = "test maps",
             description = "a test",
@@ -58,10 +51,22 @@ class CloakMigrationManager(private val myProject: Project) {
                 test("foo.bar.baz234567")
 
 
-                ),
+            ),
             fileName = "should prob remove this"
         )
-        CloakMigrationProcessor(myProject, migrationMap).run()
+
+
+
+        MigrationsDialog(listOf(migrationMap)).show()
+//        val migrationDialog = CloakMigrationDialog(myProject, myMigrationMapSet)
+//        if (!migrationDialog.showAndGet()) {
+//            return
+//        }
+
+//        val x = Messages.showInputDialog("")
+//        println("asdfsdf")
+//
+//        CloakMigrationProcessor(myProject, migrationMap).run()
     }
 //
 //    fun findMigrationMap(name: String): CloakMigrationMap? {

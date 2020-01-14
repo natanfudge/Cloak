@@ -7,6 +7,9 @@ CLASS bgq net/minecraft/block/AbstractBannerBlock
 	METHOD b getColor ()Lawa;
 		COMMENT method comment
 	METHOD obf ()V
+	CLASS a b
+		METHOD a b ()V
+	CLASS testMissing
 	CLASS testObf testDeobf
 		COMMENT inner class comment
 		FIELD a b B
@@ -15,6 +18,3 @@ CLASS bgq net/minecraft/block/AbstractBannerBlock
 				COMMENT arg comment
 				COMMENT line 2
 				COMMENT and line 3
-	CLASS a b
-		METHOD a b ()V
-	CLASS testMissing

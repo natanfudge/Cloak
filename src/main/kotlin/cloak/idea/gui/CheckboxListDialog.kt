@@ -4,7 +4,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.layout.panel
 import javax.swing.JComponent
 
-class CheckboxListDialog(private val options: List<String>, title: String) : DialogWrapper(true) {
+class CheckboxListDialog(private val options: List<String>, title: String) : CloakDialog(title) {
     private var checkedList: MutableList<Boolean> = MutableList(options.size) { false }
 
     override fun createCenterPanel(): JComponent? = panel {
@@ -15,10 +15,9 @@ class CheckboxListDialog(private val options: List<String>, title: String) : Dia
         }
     }
 
-    fun getChosenOptions() = options.filterIndexed { i, _ -> checkedList[i] }
-
     init {
         init()
-        this.title = title
     }
+
+    fun getChosenOptions() = options.filterIndexed { i, _ -> checkedList[i] }
 }

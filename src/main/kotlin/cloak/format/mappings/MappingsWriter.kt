@@ -41,7 +41,7 @@ private class MappingsWriter(val writer: BufferedWriter) {
 
         writeComments(indent)
 
-        for (field in fields) {
+        for (field in fields.sortedBy { it.obfuscatedName }) {
             val fieldIndent = indent + NaturalIndent.Field
             if (field.deobfuscatedName != null) {
                 writeLine(
@@ -52,7 +52,7 @@ private class MappingsWriter(val writer: BufferedWriter) {
             field.writeComments(fieldIndent)
         }
 
-        for (method in methods) {
+        for (method in methods.sortedBy { it.obfuscatedName }) {
             val methodIndent = indent + NaturalIndent.Method
             if (method.deobfuscatedName != null) {
                 writeLine(
@@ -84,7 +84,7 @@ private class MappingsWriter(val writer: BufferedWriter) {
             }
         }
 
-        for (innerClass in innerClasses) innerClass.write(indent + 1)
+        for (innerClass in innerClasses.sortedBy { it.obfuscatedName }) innerClass.write(indent + 1)
 
     }
 
