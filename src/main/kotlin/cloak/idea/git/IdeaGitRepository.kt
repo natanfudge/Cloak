@@ -39,7 +39,7 @@ class IdeaGitRepository(project: Project, git: JGit, path: File) : CloakReposito
     override fun deleteBranch(remoteUrl: String, branchName: String) {
         val result = IdeaGit.getInstance()
             .branchDelete(ideaRepo, branchName, true, GitLineHandlerListener { line, outputType -> })
-        if (!result.success()) LOGGER.warn("Could not delete $branchName: $result")
+        if (!result.success()) LOGGER.warn("Could not delete $branchName: $result", RuntimeException())
         push(remoteUrl, branchName, refSpec = "+:refs/heads/$branchName")
     }
 

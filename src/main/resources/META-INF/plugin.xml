@@ -10,7 +10,8 @@
 
     <change-notes><![CDATA[
       <div>
-        <p> - When submitting you now have a text box to write the PR body in
+        <p> - Fixed mappings being outputted in the wrong order
+        <p> - Changed the submit mappings dialog a bit
       </div>
     ]]>
     </change-notes>

@@ -9,7 +9,7 @@ import cloak.platform.*
 import cloak.platform.saved.updateIntermediaryNamesToVersion
 import org.eclipse.jgit.lib.Repository
 
-private const val useDebugRepo = false
+private const val useDebugRepo = true
 
 object SubmitAction {
     suspend fun submit(platform: ExtendedPlatform) = with(platform) {

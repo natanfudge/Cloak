@@ -8,11 +8,11 @@ import cloak.git.yarnRepo
 import cloak.platform.ActiveMappings
 import cloak.platform.AsyncContext
 import cloak.platform.ExtendedPlatform
+import cloak.platform.changeText
 import cloak.platform.saved.ExplainedResult
 import cloak.platform.saved.showedNoteAboutLicense
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 suspend fun ExtendedPlatform.warmup(asyncContext: AsyncContext) = coroutineScope {
     getAuthenticatedUser()
@@ -82,9 +82,15 @@ suspend fun ExtendedPlatform.findMatchingMapping(name: Name): ExplainedResult<Ma
 
 
     return asyncWithText("Preparing rename...") {
-        warmup(it)
+        it.changeText("Warming up...") {
+            warmup(it)
+        }
 
-        if (!ActiveMappings.areActive()) ActiveMappings.refresh(this@findMatchingMapping)
+        if (!ActiveMappings.areActive()) {
+            it.changeText("Refreshing mappings...") {
+                ActiveMappings.refresh(this@findMatchingMapping)
+            }
+        }
 
         val oldName = name.remapParameterDescriptorsToInt(this)
 

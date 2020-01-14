@@ -79,14 +79,16 @@ class InputFieldDataWrapper(private val data: InputFieldData) {
                 validator.canClose(inputString)
     }
 
-    private val textFieldCore: JTextComponent = if (data.multiline) JTextArea(7, 47) else JTextField(30)
+    private val textFieldCore: JTextComponent = if (data.multiline){
+        JTextArea(7, 47)
+    } else JTextField(30)
 
     fun createTextFieldComponent() = JPanel(BorderLayout()).apply {
+        if(data.multiline) border = EmptyBorder(10,0,0,3)
         add(JLabel(data.description), BorderLayout.LINE_START) {
             border = EmptyBorder(0, 0, 5, 5)
         }
         add(textFieldCore, BorderLayout.LINE_END) {
-            margin = JBInsets(0, 10, 0, 0)
             textField = this
         }
     }
