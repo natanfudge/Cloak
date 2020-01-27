@@ -17,47 +17,12 @@ package cloak.idea.migrate
 
 import com.intellij.openapi.project.Project
 
-class CloakMigrationManager(private val myProject: Project) {
+class CloakMigrationManager(private val project: Project) {
 
     private fun test(str: String) = CloakMigrationMapEntry(str, "", MigrationEntryType.Class, true)
 
-    //    private val myMigrationMapSet = CloakMigrationMapSet()
     fun showMigrationDialog() {
-        val migrationMap = CloakMigrationMap(
-            name = "test maps",
-            description = "a test",
-            entries =
-            listOf(
-//                CloakMigrationMapEntry("java.io.File", "java.io.Nigga", MigrationEntryType.Class, true)
-//            ,CloakMigrationMapEntry("java.lang.String", "java.nigga.String", MigrationEntryType.Class, true)
-//            ,
-//                CloakMigrationMapEntry("java.shit.Path", "java.nio.file.Path", MigrationEntryType.Class, true),
-//                CloakMigrationMapEntry("java.io.Foo", "java.io.File", MigrationEntryType.Class, true),
-//                CloakMigrationMapEntry("java.nio.Path", "", MigrationEntryType.Class, true),
-//                CloakMigrationMapEntry("java.nio.bar.Path", "", MigrationEntryType.Class, true),
-//                CloakMigrationMapEntry("java.io.bar.File", "", MigrationEntryType.Class, true),
-//                CloakMigrationMapEntry("java.bar.File", "", MigrationEntryType.Class, true)
 
-                test("fuck.minecraft.block.Bleak"),
-                test("foo.Bar"),
-                test("foo.bar.b"),
-                test("foo.bar.ba"),
-                test("foo.bar.baz"),
-                test("foo.bar.baz2"),
-                test("foo.bar.baz23"),
-                test("foo.bar.baz234"),
-                test("foo.bar.baz2345"),
-                test("foo.bar.baz23456"),
-                test("foo.bar.baz234567")
-
-
-            ),
-            fileName = "should prob remove this"
-        )
-
-
-
-        MigrationsDialog(listOf(migrationMap)).show()
 //        val migrationDialog = CloakMigrationDialog(myProject, myMigrationMapSet)
 //        if (!migrationDialog.showAndGet()) {
 //            return

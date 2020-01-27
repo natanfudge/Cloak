@@ -135,7 +135,8 @@ object RenameAction {
             inputB = InputFieldData(
                 description = "Explanation",
                 validator = PlatformInputValidator(allowEmptyString = true)
-            )
+            ),
+            helpId = "Rename-Action"
 
         ) ?: return null
 

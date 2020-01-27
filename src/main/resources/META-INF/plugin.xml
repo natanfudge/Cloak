@@ -10,8 +10,7 @@
 
     <change-notes><![CDATA[
       <div>
-        <p> - Fixed mappings being outputted in the wrong order
-        <p> - Changed the submit mappings dialog a bit
+        <p> - Added documentation for cloak features, accessible through the question mark button in dialogs: https://github.com/natanfudge/Cloak/wiki
       </div>
     ]]>
     </change-notes>
@@ -34,10 +33,10 @@
             <keyboard-shortcut first-keystroke="alt F3" keymap="$default"/>
         </action>
 
-<!--        <action id="Cloak.Test" class="cloak.idea.migrate.TestMigrateAction" text="Test"-->
-<!--                description="Test">-->
-<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
-<!--        </action>-->
+        <action id="Cloak.Test" class="cloak.idea.migrate.TestMigrateAction" text="Test"
+                description="Test">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
 
         <group id="Cloak.GlobalMenu" text="Fabric" description="The Fabric main menu" popup="true" icon="/assets/fabric_logo_16.png">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
@@ -76,5 +75,6 @@
 
         <highlightingPassFactory implementation="cloak.idea.NamingProgressHighlighterFactory" />
         <lang.foldingBuilder language="JAVA" implementationClass="cloak.idea.folding.RenameFoldingBuilder"/>
+        <webHelpProvider implementation="cloak.idea.gui.CloakWebHelpProvider"/>
     </extensions>
 </idea-plugin>

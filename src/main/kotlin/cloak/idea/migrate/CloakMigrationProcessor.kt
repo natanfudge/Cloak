@@ -35,9 +35,6 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usageView.UsageViewDescriptor
 import java.util.*
 
-/**
- * @author ven
- */
 class CloakMigrationProcessor @JvmOverloads constructor(
     project: Project,
     private val myMigrationMap: CloakMigrationMap,
@@ -46,14 +43,14 @@ class CloakMigrationProcessor @JvmOverloads constructor(
     )
 ) : BaseRefactoringProcessor(project) {
     private var myPsiMigration: PsiMigration?
-    private var myRefsToShorten: ArrayList<SmartPsiElementPointer<PsiElement>>? = null
+    private var refsToShorten: MutableList<SmartPsiElementPointer<PsiElement>> = mutableListOf()
     override fun createUsageViewDescriptor(usages: Array<UsageInfo>): UsageViewDescriptor {
         return CloakMigrationUsagesViewDescriptor(myMigrationMap, false)
     }
 
     private fun startMigration(project: Project): PsiMigration {
         val migration = PsiMigrationManager.getInstance(project).startMigration()
-        findOrCreateEntries(project, migration)
+//        findOrCreateEntries(project, migration)
         return migration
     }
 
@@ -126,7 +123,6 @@ class CloakMigrationProcessor @JvmOverloads constructor(
         finishFindMigration()
         val psiMigration = PsiMigrationManager.getInstance(myProject).startMigration()
         val a = LocalHistory.getInstance().startAction(commandName)
-        myRefsToShorten = ArrayList()
         try {
             var sameShortNames = false
             for (entry in myMigrationMap.entries) {
@@ -137,27 +133,26 @@ class CloakMigrationProcessor @JvmOverloads constructor(
                     MigrationEntryType.Field -> TODO()
                 }
 
-                CloakMigrationUtil.doMigration(element, newName, usages, myRefsToShorten!!)
-                if (!sameShortNames && Comparing.strEqual(
-                        StringUtil.getShortName(entry.oldName),
-                        StringUtil.getShortName(entry.newName)
-                    )
+                CloakMigrationUtil.doMigration(element, newName, usages, refsToShorten)
+                if (!sameShortNames && StringUtil.getShortName(entry.oldName) == StringUtil.getShortName(entry.newName)
+
+
+
                 ) {
                     sameShortNames = true
                 }
             }
             if (!sameShortNames) {
-                myRefsToShorten!!.clear()
+                refsToShorten.clear()
             }
         } finally {
             a.finish()
             psiMigration.finish()
         }
     }
-
     override fun performPsiSpoilingRefactoring() {
         val styleManager = JavaCodeStyleManager.getInstance(myProject)
-        for (pointer in myRefsToShorten!!) {
+        for (pointer in refsToShorten) {
             val element = pointer.element
             if (element != null) {
                 styleManager.shortenClassReferences(element)

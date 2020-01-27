@@ -3,13 +3,11 @@ package cloak.idea.gui
 import cloak.idea.util.CommonIcons
 import cloak.platform.InputFieldData
 import cloak.platform.PlatformInputValidator
+import com.intellij.CommonBundle
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.*
-import com.intellij.openapi.ui.messages.MessageDialog
 import com.intellij.ui.DocumentAdapter
-import com.intellij.util.ui.JBInsets
 import java.awt.BorderLayout
-import java.awt.event.ActionEvent
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.event.DocumentEvent
@@ -22,6 +20,7 @@ fun showTwoInputsDialog(
     message: String?,
     title: String,
     icon: Icon = CommonIcons.Question,
+    helpId: String?,
     inputA: InputFieldData,
     inputB: InputFieldData
 ): Pair<String, String>? {
@@ -29,11 +28,7 @@ fun showTwoInputsDialog(
     val inputAWrapper = InputFieldDataWrapper(inputA)
     val inputBWrapper = InputFieldDataWrapper(inputB)
 
-    val dialog = TwoInputsDialog(
-        project, message, title, icon,
-        arrayOf(Messages.OK_BUTTON, Messages.CANCEL_BUTTON),
-        0, inputAWrapper, inputBWrapper
-    )
+    val dialog = TwoInputsDialog(project, message, title, icon, helpId, inputAWrapper, inputBWrapper)
     inputAWrapper.applySelection()
     inputBWrapper.applySelection()
 
@@ -79,12 +74,12 @@ class InputFieldDataWrapper(private val data: InputFieldData) {
                 validator.canClose(inputString)
     }
 
-    private val textFieldCore: JTextComponent = if (data.multiline){
+    private val textFieldCore: JTextComponent = if (data.multiline) {
         JTextArea(7, 47)
     } else JTextField(30)
 
     fun createTextFieldComponent() = JPanel(BorderLayout()).apply {
-        if(data.multiline) border = EmptyBorder(10,0,0,3)
+        if (data.multiline) border = EmptyBorder(10, 0, 0, 3)
         add(JLabel(data.description), BorderLayout.LINE_START) {
             border = EmptyBorder(0, 0, 5, 5)
         }
@@ -101,14 +96,16 @@ class InputFieldDataWrapper(private val data: InputFieldData) {
 
 class TwoInputsDialog(
     project: Project?,
-    message: String?,
-    title: String?,
+    private val message: String?,
+    title: String,
     icon: Icon?,
-    options: Array<String?>,
-    defaultOption: Int,
+    private val helpId: String?,
     private val inputA: InputFieldDataWrapper,
     private val inputB: InputFieldDataWrapper
-) : MessageDialog(project, true) {
+) : CloakDialog(project, title) {
+
+//    private val options = arrayOf(Messages.OK_BUTTON, Messages.CANCEL_BUTTON, CommonBundle.getHelpButtonText())
+//    private val defaultOption = 0
 
     private inline fun bothInputs(code: InputFieldDataWrapper.() -> Unit) {
         inputA.code()
@@ -116,7 +113,7 @@ class TwoInputsDialog(
     }
 
     init {
-        _init(title, message, options, defaultOption, -1, icon, null)
+        init(/*title, message, options, defaultOption, -1, icon, null*/)
         bothInputs { initText() }
         enableOkAction()
     }
@@ -129,48 +126,49 @@ class TwoInputsDialog(
         }
     }
 
-    private fun Document.onTextChange(callback: (DocumentEvent) -> Unit) = addDocumentListener(
+    override fun getHelpId(): String? {
+        return "Cloak.$helpId"
+    }
+
+    private fun Document.onTextChange(callback: () -> Unit) = addDocumentListener(
         object : DocumentAdapter() {
             public override fun textChanged(event: DocumentEvent) {
-                callback(event)
+                callback()
             }
-        })
+        })/*.also { callback() }*/
 
-    override fun createActions(): Array<Action?> {
-        val actions = arrayOfNulls<Action>(myOptions.size)
-        for (i in myOptions.indices) {
-            val option = myOptions[i]
-            if (i == 0) { // "OK" is default button. It has index 0.
-                actions[0] = okAction
-                actions[0]!!.putValue(DialogWrapper.DEFAULT_ACTION, true)
+    private fun InputFieldDataWrapper.validate(): Boolean {
+        val text = textField.text.trim { it <= ' ' }
+        if (validator != null) {
+            if (!validator.checkInput(text)) {
+                return false
+            }
 
-                bothInputs {
-                    textField.document.onTextChange {
-                        actions[i]!!.isEnabled = true
-                        val text = textField.text.trim { it <= ' ' }
-                        if (validator != null) {
-                            if (!validator.checkInput(text)) {
-                                actions[i]!!.isEnabled = false
-                            }
+            if (validator is InputValidatorEx) {
+                val errorText = validator.getErrorText(text)
+                setErrorText(errorText, textField)
+                if (errorText != null) return false
+            }
+        }
+        return true
+    }
 
-                            if (validator is InputValidatorEx) {
-                                val errorText = validator.getErrorText(text)
-                                setErrorText(errorText, textField)
-                                if (errorText != null) actions[i]!!.isEnabled = false
-                            }
-                        }
-                    }
-                }
+    override fun createActions(): Array<Action> {
+        val returnedOkAction = okAction.apply {
+            putValue(DialogWrapper.DEFAULT_ACTION, true)
 
-            } else {
-                actions[i] = object : AbstractAction(option) {
-                    override fun actionPerformed(e: ActionEvent) {
-                        close(i)
-                    }
+            bothInputs {
+                textField.document.onTextChange {
+                    isEnabled = inputA.validate() && inputB.validate()
                 }
             }
         }
-        return actions
+
+        return arrayOf(
+            returnedOkAction,
+            cancelAction,
+            helpAction
+        )
     }
 
 
@@ -182,16 +180,16 @@ class TwoInputsDialog(
 
     override fun createCenterPanel(): JComponent? = null
 
-    override fun createNorthPanel(): JComponent? {
-        val panel = createIconPanel()
-        val messagePanel = createMessagePanel()
-        panel.add(messagePanel, BorderLayout.CENTER)
-        return panel
-    }
+//    override fun createNorthPanel(): JComponent? {
+//        val panel = createIconPanel()
+//        val messagePanel = createMessagePanel()
+//        panel.add(messagePanel, BorderLayout.CENTER)
+//        return panel
+//    }
 
-    override fun createMessagePanel(): JPanel {
+    override fun createNorthPanel(): JPanel {
         val messagePanel = JPanel(BorderLayout())
-        if (myMessage != null) {
+        if (message != null) {
             val textComponent = createTextComponent()
             messagePanel.add(textComponent, BorderLayout.NORTH)
         }
@@ -202,12 +200,16 @@ class TwoInputsDialog(
         return messagePanel
     }
 
+    private fun createMessageComponent(message: String?): JTextPane {
+        val messageComponent = JTextPane()
+        return Messages.configureMessagePaneUi(messageComponent, message)
+    }
 
     private fun createTextComponent(): JComponent {
-        val textComponent: JComponent = if (BasicHTML.isHTMLString(myMessage)) {
-            createMessageComponent(myMessage)
+        val textComponent: JComponent = if (BasicHTML.isHTMLString(message)) {
+            createMessageComponent(message)
         } else {
-            val textLabel = JLabel(myMessage)
+            val textLabel = JLabel(message)
             textLabel.ui = MultiLineLabelUI()
             textLabel
         }

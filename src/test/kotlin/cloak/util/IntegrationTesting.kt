@@ -31,14 +31,14 @@ class TestPlatform(private val renameInput: Pair<String, String?>? = null, priva
     override suspend fun getTwoInputs(
         message: String?,
         request: UserInputRequest,
+        helpId: String?,
         inputA: InputFieldData,
         inputB: InputFieldData
-    ): Pair<String, String?>?  = when (request) {
+    ): Pair<String, String?>? = when (request) {
         UserInputRequest.NewName -> renameInput
 //        UserInputRequest.GitUserAuthor -> Pair(TestAuthor.name, TestAuthor.email)
         else -> error("Unexpected")
     }
-
 
 
     override suspend fun showMessageDialog(message: String, title: String) {}

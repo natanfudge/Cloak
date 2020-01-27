@@ -18,9 +18,9 @@ package cloak.idea.migrate
 import com.intellij.openapi.util.io.FileUtil
 
 data class CloakMigrationMap(
-    val name: String,
+    val name: String ,
     val description: String,
-    val entries: List<CloakMigrationMapEntry>,
+    val entries: MutableList<CloakMigrationMapEntry>,
     val fileName: String = FileUtil.sanitizeFileName(name, false)
 ) {
 

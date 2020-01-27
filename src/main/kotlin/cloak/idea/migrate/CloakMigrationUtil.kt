@@ -82,7 +82,7 @@ object CloakMigrationUtil {
 
     fun doMigration(
         elementToBind: PsiElement,
-        newQName: String?,
+        newQName: String,
         usages: Array<UsageInfo>,
         refsToShorten: MutableList<SmartPsiElementPointer<PsiElement>>
     ) {
@@ -91,15 +91,15 @@ object CloakMigrationUtil {
             // rename all references
             for (usage in usages) {
                 if (usage is CloakMigrationProcessor.MigrationUsageInfo) {
-                    if (Comparing.equal(newQName, usage.mapEntry.newName)) {
+                    if (newQName == usage.mapEntry.newName) {
                         val element = usage.getElement()
                         if (element == null || !element.isValid) continue
-                        var psiElement: PsiElement?
-                        psiElement = if (element is PsiReference) {
+                        val psiElement = if (element is PsiReference) {
                             element.bindToElement(elementToBind)
                         } else {
                             bindNonReference(elementToBind, element, usage)
                         }
+
                         if (psiElement != null) {
                             refsToShorten.add(smartPointerManager.createSmartPsiElementPointer(psiElement))
                         }

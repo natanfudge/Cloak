@@ -56,10 +56,11 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
     override suspend fun getTwoInputs(
         message: String?,
         request: UserInputRequest,
+        helpId : String? ,
         inputA : InputFieldData,
         inputB : InputFieldData
     ) = getFromUiThread {
-        showTwoInputsDialog(project, message, request.title, CommonIcons.Question, inputA, inputB)
+        showTwoInputsDialog(project, message, request.title, CommonIcons.Question,helpId, inputA, inputB)
             ?.run { Pair(first, if (second == "") null else second) }
     }
 
@@ -123,7 +124,7 @@ class IdeaPlatform(val project: Project, val editor: Editor? = null) : ExtendedP
 
     override suspend fun getMultipleChoicesBetweenOptions(title: String, options: List<String>): List<String> =
         getFromUiThread {
-            val dialog = CheckboxListDialog(options, title)
+            val dialog = CheckboxListDialog(project,options, title)
             dialog.show()
             dialog.getChosenOptions()
         }

@@ -31,7 +31,8 @@ object SubmitAction {
                     multiline = false,
                     validator = PlatformInputValidator(allowEmptyString = false)
                 ),
-                inputB = InputFieldData(description = "Body", multiline = true)
+                inputB = InputFieldData(description = "Body", multiline = true),
+                helpId = "Submit-Mappings-Action"
             ) ?: return
 
             val upstreamOwner = if (useDebugRepo) "shedaniel" else YarnRepo.UpstreamUsername

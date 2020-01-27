@@ -11,13 +11,14 @@ interface ExtendedPlatform {
 
     val persistentSaver: PersistentSaver
 
-    val branch : BranchInfoApi get() = BranchInfoApi(this)
+    val branch: BranchInfoApi get() = BranchInfoApi(this)
 
     suspend fun getTwoInputs(
         message: String?,
         request: UserInputRequest,
-        inputA : InputFieldData,
-        inputB : InputFieldData
+        helpId: String? = null,
+        inputA: InputFieldData,
+        inputB: InputFieldData
     ): Pair<String, String?>?
 
     suspend fun getUserInput(
@@ -37,7 +38,7 @@ interface ExtendedPlatform {
 
     suspend fun getMultipleChoicesBetweenOptions(title: String, options: List<String>): List<String>
 
-    suspend fun getJavadocInput(title: String, oldJavadoc : String) : String?
+    suspend fun getJavadocInput(title: String, oldJavadoc: String): String?
 
     suspend fun showMessageDialog(message: String, title: String)
 
@@ -62,6 +63,6 @@ interface ExtendedPlatform {
      */
     suspend fun getAuthenticatedUser(): GitUser
 
-    fun createGit(git: JGit, path : File): CloakRepository
+    fun createGit(git: JGit, path: File): CloakRepository
 
 }
